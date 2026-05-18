@@ -1,0 +1,243 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isUserVerified() {
+      // Mandating email verification for standard writes
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    // Role Checks
+    // We check the 'users' collection for roles. 
+    // We also hardcode the admin emails for bootstrap safety.
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email in ["davmuchiri48@gmail.com", "daudimuchiri4@gmail.com"] ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin')
+      );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'teacher';
+    }
+
+    function isStaff() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'staff';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'role']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+             data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.role in ['student', 'teacher', 'admin', 'staff'] &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 40)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 40)) &&
+             (!('residence' in data) || (data.residence is string && data.residence.size() <= 500)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 500)) &&
+             (!('bloodGroup' in data) || (data.bloodGroup is string && data.bloodGroup.size() <= 10)) &&
+             (!('course' in data) || (data.course is string && data.course.size() <= 200)) &&
+             (!('specialization' in data) || (data.specialization is string && data.specialization.size() <= 200)) &&
+             (!('admissionNumber' in data) || (data.admissionNumber is string && data.admissionNumber.size() <= 100)) &&
+             (!('year' in data) || (data.year is string && data.year.size() <= 20)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 2000)) &&
+             (!('firstName' in data) || (data.firstName is string)) &&
+             (!('lastName' in data) || (data.lastName is string)) &&
+             (!('gender' in data) || (data.gender is string)) &&
+             (!('dateOfBirth' in data) || (data.dateOfBirth is string)) &&
+             (!('academicYear' in data) || (data.academicYear is string)) &&
+             (!('admissionDate' in data) || (data.admissionDate is string)) &&
+             (!('religion' in data) || (data.religion is string)) &&
+             (!('caste' in data) || (data.caste is string)) &&
+             (!('fatherName' in data) || (data.fatherName is string)) &&
+             (!('motherName' in data) || (data.motherName is string)) &&
+             (!('guardianName' in data) || (data.guardianName is string)) &&
+             (!('guardianPhone' in data) || (data.guardianPhone is string)) &&
+             (!('group' in data) || (data.group is string)) &&
+             (!('category' in data) || (data.category is string)) &&
+             (!('roll' in data) || (data.roll is string)) &&
+             (!('classIds' in data) || (data.classIds is list)) &&
+             (!('createdAt' in data) || (data.createdAt is string)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string));
+    }
+
+    function isValidSettings(data, settingId) {
+      return (settingId == 'hero_legacy' ? data.images is list :
+             (settingId == 'hero_slides' ? data.slides is list :
+             (settingId == 'gallery' ? data.images is list :
+             (data.appTitle is string && data.appTitle.size() <= 100))));
+    }
+
+    function isValidFeeBalance(data) {
+      return data.studentId is string && isValidId(data.studentId) &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             data.paidAmount is number && data.paidAmount >= 0 &&
+             data.balance is number &&
+             data.lastUpdated is string && // Usually we'd use timestamp, but blueprint says string format date-time
+             data.history is list;
+    }
+
+    // --- Rules ---
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        (isOwner(userId) && incoming().role == 'student') || 
+        isAdmin() || 
+        isTeacher()
+      ) && isValidUser(incoming());
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        isTeacher() ||
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'phoneNumber', 'phone', 'fcmTokens', 'course', 'photoUrl', 
+          'residence', 'bloodGroup', 'admissionNumber', 'year', 'updatedAt',
+          'specialization'
+        ]))
+      ) && isValidUser(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidSettings(incoming(), settingId);
+    }
+
+    match /exam_attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(attendanceId);
+    }
+
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidId(classId);
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuthenticated();
+      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(unitId);
+    }
+
+    match /exams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(examId);
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAuthenticated() && (isAdmin() || isTeacher() || isStaff() || isOwner(resource.data.studentId));
+      allow create: if isAuthenticated() && isOwner(incoming().studentId) && isValidId(submissionId);
+      allow update: if (isAdmin() || isTeacher() || isStaff());
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(attendanceId);
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.senderId == request.auth.uid || 
+        (resource.data.userId == 'SYSTEM_ANNOUNCEMENT_ARCHIVE' && (isAdmin() || isTeacher() || isStaff()))
+      );
+      allow create: if isAdmin() || isTeacher() || isStaff();
+      allow update: if isOwner(resource.data.userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isOwner(resource.data.userId) || isAdmin() || isTeacher() || isStaff();
+    }
+
+    match /fees/{feeId} {
+      // Secured list queries: evaluate auth.uid against resource.data.studentId
+      allow list: if isAuthenticated() && (isAdmin() || resource.data.studentId == request.auth.uid);
+      allow get: if isAuthenticated() && (isAdmin() || resource.data.studentId == request.auth.uid);
+      allow create: if isAdmin() && isValidFeeBalance(incoming());
+      allow update: if isAdmin();
+    }
+
+    match /feeConfigs/{feeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /feeTypes/{typeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /feeGroups/{groupId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /school_calendar/{dateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    match /roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /grades/{gradeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /admissions/{admissionId} {
+      allow read: if isAdmin() || isTeacher() || isStaff();
+      allow create: if true; // Public Online Admission
+      allow update, delete: if isAdmin() || isTeacher() || isStaff();
+    }
+
+    // --- Chat Rules ---
+    match /chat_rooms/{roomId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+      allow create: if isAuthenticated() && (request.auth.uid in request.resource.data.participants);
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+    }
+
+    match /chat_messages/{messageId} {
+      allow read: if isAuthenticated() && exists(/databases/$(database)/documents/chat_rooms/$(resource.data.roomId)) && 
+                     (request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(resource.data.roomId)).data.participants);
+      allow create: if isAuthenticated() && exists(/databases/$(database)/documents/chat_rooms/$(request.resource.data.roomId)) && 
+                      (request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(request.resource.data.roomId)).data.participants);
+    }
+  }
+}

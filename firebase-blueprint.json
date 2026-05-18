@@ -1,0 +1,292 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the system (student or teacher)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "classIds": { "type": "array", "items": { "type": "string" }, "description": "The IDs of the classes the student belongs to" },
+        "course": { "type": "string", "description": "The course/section assigned to the student" },
+        "admissionNumber": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "fcmTokens": { "type": "array", "items": { "type": "string" }, "description": "Tokens for push notifications" },
+        "year": { "type": "string", "description": "Study year for students, experience for teachers" },
+        "specialization": { "type": "string" },
+        "residence": { "type": "string" },
+        "idNumber": { "type": "string" },
+        "gender": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "religion": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "admissionDate": { "type": "string" },
+        "nationality": { "type": "string" },
+        "emergencyContact": { "type": "string" },
+        "emergencyPhone": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "guardianName": { "type": "string" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "A school class",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "courses": { 
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["name", "teacherId"]
+    },
+    "Unit": {
+      "title": "Unit",
+      "description": "An academic unit/subject within a class",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "classId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "classId"]
+    },
+    "FeeType": {
+      "title": "FeeType",
+      "description": "Categorization for fees (e.g. Tuition, Exam)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "FeeGroup": {
+      "title": "FeeGroup",
+      "description": "Grouping for fees (e.g. Regular, Private)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "An exam created by a teacher",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "questions": { "type": "array", "items": { "type": "object" } },
+        "published": { "type": "boolean" },
+        "isOffline": { "type": "boolean" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "examDate": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "duration": { "type": "number", "description": "Exam duration in minutes" }
+      },
+      "required": ["title", "subjectId", "teacherId", "questions", "published"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "An exam submission by a student",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "answers": { "type": "array", "items": { "type": "object" } },
+        "grade": { "type": "number" },
+        "feedback": { "type": "string" }
+      },
+      "required": ["examId", "studentId", "answers"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance record for a class",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "records": { "type": "object", "description": "Map of studentId to status (present/absent/late/excused)" }
+      },
+      "required": ["classId", "date", "records"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global system settings",
+      "type": "object",
+      "properties": {
+        "appTitle": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "fontFamily": { "type": "string" },
+        "fontSize": { "type": "string" },
+        "textAlign": { "type": "string" },
+        "isSchoolClosed": { "type": "boolean" },
+        "schoolClosedReason": { "type": "string" }
+      }
+    },
+    "Role": {
+      "title": "Role",
+      "description": "A user role with specific permissions",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "permissions": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "permissions"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["exam", "grade", "announcement", "deadline", "fee", "broadcast"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "link": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentType": { "type": "string", "enum": ["image", "pdf", "word"] }
+      },
+      "required": ["userId", "title", "message", "type", "read", "createdAt"]
+    },
+    "FeeBalance": {
+      "title": "FeeBalance",
+      "description": "Student fee balance and history",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "balance": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "history": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["studentId", "totalAmount", "paidAmount", "balance", "lastUpdated"]
+    },
+    "ClassFee": {
+      "title": "ClassFee",
+      "description": "Fee configuration for a class",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "period": { "type": "string", "enum": ["semester", "yearly"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["classId", "title", "amount", "period", "createdAt"]
+    },
+    "ExamAttendance": {
+      "title": "ExamAttendance",
+      "description": "Attendance record for a specific exam",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "status": { "type": "string", "enum": ["present", "absent", "excused"] },
+        "markedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["examId", "studentId", "status", "markedAt"]
+    },
+    "Grade": {
+      "title": "Grade",
+      "description": "Grading scale definition",
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "minPercentage": { "type": "number" },
+        "maxPercentage": { "type": "number" },
+        "comment": { "type": "string" }
+      },
+      "required": ["label", "minPercentage", "maxPercentage"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A school expenditure record",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "recordedBy": { "type": "string" }
+      },
+      "required": ["title", "amount", "category", "date", "recordedBy"]
+    },
+    "SchoolCalendar": {
+      "title": "SchoolCalendar",
+      "description": "Records of school closed/open dates",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "reason": { "type": "string" }
+      },
+      "required": ["date", "status"]
+    },
+    "ChatRoom": {
+      "title": "ChatRoom",
+      "description": "A conversation between users",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" }, "description": "User IDs" },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["direct", "group"] },
+        "name": { "type": "string", "description": "For group chats" }
+      },
+      "required": ["participants", "type", "lastMessageAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message within a chat room",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentType": { "type": "string", "enum": ["image", "pdf", "file"] },
+        "readBy": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["roomId", "senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/classes/{classId}": { "schema": "Class", "description": "Class details" },
+    "/units/{unitId}": { "schema": "Unit", "description": "Academic units/subjects" },
+    "/exams/{examId}": { "schema": "Exam", "description": "Exam definitions" },
+    "/submissions/{submissionId}": { "schema": "Submission", "description": "Exam submissions" },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Attendance records" },
+    "/settings/global": { "schema": "Settings", "description": "Global system settings" },
+    "/roles/{roleId}": { "schema": "Role", "description": "Role definitions" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "User notifications" },
+    "/fees/{feeId}": { "schema": "FeeBalance", "description": "Student fee balances" },
+    "/feeConfigs/{feeId}": { "schema": "ClassFee", "description": "Class fee configurations" },
+    "/feeTypes/{typeId}": { "schema": "FeeType", "description": "Fee categorization types" },
+    "/feeGroups/{groupId}": { "schema": "FeeGroup", "description": "Fee grouping categories" },
+    "/exam_attendance/{attendanceId}": { "schema": "ExamAttendance", "description": "Exam attendance records" },
+    "/grades/{gradeId}": { "schema": "Grade", "description": "Grading scale" },
+    "/expenses/{expenseId}": { "schema": "Expense", "description": "School expenditures" },
+    "/school_calendar/{dateId}": { "schema": "SchoolCalendar", "description": "School calendar events" },
+    "/chat_rooms/{roomId}": { "schema": "ChatRoom", "description": "Active conversations" },
+    "/chat_messages/{messageId}": { "schema": "ChatMessage", "description": "Messages in chats" }
+  }
+}
