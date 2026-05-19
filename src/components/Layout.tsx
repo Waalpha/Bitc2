@@ -1,0 +1,492 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from './AuthProvider';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
+import { Toast, ToastMessage } from './Toast';
+import { LogoutButton } from './Auth';
+import { NotificationBell } from './NotificationBell';
+import { 
+  LayoutDashboard, 
+  Home,
+  BookOpen, 
+  Users, 
+  ClipboardCheck, 
+  FileText, 
+  Award,
+  Menu, 
+  X, 
+  ChevronDown,
+  User,
+  Settings,
+  Wallet,
+  TrendingUp,
+  GraduationCap,
+  MessageSquare,
+  Calendar,
+  Lock,
+  Maximize
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, userData, settings, hasPermission, feeBalance } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const mountTime = React.useRef(new Date().toISOString());
+  const location = useLocation();
+
+  const addToast = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, text, type }]);
+    setTimeout(() => removeToast(id), 5000);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Listen for new notifications for real-time alerts
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // Only show toast if created after component mount and it's unread
+          if (data.createdAt > mountTime.current && !data.read) {
+            addToast(`${data.title}: ${data.message}`, 'success');
+          }
+        }
+      });
+    }, (error) => {
+      console.warn("Layout notification listener failed:", error.message);
+      // We don't want to show a fatal error here since NotificationBell also handles this
+    });
+
+    return unsubscribe;
+  }, [user]);
+
+  const isRestricted = settings?.denyAccessOnBalance && 
+                     userData?.role === 'student' && 
+                     (feeBalance?.balance || 0) > 0;
+
+  const navGroups = [
+    {
+      title: 'DASHBOARD',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: null },
+        { name: 'Profile', path: '/profile', icon: User, permission: null, role: 'student' },
+      ]
+    },
+    {
+      title: 'COMMUNICATION',
+      items: [
+        { name: 'WhatsApp Group', path: '/whatsapp', icon: MessageSquare, permission: null },
+      ]
+    },
+    {
+      title: 'ACADEMIC',
+      items: [
+        { name: 'Timetable', path: '/timetable', icon: Calendar, permission: null },
+        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, role: 'student' },
+      ]
+    },
+    {
+      title: 'ADMINISTRATION',
+      items: [
+        { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'system_settings' },
+        { name: 'Classes', path: '/classes', icon: Users, permission: 'manage_classes' },
+        { name: 'Units', path: '/units', icon: BookOpen, permission: 'manage_units' },
+      ]
+    },
+    {
+      title: 'STUDENT INFO',
+      items: [
+        { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'view_students' },
+        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'view_students' },
+        { name: 'Student List', path: '/students', icon: Users, permission: 'view_students' },
+        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: null },
+        { name: 'Exams', path: '/exams', icon: FileText, permission: 'manage_exams' },
+        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'manage_exams' },
+        { name: 'Marks', path: '/marks', icon: Award, permission: 'manage_exams' },
+        { name: 'Results', path: '/results', icon: TrendingUp, permission: null },
+        { name: 'Fees', path: '/fees', icon: Wallet, permission: null },
+      ]
+    }
+  ];
+
+  const dynamicStyles = {
+    fontFamily: settings?.fontFamily || 'Inter, sans-serif',
+    fontSize: settings?.fontSize || '16px',
+    textAlign: settings?.textAlign || 'left' as any,
+  };
+
+  const isStudent = userData?.role === 'student';
+  const isDashboard = location.pathname === '/dashboard';
+
+  const SidebarContent = () => (
+    <div className={`flex flex-col h-full ${isStudent ? 'bg-[#0B1221]' : 'bg-bg-dark'} text-text-secondary relative overflow-hidden`}>
+      {/* Decorative gradient for sidebar */}
+      {!isStudent && (
+        <>
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        </>
+      )}
+
+      <div className="p-8 mb-4 flex items-center gap-3 relative">
+        {settings?.logoUrl ? (
+          <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20">
+            <GraduationCap className="text-white w-6 h-6" />
+          </div>
+        )}
+        <div className="overflow-hidden">
+          <p className="text-white font-bold text-sm uppercase tracking-tight leading-none truncate">{settings?.appTitle || 'BITC Portal'}</p>
+          <p className={`text-[10px] uppercase tracking-widest font-bold ${isStudent ? 'text-blue-400' : 'text-primary'} mt-1.5 opacity-80`}>Smart Learning</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-5 py-2 space-y-8 custom-scrollbar relative">
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((item: any) => {
+            if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
+            if (isStudent && item.path === '/dashboard') return true; // Re-enable for student
+            if (item.role && userData?.role !== item.role) return false;
+            return !item.permission || hasPermission(item.permission);
+          });
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.title}>
+              <p className="px-4 text-[10px] font-bold tracking-widest text-text-muted mb-4 uppercase">{group.title}</p>
+              <div className="space-y-1.5">
+                {visibleItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group relative ${
+                      location.pathname === item.path
+                        ? `${isStudent ? 'bg-blue-600' : 'bg-primary'} text-white shadow-xl ${isStudent ? 'shadow-blue-900/40' : 'shadow-primary/30'}`
+                        : 'text-text-muted hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <item.icon size={18} className={location.pathname === item.path ? 'text-white' : `text-text-muted group-hover:${isStudent ? 'text-blue-400' : 'text-primary'} transition-colors`} />
+                    <span className="flex-1">{item.name}</span>
+                    {location.pathname === item.path && (
+                      <motion.div 
+                        layoutId="activeTabSide"
+                        className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="p-6 relative">
+        <div className={`rounded-[24px] p-4 flex items-center gap-3 border border-white/5 group hover:bg-white/5 transition-all cursor-pointer ${isStudent ? 'bg-white/5' : 'bg-bg-card/50'}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg ${isStudent ? 'bg-blue-600' : 'bg-gradient-to-br from-primary to-highlight'}`}>
+            {userData?.name?.charAt(0)}
+          </div>
+          <div className="overflow-hidden flex-1">
+            <p className="text-text-primary text-xs font-bold truncate">{userData?.name}</p>
+            <p className={`text-[10px] uppercase tracking-widest font-bold ${isStudent ? 'text-blue-400' : 'text-primary'} opacity-60 mt-0.5`}>{userData?.role}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const StudentBottomNav = () => (
+    <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="bg-[#1A1F2E]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center justify-around shadow-2xl relative overflow-hidden">
+        {/* Accent light for bottom nav */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-px bg-blue-500/50 shadow-[0_0_20px_blue]" />
+        
+        <Link to="/dashboard" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/dashboard' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <Home size={22} />
+          <span className="text-xs font-bold uppercase tracking-tighter">Home</span>
+        </Link>
+        <Link to="/my-units" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/my-units' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <BookOpen size={20} />
+          <span className="text-xs font-bold uppercase tracking-tighter">Learn</span>
+        </Link>
+        
+        {/* Central Scan/Action Button */}
+        <div className="relative -top-3">
+          <div className="absolute inset-0 bg-blue-600 blur-xl opacity-30 animate-pulse" />
+          <button className="bg-blue-600 text-white p-4 rounded-2xl shadow-xl shadow-blue-600/40 relative z-10 active:scale-95 transition-transform">
+            <Maximize size={24} />
+          </button>
+        </div>
+
+        <Link to="/fees" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/fees' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <Wallet size={20} />
+          <span className="text-xs font-bold uppercase tracking-tighter">Fees</span>
+        </Link>
+        <Link to="/profile" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/profile' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <User size={20} />
+          <span className="text-xs font-bold uppercase tracking-tighter">Me</span>
+        </Link>
+      </div>
+    </div>
+  );
+
+  if (isRestricted && location.pathname !== '/fees') {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 selection:bg-blue-100 selection:text-blue-700" style={dynamicStyles}>
+        {/* Background decoration */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-400/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] bg-indigo-400/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] pointer-events-none">
+            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+          </div>
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 max-w-xl w-full"
+        >
+          <div className="bg-white rounded-[48px] p-10 sm:p-14 text-center shadow-2xl shadow-black/50 border border-white/10 relative overflow-hidden">
+            {/* Warning tag */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-red-600 px-6 py-2 rounded-b-2xl">
+              <p className="text-xs font-bold text-white uppercase tracking-[0.3em]">System Lock</p>
+            </div>
+
+            <div className="mb-10 inline-flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-500 blur-2xl opacity-20 animate-pulse" />
+                <div className="bg-red-50 p-8 rounded-[40px] text-red-600 relative">
+                  <Lock size={64} className="stroke-[2.5]" />
+                </div>
+              </div>
+            </div>
+
+            <h1 className="text-4xl font-bold text-slate-900 uppercase tracking-tighter mb-4 leading-none">
+              Portal Access <span className="text-red-600">Denied</span>
+            </h1>
+            
+            <p className="text-slate-500 font-bold max-w-sm mx-auto mb-10 leading-relaxed uppercase text-xs tracking-widest">
+              Your academic portal has been suspended due to an outstanding fee balance of
+              <span className="block text-2xl text-slate-900 font-bold mt-2 mb-1 tracking-tight">Ksh {feeBalance?.balance?.toLocaleString()}</span>
+              Please settle the balance to restore full access.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+              <Link 
+                to="/fees" 
+                className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-3xl font-bold text-xs uppercase tracking-widest shadow-2xl shadow-blue-600/40 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+              >
+                Clear Balance Now
+              </Link>
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full sm:w-auto bg-slate-100 text-slate-600 px-10 py-5 rounded-3xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+              >
+                I Have Paid
+              </button>
+            </div>
+
+            <div className="mt-12 pt-10 border-t border-slate-100 flex flex-col items-center gap-6">
+              <div className="flex items-center gap-3 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                  {userData?.name?.charAt(0)}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-900 uppercase truncate max-w-[120px]">{userData?.name}</p>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-widest leading-none">Student Locked</p>
+                </div>
+              </div>
+              <LogoutButton />
+            </div>
+          </div>
+
+          <p className="mt-8 text-center text-white/40 text-xs font-bold uppercase tracking-[0.4em] px-10 leading-relaxed">
+            Contact the accounts department at BITC center for manual payment verification or technical support.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen ${isStudent ? 'bg-[#0B1221]' : 'bg-bg-main'} flex overflow-hidden selection:bg-primary/20 selection:text-primary`} style={dynamicStyles}>
+      {/* Background decoration */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className={`absolute top-[-10%] right-[-5%] w-[40%] h-[40%] ${isStudent ? 'bg-blue-600/10' : 'bg-primary/5'} rounded-full blur-[120px]`} />
+        <div className={`absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] ${isStudent ? 'bg-indigo-600/10' : 'bg-highlight/5'} rounded-full blur-[100px]`} />
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-72 h-screen sticky top-0 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.05)] z-40 transform-gpu">
+        <SidebarContent />
+      </aside>
+
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10 scroll-smooth pb-32 lg:pb-0">
+        {/* Top Navbar */}
+        {!(isStudent && isDashboard) && (
+          <header className={`h-20 ${isStudent ? 'bg-[#0B1221]/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
+            <div className="flex items-center gap-4 flex-1">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden p-2.5 rounded-xl text-text-muted hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+              >
+                <Menu size={22} />
+              </button>
+              
+              <div className="relative flex-1 max-w-md hidden md:block group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-all">
+                  <Menu size={16} className="rotate-90 opacity-50" />
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Search anything..."
+                  className={`w-full border-none rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-text-secondary placeholder:text-text-muted focus:ring-4 ${isStudent ? 'bg-white/5 focus:ring-blue-500/20 text-white' : 'bg-bg-card/50 focus:ring-primary/20 text-text-primary'} shadow-sm ring-1 ring-white/10 transition-all outline-none`}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 sm:gap-6">
+              {/* Year/Period */}
+              <div className={`hidden lg:flex items-center gap-3 ${isStudent ? 'bg-white/5' : 'bg-bg-card'} px-5 py-2.5 rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all hover:shadow-sm`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-blue-400' : 'bg-primary'} animate-pulse`} />
+                <span className={`text-[10px] font-bold ${isStudent ? 'text-gray-300' : 'text-text-secondary'} uppercase tracking-widest`}>2026 [Jan-Dec]</span>
+                <ChevronDown size={14} className="text-text-muted" />
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-4 border-l border-white/10 pl-4 sm:pl-6">
+                <NotificationBell />
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className={`w-11 h-11 rounded-2xl ${isStudent ? 'bg-white/5' : 'bg-bg-card'} flex items-center justify-center text-text-muted hover:text-white border border-white/10 hover:border-blue-400/50 transition-all shadow-sm hover:shadow-md overflow-hidden active:scale-95`}
+                  >
+                    <User size={20} />
+                  </button>
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className={`absolute right-0 mt-6 w-64 rounded-[32px] shadow-2xl py-2 ${isStudent ? 'bg-[#1A1F2E]' : 'bg-bg-card'} ring-1 ring-white/10 z-50 p-6`}
+                      >
+                        <div className="mb-6 flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold ${isStudent ? 'bg-blue-600' : 'bg-primary/10 text-primary'}`}>
+                            {userData?.name?.charAt(0)}
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-text-primary truncate tracking-tight">{userData?.name}</p>
+                            <p className={`text-xs font-bold ${isStudent ? 'text-blue-400' : 'text-primary'} uppercase tracking-widest mt-0.5`}>{userData?.role}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Link to="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-text-secondary hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest">
+                            <User size={18} className="text-text-muted" /> Profile
+                          </Link>
+                          <Link to="/admin" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-text-secondary hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest">
+                            <Settings size={18} className="text-text-muted" /> Settings
+                          </Link>
+                          <div className="pt-2">
+                            <LogoutButton />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
+
+        {/* Page Content */}
+        <main className={`p-6 sm:p-10 max-w-[1700px] w-full mx-auto relative min-h-full ${isStudent ? 'text-white' : ''}`}>
+          {children}
+          
+          <footer className="mt-20 pt-8 pb-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-2">
+            <div className="flex items-center gap-3 opacity-60">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${isStudent ? 'bg-blue-600/50' : 'bg-primary/50'}`}>
+                <GraduationCap size={16} />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
+                {settings?.appTitle || 'BITC Portal'} <span className="mx-2 opacity-30">|</span> Smart Management
+              </p>
+            </div>
+            
+            <div className="text-center md:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-text-muted opacity-80">
+                Copyright Davtech Solutions 2026 <span className="mx-2 opacity-30">|</span> All Rights Reserved.
+              </p>
+              <div className="flex items-center justify-center md:justify-end gap-4 mt-2 opacity-40">
+                <span className="text-[8px] font-bold uppercase tracking-widest hover:text-white transition-colors cursor-pointer">Privacy</span>
+                <span className="text-[8px] font-bold uppercase tracking-widest hover:text-white transition-colors cursor-pointer">Terms</span>
+                <span className="text-[8px] font-bold uppercase tracking-widest hover:text-white transition-colors cursor-pointer">Support</span>
+              </div>
+            </div>
+          </footer>
+        </main>
+
+        {isStudent && <StudentBottomNav />}
+        <Toast messages={toasts} onRemove={removeToast} />
+      </div>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.nav
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute inset-y-0 left-0 w-72 bg-[#12121e] shadow-2xl overflow-hidden"
+            >
+              <SidebarContent />
+            </motion.nav>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+      `}} />
+    </div>
+  );
+};

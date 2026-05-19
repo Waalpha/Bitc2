@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Spec Provided Colors */
+  --color-deep-navy: #0F172A;
+  --color-dark-slate: #1E293B;
+  --color-charcoal-blue: #111827;
+  --color-royal-blue: #2563EB;
+  --color-soft-white: #FFFFFF;
+  --color-gray-muted: #94A3B8;
+  --color-emerald-green: #10B981;
+  --color-bright-cyan: #06B6D4;
+
+  /* Brand Colors - Mapping Spec to Functional Names */
+  --color-primary: var(--color-royal-blue);
+  --color-primary-hover: #1D4ED8;
+  --color-highlight: #3B82F6;
+
+  /* Accent Colors */
+  --color-success: var(--color-emerald-green);
+  --color-cyan-vibe: var(--color-bright-cyan);
+
+  /* Backgrounds */
+  --color-bg-main: var(--color-deep-navy);
+  --color-bg-dark: var(--color-charcoal-blue);
+  --color-bg-card: var(--color-dark-slate);
+
+  /* Text Colors */
+  --color-text-primary: var(--color-soft-white);
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: var(--color-gray-muted);
+
+  /* Overriding base Tailwind colors for consistency across the app */
+  --color-slate-900: var(--color-deep-navy);
+  --color-slate-800: var(--color-dark-slate);
+  --color-slate-50: #f8fafc;
+  --color-white: var(--color-soft-white);
+  --color-blue-600: var(--color-royal-blue);
+  --color-blue-700: #1D4ED8;
+  --color-blue-500: #3B82F6;
+  --color-emerald-500: var(--color-emerald-green);
+  --color-emerald-600: #059669;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply antialiased text-text-primary bg-bg-main font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Fix for visibility in components using light backgrounds */
+  .bg-white, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100 {
+    @apply text-slate-900;
+  }
+  
+  .bg-white p, .bg-white span, .bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white label {
+    @apply text-slate-900;
+  }
+
+  .bg-white .text-gray-400, .bg-white .text-slate-400 {
+    @apply text-slate-400;
+  }
+
+  @media print {
+    @page {
+      size: landscape;
+      margin: 0.5cm;
+    }
+    
+    header, 
+    .print\:hidden {
+      display: none !important;
+    }
+
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+      max-width: none !important;
+    }
+
+    .max-w-7xl {
+      max-width: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    body {
+      background-color: white !important;
+    }
+
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Reset scrolling for printing */
+    html, body, #root, .min-h-screen, .h-screen, .overflow-y-auto, .overflow-x-auto {
+      height: auto !important;
+      overflow: visible !important;
+      position: static !important;
+    }
+
+    aside, header, footer {
+      display: none !important;
+    }
+
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+    }
+  }
+}

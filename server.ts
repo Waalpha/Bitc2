@@ -1,0 +1,511 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
+import cron from "node-cron";
+import admin from "firebase-admin";
+import dotenv from "dotenv";
+import cors from "cors";
+import fs from "fs";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+
+import os from "os";
+
+dotenv.config();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Ensure uploads directory exists in /tmp for Cloud Run compatibility
+const uploadsDir = path.join(os.tmpdir(), "uploads");
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (err) {
+  console.error("Failed to create uploads directory:", err);
+}
+
+// Configure Multer
+const storageConfig = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname.replace(/\s+/g, "_"));
+  },
+});
+const upload = multer({ 
+  storage: storageConfig,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+// Initialize Firebase Admin
+let db: admin.firestore.Firestore | null = null;
+try {
+  if (admin.apps.length === 0) {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    let options: any = {};
+    
+    if (process.env.FIREBASE_PROJECT_ID) {
+      options.projectId = process.env.FIREBASE_PROJECT_ID;
+    } else if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      options.projectId = config.projectId;
+    }
+    
+    admin.initializeApp(options);
+  }
+  db = admin.firestore();
+  console.log("Firebase Admin initialized successfully");
+} catch (error) {
+  console.log("Firebase Admin initialization warning:", error);
+}
+
+async function startServer() {
+  const app = express();
+  const PORT = Number(process.env.PORT) || 3000;
+
+  console.log(`[STARTUP] Starting server in ${process.env.NODE_ENV || 'development'} mode`);
+  
+  // Reload env just in case
+  dotenv.config();
+
+  console.log(`[STARTUP] Firebase Admin: ${db ? 'INITIALIZED' : 'NOT INITIALIZED'}`);
+
+  app.use(cors({
+    origin: true,
+    credentials: true
+  })); 
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+  // Debug middleware to log ALL incoming requests to /api
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      console.log(`[REQ] ${req.method} ${req.path}`);
+    }
+    next();
+  });
+
+  // Explicitly serve uploads folder
+  app.use("/uploads", express.static(uploadsDir));
+
+  const apiRouter = express.Router();
+  
+  // 1. API Health Check
+  apiRouter.get("/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      time: new Date().toISOString(),
+      env: process.env.NODE_ENV || 'development',
+      cloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
+    });
+  });
+
+  // Cloudinary Config - Return 200 even if not configured, just with enabled: false
+  apiRouter.get("/cloudinary-config", (req, res) => {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.json({ enabled: false });
+    }
+    
+    try {
+      const timestamp = Math.round(new Date().getTime() / 1000);
+      const signature = cloudinary.utils.api_sign_request(
+        { 
+          timestamp, 
+          folder: "whatsapp_assets" 
+        },
+        process.env.CLOUDINARY_API_SECRET
+      );
+
+      res.json({
+        enabled: true,
+        signature,
+        timestamp,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        folder: "whatsapp_assets"
+      });
+    } catch (error) {
+      console.error("[CLOUDINARY] Signature error:", error);
+      res.status(500).json({ error: "Failed to generate signature" });
+    }
+  });
+
+  // 2. Proxy Download Endpoint
+  apiRouter.get("/download", async (req, res) => {
+    const { url, filename } = req.query;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: "No URL provided" });
+    }
+
+    console.log(`[DOWNLOAD_PROXY] Request for: ${url}`);
+    
+    try {
+      const fetchHeaders: any = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*'
+      };
+
+      let response = await fetch(url, { headers: fetchHeaders });
+      
+      if (!response.ok) {
+        console.error(`[DOWNLOAD_PROXY] Remote fetch failed: ${response.status} ${response.statusText} for URL: ${url}`);
+        throw new Error(`Remote server returned ${response.status} ${response.statusText}`);
+      }
+
+      // Detection logic for extensions and mime types
+      const urlLower = url.toLowerCase();
+      let detectedExt = "";
+      let detectedMime = "";
+
+      if (urlLower.endsWith(".pdf") || urlLower.includes(".pdf?")) {
+        detectedExt = ".pdf";
+        detectedMime = "application/pdf";
+      } else if (urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg") || urlLower.includes(".jpg?") || urlLower.includes(".jpeg?")) {
+        detectedExt = ".jpg";
+        detectedMime = "image/jpeg";
+      } else if (urlLower.endsWith(".png") || urlLower.includes(".png?")) {
+        detectedExt = ".png";
+        detectedMime = "image/png";
+      } else if (urlLower.endsWith(".docx") || urlLower.includes(".docx?")) {
+        detectedExt = ".docx";
+        detectedMime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      } else if (urlLower.endsWith(".doc") || urlLower.includes(".doc?")) {
+        detectedExt = ".doc";
+        detectedMime = "application/msword";
+      }
+
+      let contentType = response.headers.get("Content-Type");
+      if (!contentType || contentType === "application/octet-stream") {
+        contentType = detectedMime || contentType;
+      }
+      
+      if (contentType) {
+        res.setHeader("Content-Type", contentType);
+      }
+      
+      let baseFilename = (filename as string || "document").replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      // Prevent double extensions but ensure we have one if we detected it
+      if (detectedExt && !baseFilename.toLowerCase().endsWith(detectedExt)) {
+        baseFilename += detectedExt;
+      }
+      
+      const safeFilename = baseFilename;
+      const mode = req.query.mode === 'inline' ? 'inline' : 'attachment';
+      res.setHeader("Content-Disposition", `${mode}; filename="${safeFilename}"`);
+      
+      // Some mobile browsers need Content-Length to show progress or open properly
+      const contentLength = response.headers.get("Content-Length");
+      if (contentLength) {
+        res.setHeader("Content-Length", contentLength);
+      }
+
+      console.log(`[DOWNLOAD_PROXY] Serving: ${safeFilename} (${contentType || 'auto'}) as ${mode}`);
+
+      // Stream the response directly to minimize memory usage
+      if (!response.body) {
+        throw new Error("No response body received from remote server");
+      }
+
+      // Convert Web Stream to Node Stream for piping
+      const { Readable } = await import('stream');
+      // @ts-ignore
+      Readable.fromWeb(response.body).pipe(res);
+      
+    } catch (error: any) {
+      console.error("[DOWNLOAD_PROXY] Error:", error);
+      res.status(500).json({ 
+        error: "Failed to download asset", 
+        details: error.message,
+        url: url 
+      });
+    }
+  });
+
+  // 3. Push Notifications
+  apiRouter.post("/notifications/push", async (req, res) => {
+    const { userId, title, body, link } = req.body;
+    if (!userId || !title || !body) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    await sendPushNotification(userId, title, body, link);
+    res.json({ success: true });
+  });
+
+  // 5. File Upload Endpoint (Cloudinary with local fallback)
+  apiRouter.post("/upload", (req, res, next) => {
+    console.log(`[UPLOAD] Incoming request: ${req.method} ${req.originalUrl}`);
+    upload.single("file")(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        // A Multer error occurred when uploading.
+        console.error("[UPLOAD] Multer error:", err);
+        return res.status(400).json({ error: "File upload error", details: err.message });
+      } else if (err) {
+        // An unknown error occurred when uploading.
+        console.error("[UPLOAD] Unknown upload error:", err);
+        return res.status(500).json({ error: "Unknown upload error" });
+      }
+
+      // Everything went fine.
+      next();
+    });
+  }, async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    try {
+      console.log(`[UPLOAD] Received file: ${req.file.originalname}, size: ${req.file.size}`);
+
+      // Check if Cloudinary is configured
+      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+        console.warn("[UPLOAD] Cloudinary not configured. Falling back to local storage URL.");
+        // Fallback to local storage URL (which we've already saved via multer)
+        const fileUrl = `/uploads/${req.file.filename}`;
+        return res.json({ 
+          success: true, 
+          url: fileUrl,
+          filename: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          provider: 'local'
+        });
+      }
+
+      console.log(`[UPLOAD] Uploading to Cloudinary: ${req.file.path}`);
+      
+      const fileExt = req.file.originalname.split(".").pop()?.toLowerCase();
+      const isDocument = ["pdf", "doc", "docx", "zip", "xls", "xlsx", "ppt", "pptx"].includes(fileExt || "");
+      const baseName = req.file.originalname.split(".").slice(0, -1).join(".");
+      const safeBaseName = baseName.replace(/[^a-zA-Z0-9]/g, '_');
+      
+      // For raw assets, the public_id should include the extension to preserve it and help with Content-Type
+      const publicId = isDocument 
+        ? `${Date.now()}-${safeBaseName}.${fileExt}`
+        : `${Date.now()}-${safeBaseName}`;
+
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "whatsapp_assets",
+        resource_type: isDocument ? "raw" : "auto",
+        public_id: publicId,
+        access_mode: "public",
+        type: "upload"
+      });
+
+      // Cleanup local file after upload
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      console.log(`[UPLOAD] Cloudinary upload successful: ${result.secure_url}`);
+
+      res.json({ 
+        success: true, 
+        url: result.secure_url,
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        provider: 'cloudinary'
+      });
+    } catch (error: any) {
+      console.error("[UPLOAD] Cloudinary error:", error);
+      
+      // Cleanup local file on error too
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      res.status(500).json({ 
+        error: "Failed to upload to Cloudinary", 
+        details: error.message 
+      });
+    }
+  });
+
+  // Mount the router after defining all routes
+  app.use("/api", apiRouter);
+
+  // Catch-all for /api routes that didn't match to ensure they return JSON, not HTML
+  app.use("/api", (req, res) => {
+    console.warn(`[API 404] No route matched for ${req.method} ${req.path}`);
+    res.status(404).json({ 
+      error: "API endpoint not found", 
+      path: req.path,
+      method: req.method 
+    });
+  });
+
+  // Final error handler for API routes
+  app.use("/api", (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error(`[API ERROR] on ${req.method} ${req.path}:`, err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  // Monthly Fees Automation
+  // Cron schedule: 0 0 1 * * (Midnight on the 1st of every month)
+  // For testing, we could use something else, but we'll stick to 1st.
+  cron.schedule("0 0 1 * *", async () => {
+    console.log("Running monthly fee automation...");
+    try {
+      await automateMonthlyFees();
+    } catch (error) {
+      console.error("Monthly fee automation failed:", error);
+    }
+  });
+
+  // Also run once on startup to ensure no missed fees (optional, but good for reliability)
+  // Or at least log that it's active.
+  console.log("Monthly fee scheduler initialized.");
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+async function sendPushNotification(userId: string, title: string, body: string, link: string = '/') {
+  if (!db) return;
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    const tokens = userData?.fcmTokens || [];
+
+    if (tokens.length === 0) {
+      console.log(`No FCM tokens for user ${userId}`);
+      return;
+    }
+
+    const message = {
+      notification: { title, body },
+      data: { link },
+      tokens: tokens
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(message);
+    console.log(`Push sent: ${response.successCount} success, ${response.failureCount} failure`);
+    
+    // Cleanup invalid tokens if any
+    if (response.failureCount > 0) {
+      const remainingTokens = tokens.filter((_: any, idx: number) => response.responses[idx].success);
+      if (remainingTokens.length !== tokens.length) {
+        await db.collection('users').doc(userId).update({ fcmTokens: remainingTokens });
+      }
+    }
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+  }
+}
+
+async function automateMonthlyFees() {
+  if (!db) {
+    console.error("Monthly fee automation skipped: Firebase Admin not initialized (missing credentials).");
+    return;
+  }
+  const now = new Date();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentMonthYear = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  const timestamp = now.toISOString();
+
+  // 1. Fetch all monthly fee configurations
+  // User changed class_fees to feeConfigs in UI
+  const configsSnap = await db.collection('feeConfigs').where('period', '==', 'monthly').get();
+  const configs = configsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  if (configs.length === 0) {
+    console.log("No monthly fee configurations found.");
+    return;
+  }
+
+  // 2. Fetch all students
+  const studentsSnap = await db.collection('users').where('role', '==', 'student').get();
+  const students = studentsSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+  console.log(`Processing ${configs.length} monthly fee configs for ${students.length} students...`);
+
+  for (const config of configs) {
+    const isAll = (config as any).classId === 'all';
+    const classIdToMatch = String((config as any).classId);
+    
+    const targetStudents = isAll 
+      ? students 
+      : students.filter(s => ((s as any).classIds || []).map(String).includes(classIdToMatch));
+
+    for (const student of targetStudents) {
+      const sUid = student.uid.trim();
+      const feeTitle = (config as any).title;
+      const feeAmount = Number((config as any).amount);
+      const historyDescription = `Monthly Fee: ${feeTitle} (${currentMonthYear})`;
+
+      // Check if already applied
+      const feesRef = db.collection('fees').doc(sUid);
+      const feeDoc = await feesRef.get();
+      const feeData = feeDoc.data() || { balance: 0, totalAmount: 0, paidAmount: 0, history: [] };
+
+      const alreadyApplied = (feeData.history || []).some((h: any) => 
+        h.description === historyDescription && h.type === 'charge'
+      );
+
+      if (alreadyApplied) {
+        // console.log(`Fee "${feeTitle}" already applied for ${student.uid} this month.`);
+        continue;
+      }
+
+      const historyItem = {
+        date: timestamp,
+        amount: feeAmount,
+        type: 'charge',
+        description: historyDescription
+      };
+
+      const newTotal = Number(feeData.totalAmount || 0) + feeAmount;
+      const newPaid = Number(feeData.paidAmount || 0);
+
+      await feesRef.set({
+        studentId: sUid,
+        totalAmount: newTotal,
+        paidAmount: newPaid,
+        balance: newTotal - newPaid,
+        lastUpdated: timestamp,
+        history: [...(feeData.history || []), historyItem]
+      }, { merge: true });
+
+      // Add notification
+      const notificationMessage = `${feeTitle}: A monthly charge of Ksh ${feeAmount} has been added for ${currentMonthYear}.`;
+      await db.collection('notifications').add({
+        userId: sUid,
+        title: 'Monthly Fee Applied',
+        message: notificationMessage,
+        type: 'fee',
+        read: false,
+        createdAt: timestamp,
+        link: '/fees'
+      });
+
+      // Send Push Notification
+      await sendPushNotification(sUid, 'Monthly Fee Applied', notificationMessage, '/#/fees');
+    }
+  }
+}
+
+startServer();

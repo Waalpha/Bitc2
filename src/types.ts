@@ -1,0 +1,379 @@
+export interface User {
+  uid: string;
+  name: string;
+  email: string;
+  role: string; // Dynamic role
+  classIds?: string[];
+  biometricId?: string;
+  biometricRawId?: string;
+  biometricLinkedAt?: string;
+  createdAt: string;
+  // Admission Fields
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  religion?: string;
+  caste?: string;
+  photoUrl?: string;
+  admissionNumber?: string;
+  admissionDate?: string;
+  academicYear?: string;
+  course?: string; // Renamed from section
+  roll?: string;
+  group?: string;
+  phone?: string;
+  bloodGroup?: string;
+  category?: string;
+  fcmTokens?: string[];
+  lastActive?: string;
+  year?: string;
+  specialization?: string;
+  residence?: string;
+  idNumber?: string;
+  nationality?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  address?: string;
+  // Parent & Guardian Fields
+  fatherName?: string;
+  fatherPhone?: string;
+  fatherOccupation?: string;
+  motherName?: string;
+  motherPhone?: string;
+  motherOccupation?: string;
+  guardianName?: string;
+  guardianRelation?: string;
+  guardianPhone?: string;
+  guardianOccupation?: string;
+  guardianAddress?: string;
+  guardianEmail?: string;
+}
+
+export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+export interface TimetableEntry {
+  id: string;
+  classId: string;
+  day: DayOfWeek;
+  unitId: string;
+  teacherId: string;
+  teacherName?: string; // Cache teacher name for easier rendering
+  unitName?: string; // Cache unit name
+  startTime: string; // HH:mm
+  endTime: string;   // HH:mm
+  room?: string;
+  color?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
+export const PERMISSIONS = [
+  { id: 'manage_users', name: 'Manage Users', description: 'Can view, edit, and delete users' },
+  { id: 'manage_classes', name: 'Manage Classes', description: 'Can create and delete classes' },
+  { id: 'manage_units', name: 'Manage Units', description: 'Can create and delete units' },
+  { id: 'manage_exams', name: 'Manage Exams', description: 'Can create and publish exams' },
+  { id: 'mark_attendance', name: 'Mark Attendance', description: 'Can record student attendance' },
+  { id: 'view_reports', name: 'View Reports', description: 'Can view system-wide reports' },
+  { id: 'view_students', name: 'View Students', description: 'Can view the student directory' },
+  { id: 'manage_fees', name: 'Manage Fees', description: 'Can manage student fee balances' },
+  { id: 'view_finance', name: 'View Finance', description: 'Can view income and expense charts' },
+  { id: 'system_settings', name: 'System Settings', description: 'Can modify app title, logo, and styles' },
+] as const;
+
+export interface Class {
+  id: string;
+  name: string;
+  teacherId: string;
+  unitIds?: string[]; // Renamed from units
+  startTime?: string; // HH:mm
+  endTime?: string;   // HH:mm
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  classId: string;
+  status: 'active' | 'completed';
+}
+
+export type ExamType = 'Midterm' | 'Final' | 'Quiz' | 'Assignment' | 'Practical' | 'Physical';
+
+export interface Question {
+  id: string;
+  text: string;
+  type: 'multiple-choice' | 'text';
+  options?: string[];
+  correctAnswer?: string;
+}
+
+export interface Exam {
+  id: string;
+  title: string;
+  type: ExamType;
+  unitId: string;
+  classId: string;
+  teacherId: string;
+  questions: Question[];
+  published: boolean;
+  isOffline?: boolean;
+  dueDate?: string;
+  examDate?: string;
+  location?: string;
+  maxMarks: number;
+  passingMarks: number;
+  duration?: number; // In minutes
+  createdAt: string;
+}
+
+export interface Submission {
+  id: string;
+  examId: string;
+  studentId: string;
+  answers: { questionId: string; answer: string }[];
+  grade?: number;
+  feedback?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: 'image' | 'pdf' | 'word' | 'video';
+  submittedAt: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  classId: string;
+  date: string;
+  records: { [studentId: string]: 'present' | 'absent' | 'late' | 'excused' };
+  biometricLogs?: { 
+    [studentId: string]: { 
+      checkIn?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string };
+      checkOut?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string };
+      leaveOut?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string; reason?: string };
+    } 
+  };
+}
+
+export interface ExamAttendance {
+  id: string;
+  examId: string;
+  studentId: string;
+  status: 'present' | 'absent' | 'excused';
+  markedAt: string;
+}
+
+export interface Grade {
+  id: string;
+  label: string; // e.g., 'A', 'B', 'C'
+  minPercentage: number;
+  maxPercentage: number;
+  comment?: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'exam' | 'grade' | 'announcement' | 'deadline' | 'fee' | 'broadcast' | 'chat';
+  read: boolean;
+  createdAt: string;
+  senderId?: string;
+  link?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: 'image' | 'pdf' | 'word' | 'video';
+}
+
+export interface FeeBalance {
+  id: string;
+  studentId: string;
+  totalAmount: number;
+  paidAmount: number;
+  balance: number;
+  lastUpdated: string;
+  history?: { 
+    date: string; 
+    amount: number; 
+    type: 'payment' | 'charge'; 
+    description: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
+  }[];
+}
+
+export interface FeeType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface FeeGroup {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface ClassFee {
+  id: string;
+  classId: string;
+  title: string;
+  amount: number;
+  period: 'semester' | 'yearly' | 'monthly';
+  feeType?: string;
+  feeGroup?: string;
+  createdAt: string;
+}
+
+export interface Expense {
+  id: string;
+  title: string;
+  amount: number;
+  category: string;
+  date: string;
+  description?: string;
+  recordedBy: string;
+}
+
+export interface SchoolCalendar {
+  id: string;
+  date: string; // YYYY-MM-DD
+  status: 'open' | 'closed';
+  reason?: string;
+}
+
+export interface ChatRoom {
+  id: string;
+  participants: string[];
+  lastMessage?: string;
+  lastMessageAt: string;
+  type: 'direct' | 'group';
+  name?: string;
+  classId?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
+  attachmentUrl?: string;
+  attachmentType?: 'image' | 'pdf' | 'word' | 'file' | 'video';
+  attachmentName?: string;
+  attachmentSize?: number;
+  readBy?: string[];
+}
+
+export interface HeroSlide {
+  id: string;
+  imageUrl: string;
+  title?: string;
+  description?: string;
+}
+
+export interface AppSettings {
+  appTitle: string;
+  schoolName?: string;
+  logoUrl?: string;
+  stampUrl?: string;
+  stampPosition?: 'left' | 'center' | 'right';
+  fontFamily: string;
+  fontSize: string;
+  textAlign: 'left' | 'center' | 'right';
+  isSchoolClosed?: boolean;
+  schoolClosedReason?: string;
+  schoolReopenDate?: string;
+  // Public Portal Settings
+  publicAddress?: string;
+  publicPhone?: string;
+  publicEmail?: string;
+  publicLocationEmbed?: string;
+  publicHeroTitle?: string;
+  publicHeroDescription?: string;
+  publicHeroImageUrl?: string;
+  publicHeroImages?: string[];
+  publicHeroSlides?: HeroSlide[];
+  heroAnimationType?: 'fade' | 'zoom-in' | 'zoom-out' | 'slide-left' | 'slide-right' | 'blur-in';
+  publicHeroFont?: string;
+  publicHeroAlign?: 'left' | 'center' | 'right';
+  publicHeroTitleSize?: string;
+  publicHeroDescriptionSize?: string;
+  // Public Portal Sections
+  portalAboutUs?: string;
+  aboutTitle?: string;
+  aboutImageUrl?: string;
+  portalGallery?: string[];
+  sessionTimeoutSeconds?: number;
+  activeSession?: string;
+  denyAccessOnBalance?: boolean;
+}
+
+export interface StyledText {
+  text: string;
+  fontSize?: string;
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
+  fontFamily?: string;
+  textAlign?: 'left' | 'center' | 'right';
+  color?: string;
+}
+
+export interface LandingHeroSlide {
+  id: string;
+  title: StyledText;
+  subtitle: StyledText;
+  description: StyledText;
+  imageUrl: string;
+  ctaText: string;
+  ctaLink: string;
+  transitionEffect?: 'fade' | 'slide' | 'zoom';
+}
+
+export interface LandingSettings {
+  logoUrl?: string;
+  heroSlides: LandingHeroSlide[];
+  featuresTitle: StyledText;
+  featuresSubtitle: StyledText;
+  features: {
+    title: StyledText;
+    description: StyledText;
+    iconName: string;
+  }[];
+  stats: {
+    label: string;
+    value: string;
+  }[];
+  ctaTitle: StyledText;
+  ctaSubtitle: StyledText;
+  ctaButtonText: string;
+}
+
+export interface PublicUnit {
+  id: string;
+  name: string;
+  description: string;
+  duration: string;
+  fee: string;
+  category: string;
+  imageUrl?: string;
+  requirements?: string[];
+}
+
+export interface AdmissionApplication {
+  id: string;
+  studentName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  unitId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  notes?: string;
+}
