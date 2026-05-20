@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup } from '../types';
-import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText } from 'lucide-react';
+import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -18,6 +18,7 @@ export const Fees: React.FC = () => {
   const [classFees, setClassFees] = useState<ClassFee[]>([]);
   const [myBalance, setMyBalance] = useState<FeeBalance | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [balanceFilter, setBalanceFilter] = useState<'all' | 'outstanding' | 'overpaid'>('all');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAddingClassFee, setIsAddingClassFee] = useState(false);
@@ -1028,10 +1029,22 @@ export const Fees: React.FC = () => {
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          s.email.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+
+    const balanceObj = feeBalances.find(b => b.studentId === s.uid);
+    const balAmt = balanceObj?.balance ?? 0;
+
+    if (balanceFilter === 'outstanding') {
+      return balAmt > 0;
+    }
+    if (balanceFilter === 'overpaid') {
+      return balAmt < 0;
+    }
+    return true;
+  });
 
   const reportStats = React.useMemo(() => {
     if (!isAdminView) return null;
@@ -1120,6 +1133,11 @@ export const Fees: React.FC = () => {
     const totalLifetimeExpected = activeFeeBalances.reduce((acc, curr) => acc + (Number(curr.totalAmount) || 0), 0);
     const totalLifetimeCollected = activeFeeBalances.reduce((acc, curr) => acc + (Number(curr.paidAmount) || 0), 0);
 
+    // Overpayment and Prepaid Credits metrics
+    const overpaidStudentsList = activeFeeBalances.filter(fb => (Number(fb.balance) || 0) < 0);
+    const totalPrepaidCredits = overpaidStudentsList.reduce((acc, curr) => acc + Math.abs(Number(curr.balance) || 0), 0);
+    const totalOverpaidStudentsCount = overpaidStudentsList.length;
+
     // Detailed Monthly Student Data for specialized reports
     const studentMonthlyData = students.map(student => {
       const balance = activeFeeBalances.find(fb => fb.studentId === student.uid);
@@ -1152,6 +1170,8 @@ export const Fees: React.FC = () => {
       totalLifetimeExpected,
       totalLifetimeCollected,
       totalBalance: totalLifetimeExpected - totalLifetimeCollected,
+      totalPrepaidCredits,
+      totalOverpaidStudentsCount,
       monthCollected,
       monthCharged,
       totalProjected,
@@ -1163,13 +1183,19 @@ export const Fees: React.FC = () => {
     };
   }, [isAdminView, feeBalances, students, classes, classFees]);
 
-  const handleDetailedReport = (type: 'due' | 'payments' | 'balance') => {
+  const handleDetailedReport = (type: 'due' | 'payments' | 'balance' | 'overpaid') => {
     if (!reportStats) return;
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const reportTitle = type === 'due' ? 'Fees Due Report' : type === 'payments' ? 'Payment Collection Report' : 'Monthly Balance Report';
+    const reportTitle = type === 'due' 
+      ? 'Fees Due Report' 
+      : type === 'payments' 
+        ? 'Payment Collection Report' 
+        : type === 'overpaid'
+          ? 'Student Overpayments & Prepaid Credits'
+          : 'Monthly Balance Report';
     const monthName = format(new Date(), 'MMMM yyyy');
     
     // Sort data for the report
@@ -1177,6 +1203,7 @@ export const Fees: React.FC = () => {
     if (type === 'due') reportData = reportData.filter(d => d.monthCharged > 0).sort((a, b) => b.monthCharged - a.monthCharged);
     if (type === 'payments') reportData = reportData.filter(d => d.monthCollected > 0).sort((a, b) => b.monthCollected - a.monthCollected);
     if (type === 'balance') reportData = reportData.filter(d => d.monthBalance > 0 || d.runningBalance > 0).sort((a, b) => b.runningBalance - a.runningBalance);
+    if (type === 'overpaid') reportData = reportData.filter(d => d.runningBalance < 0).sort((a, b) => a.runningBalance - b.runningBalance);
 
     const html = `
       <html>
@@ -1219,8 +1246,8 @@ export const Fees: React.FC = () => {
                 <th width="30%">Student Name</th>
                 <th width="20%">Class</th>
                 ${type === 'due' ? '<th>Description</th>' : ''}
-                <th class="amount">${type === 'due' ? 'Amount Due' : type === 'payments' ? 'Amount Paid' : 'Monthly Bal.'}</th>
-                ${type === 'balance' ? '<th class="amount">Total Bal.</th>' : ''}
+                <th class="amount">${type === 'due' ? 'Amount Due' : type === 'payments' ? 'Amount Paid' : type === 'overpaid' ? 'Held Prepaid Credit' : 'Monthly Bal.'}</th>
+                ${type === 'balance' || type === 'overpaid' ? '<th class="amount">Total Bal.</th>' : ''}
               </tr>
             </thead>
             <tbody>
@@ -1229,14 +1256,16 @@ export const Fees: React.FC = () => {
                   <td><strong>${d.name}</strong><br/><span style="font-size: 9px; color: #9ca3af;">${d.email}</span></td>
                   <td>${d.classNames || 'N/A'}</td>
                   ${type === 'due' ? '<td>Monthly Fees</td>' : ''}
-                  <td class="amount">Ksh ${ (type === 'due' ? d.monthCharged : type === 'payments' ? d.monthCollected : d.monthBalance).toLocaleString()}</td>
+                  <td class="amount">${type === 'overpaid' ? `Ksh ${Math.abs(d.runningBalance).toLocaleString()} Credit` : `Ksh ${(type === 'due' ? d.monthCharged : type === 'payments' ? d.monthCollected : d.monthBalance).toLocaleString()}`}</td>
                   ${type === 'balance' ? `<td class="amount" style="color: ${d.runningBalance > 0 ? '#dc2626' : '#059669'}">Ksh ${d.runningBalance.toLocaleString()}</td>` : ''}
+                  ${type === 'overpaid' ? `<td class="amount" style="color: #059669">Ksh ${d.runningBalance.toLocaleString()} (Credit)</td>` : ''}
                 </tr>
               `).join('')}
               <tr class="total-row">
                 <td colspan="${type === 'due' ? 3 : 2}">TOTAL</td>
-                <td class="amount">Ksh ${(type === 'due' ? reportStats.monthCharged : type === 'payments' ? reportStats.monthCollected : reportStats.monthBalance).toLocaleString()}</td>
+                <td class="amount">Ksh ${(type === 'due' ? reportStats.monthCharged : type === 'payments' ? reportStats.monthCollected : type === 'overpaid' ? reportStats.totalPrepaidCredits : reportStats.monthBalance).toLocaleString()}</td>
                 ${type === 'balance' ? `<td class="amount">Ksh ${reportStats.totalBalance.toLocaleString()}</td>` : ''}
+                ${type === 'overpaid' ? `<td class="amount" style="color: #059669">-Ksh ${reportStats.totalPrepaidCredits.toLocaleString()} (Pool)</td>` : ''}
               </tr>
             </tbody>
           </table>
@@ -1339,17 +1368,51 @@ export const Fees: React.FC = () => {
           {activeTab === 'individual' && (
             <>
               <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search students..."
-                  value={searchTerm || ''}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-bg-card border border-white/5 rounded-xl focus:ring-2 focus:ring-primary outline-none text-text-primary"
-                />
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={searchTerm || ''}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-bg-card border border-white/5 rounded-xl focus:ring-2 focus:ring-primary outline-none text-text-primary"
+                  />
+                </div>
+                <div className="flex bg-[#111] p-1 rounded-xl border border-white/5 self-start sm:self-auto gap-1">
+                  <button
+                    onClick={() => setBalanceFilter('all')}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                      balanceFilter === 'all'
+                        ? 'bg-white/15 text-white shadow-sm border border-white/10'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setBalanceFilter('outstanding')}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                      balanceFilter === 'outstanding'
+                        ? 'bg-rose-500/10 text-rose-500 shadow-sm border border-rose-500/20'
+                        : 'text-gray-400 hover:text-rose-400'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                    Outstanding
+                  </button>
+                  <button
+                    onClick={() => setBalanceFilter('overpaid')}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                      balanceFilter === 'overpaid'
+                        ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
+                        : 'text-gray-400 hover:text-emerald-400'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Credit / Prepaid
+                  </button>
+                </div>
               </div>
-          </div>
 
           <div className="bg-bg-card rounded-2xl shadow-xl border border-white/5 overflow-hidden">
             <div className="overflow-x-auto">
@@ -1380,16 +1443,32 @@ export const Fees: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          Ksh {balance?.totalAmount || 0}
+                        <td className="px-6 py-4 text-sm text-gray-400">
+                          Ksh {balance?.totalAmount?.toLocaleString() || 0}
                         </td>
-                        <td className="px-6 py-4 text-sm text-green-600 font-medium">
-                          Ksh {balance?.paidAmount || 0}
+                        <td className="px-6 py-4 text-sm text-green-500 font-medium">
+                          Ksh {balance?.paidAmount?.toLocaleString() || 0}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-bold ${ (balance?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            Ksh {balance?.balance || 0}
-                          </span>
+                          {balance ? (
+                            balance.balance > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                Ksh {balance.balance.toLocaleString()} Due
+                              </span>
+                            ) : balance.balance < 0 ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                Ksh {Math.abs(balance.balance).toLocaleString()} Credit
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-white/5 text-gray-400 border border-white/5">
+                                Fully Cleared
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-xs text-gray-500 italic">No balance record</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-xs text-gray-400">
                           {balance?.lastUpdated ? format(new Date(balance.lastUpdated), 'MMM dd, yyyy') : 'Never'}
@@ -1627,9 +1706,16 @@ export const Fees: React.FC = () => {
                 >
                   <Wallet size={16} className="text-amber-500" /> Balance Report
                 </button>
+                <button 
+                  onClick={() => handleDetailedReport('overpaid')}
+                  className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-xl font-bold text-xs shadow-sm hover:bg-emerald-100 transition-all uppercase tracking-widest flex-shrink-0"
+                  title="Students who have paid more than required"
+                >
+                  <Sparkles size={16} className="text-emerald-600" /> Prepayments Report
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Invoiced This Month</p>
@@ -1671,6 +1757,17 @@ export const Fees: React.FC = () => {
                   <div className="mt-4 flex items-center gap-2 text-indigo-600">
                     <Users size={16} />
                     <span className="text-xs font-bold">Projected for Current Term</span>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50/40 p-6 rounded-[24px] border border-emerald-100/50 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">Prepaid Credits Pool</p>
+                    <h3 className="text-2xl font-bold text-emerald-700">Ksh {reportStats.totalPrepaidCredits.toLocaleString()}</h3>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 text-emerald-600">
+                    <Sparkles size={16} className="animate-pulse" />
+                    <span className="text-xs font-bold">Overpayments across {reportStats.totalOverpaidStudentsCount} students</span>
                   </div>
                 </div>
               </div>
@@ -1848,22 +1945,41 @@ export const Fees: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center">
-              <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                <Wallet size={32} />
+            <div className={`p-8 rounded-3xl text-center border transition-all ${
+              (myBalance?.balance || 0) < 0 
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-white border-gray-100 text-gray-900 shadow-sm'
+            }`}>
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+                (myBalance?.balance || 0) < 0 ? 'bg-emerald-400/20 text-emerald-400 animate-bounce' : 'bg-blue-50 text-blue-600'
+              }`}>
+                { (myBalance?.balance || 0) < 0 ? <Sparkles size={32} /> : <Wallet size={32} /> }
               </div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Current Balance</p>
-              <h2 className={`text-4xl font-bold mb-4 ${ (myBalance?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                Ksh {myBalance?.balance || 0}
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-400' : 'text-gray-400' }`}>
+                { (myBalance?.balance || 0) < 0 ? 'Available Prepaid Credit' : 'Current Balance' }
+              </p>
+              <h2 className={`text-4xl font-extrabold mb-3 tracking-tight ${
+                (myBalance?.balance || 0) > 0 
+                  ? 'text-rose-500' 
+                  : (myBalance?.balance || 0) < 0 
+                    ? 'text-emerald-400' 
+                    : 'text-gray-400'
+              }`}>
+                Ksh { (myBalance?.balance || 0) < 0 ? Math.abs(myBalance.balance).toLocaleString() : (myBalance?.balance || 0).toLocaleString() }
               </h2>
-              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-50">
+              { (myBalance?.balance || 0) < 0 && (
+                <p className="text-xs text-emerald-400 font-medium mb-4 bg-emerald-500/10 py-1.5 px-3 rounded-lg inline-block border border-emerald-500/20">
+                  🎉 You have pre-paid your fees! This credit covers future invoices automatically.
+                </p>
+              )}
+              <div className={`grid grid-cols-2 gap-4 pt-6 border-t ${ (myBalance?.balance || 0) < 0 ? 'border-emerald-500/15' : 'border-gray-50' }`}>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Total Fees</p>
-                  <p className="text-lg font-bold text-gray-900">Ksh {myBalance?.totalAmount || 0}</p>
+                  <p className={`text-xs mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Invoiced</p>
+                  <p className={`text-lg font-bold ${ (myBalance?.balance || 0) < 0 ? 'text-white' : 'text-gray-800' }`}>Ksh {myBalance?.totalAmount?.toLocaleString() || 0}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Total Paid</p>
-                  <p className="text-lg font-bold text-green-600">Ksh {myBalance?.paidAmount || 0}</p>
+                  <p className={`text-xs mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Paid</p>
+                  <p className="text-lg font-bold text-green-500">Ksh {myBalance?.paidAmount?.toLocaleString() || 0}</p>
                 </div>
               </div>
             </div>
