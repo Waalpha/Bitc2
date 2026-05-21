@@ -4,6 +4,7 @@ export interface User {
   email: string;
   role: string; // Dynamic role
   classIds?: string[];
+  disabled?: boolean;
   biometricId?: string;
   biometricRawId?: string;
   biometricLinkedAt?: string;
@@ -269,13 +270,6 @@ export interface ChatMessage {
   readBy?: string[];
 }
 
-export interface HeroSlide {
-  id: string;
-  imageUrl: string;
-  title?: string;
-  description?: string;
-}
-
 export interface AppSettings {
   appTitle: string;
   schoolName?: string;
@@ -297,8 +291,6 @@ export interface AppSettings {
   publicHeroDescription?: string;
   publicHeroImageUrl?: string;
   publicHeroImages?: string[];
-  publicHeroSlides?: HeroSlide[];
-  heroAnimationType?: 'fade' | 'zoom-in' | 'zoom-out' | 'slide-left' | 'slide-right' | 'blur-in';
   publicHeroFont?: string;
   publicHeroAlign?: 'left' | 'center' | 'right';
   publicHeroTitleSize?: string;
@@ -323,20 +315,8 @@ export interface StyledText {
   color?: string;
 }
 
-export interface LandingHeroSlide {
-  id: string;
-  title: StyledText;
-  subtitle: StyledText;
-  description: StyledText;
-  imageUrl: string;
-  ctaText: string;
-  ctaLink: string;
-  transitionEffect?: 'fade' | 'slide' | 'zoom';
-}
-
 export interface LandingSettings {
   logoUrl?: string;
-  heroSlides: LandingHeroSlide[];
   featuresTitle: StyledText;
   featuresSubtitle: StyledText;
   features: {
