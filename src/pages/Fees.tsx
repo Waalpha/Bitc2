@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup } from '../types';
-import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles } from 'lucide-react';
+import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -11,7 +11,12 @@ import { Toast, ToastMessage } from '../components/Toast';
 export const Fees: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
-  const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports'>('individual');
+  const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports' | 'installments'>('individual');
+  const [installmentStudentId, setInstallmentStudentId] = useState<string>('');
+  const [courseFeeTotal, setCourseFeeTotal] = useState<number>(70000);
+  const [monthlyInstalment, setMonthlyInstalment] = useState<number>(4500);
+  const [installmentClassId, setInstallmentClassId] = useState<string>('');
+  const [customScheduleMonths, setCustomScheduleMonths] = useState<number>(16);
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -1731,6 +1736,15 @@ export const Fees: React.FC = () => {
               <TrendingUp size={18} />
               Financial Reports
             </button>
+            <button
+              onClick={() => setActiveTab('installments')}
+              className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'installments' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              <Calculator size={18} />
+              Installment Planner
+            </button>
           </div>
 
           {activeTab === 'individual' && (
@@ -2317,6 +2331,356 @@ export const Fees: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'installments' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+              {/* Heading Card with customized info */}
+              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-8 rounded-3xl border border-white/10 text-white relative overflow-hidden shadow-xl">
+                <div className="absolute top-[-40%] right-[-10%] w-[300px] h-[300px] bg-primary/20 rounded-full blur-[80px]" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2.5 bg-white/10 rounded-xl text-primary">
+                      <Calculator size={24} />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Administrative Tools</span>
+                  </div>
+                  <h2 className="text-3xl font-extrabold tracking-tight">Fee Installment Plan & Deduction Tracker</h2>
+                  <p className="text-white/70 text-sm mt-2 max-w-2xl leading-relaxed">
+                    Set up course-specific structures and projection profiles. Deduct installment premiums (such as <strong>Ksh {monthlyInstalment.toLocaleString()}</strong> monthly) directly from the overall fee (such as <strong>Ksh {courseFeeTotal.toLocaleString()}</strong>) manually or at the end of the month.
+                  </p>
+                </div>
+              </div>
+
+              {/* Grid with 2 Main Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Left Section: Plan Configuration & Simulator (col-span-5) */}
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="bg-[#111] p-6 rounded-3xl border border-white/5 space-y-6 shadow-sm">
+                    <div className="border-b border-white/5 pb-4">
+                      <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+                        <Layers size={18} className="text-primary" />
+                        Simulation & Presets
+                      </h3>
+                      <p className="text-xs text-text-muted mt-1">Configure parameters to simulate the monthly deduction schedule.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Course Fee Input */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Full Course Fee Amount (Ksh)</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">Ksh</span>
+                          <input
+                            type="number"
+                            value={courseFeeTotal}
+                            onChange={(e) => setCourseFeeTotal(Math.max(0, parseFloat(e.target.value) || 0))}
+                            placeholder="70,000"
+                            className="w-full pl-14 pr-4 py-3 bg-[#111115] border border-white/5 rounded-2xl focus:ring-2 focus:ring-primary outline-none text-text-primary font-bold"
+                          />
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1.5 ml-1">Standard preset default is 70,000</p>
+                      </div>
+
+                      {/* Monthly Installment Premium */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Monthly Installment Premium (Ksh)</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">Ksh</span>
+                          <input
+                            type="number"
+                            value={monthlyInstalment}
+                            onChange={(e) => setMonthlyInstalment(Math.max(1, parseFloat(e.target.value) || 0))}
+                            placeholder="4,500"
+                            className="w-full pl-14 pr-4 py-3 bg-[#111115] border border-white/5 rounded-2xl focus:ring-2 focus:ring-primary outline-none text-text-primary font-bold"
+                          />
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1.5 ml-1">Standard preset installment is 4,500</p>
+                      </div>
+
+                      {/* Display calculations summary */}
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Total Simulated Term:</span>
+                          <span className="font-bold text-text-primary">
+                            {Math.ceil(courseFeeTotal / Math.max(1, monthlyInstalment))} Months
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Final Month Premium:</span>
+                          <span className="font-bold text-text-primary">
+                            Ksh {(courseFeeTotal % Math.max(1, monthlyInstalment) || Math.max(1, monthlyInstalment)).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Amortization Target:</span>
+                          <span className="font-bold text-emerald-400">Clears to Ksh 0</span>
+                        </div>
+                      </div>
+
+                      {/* Simulator Schedule List */}
+                      <div className="pt-4 border-t border-white/5">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Simulated Deduction Breakdown</label>
+                        <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 rounded-xl">
+                          {Array.from({ length: Math.ceil(courseFeeTotal / Math.max(1, monthlyInstalment)) }).map((_, index) => {
+                            const monthNum = index + 1;
+                            const begBal = courseFeeTotal - (index * monthlyInstalment);
+                            const deduction = Math.min(begBal, monthlyInstalment);
+                            const endBal = Math.max(0, begBal - deduction);
+                            return (
+                              <div key={index} className="flex justify-between items-center bg-[#18181b]/30 p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-xs">
+                                <div>
+                                  <span className="font-bold text-white uppercase text-[10px] tracking-wide bg-white/5 px-2 py-0.5 rounded mr-2">Month {monthNum}</span>
+                                  <span className="text-gray-400 font-medium">Rem: Ksh {begBal.toLocaleString()}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-rose-400 font-extrabold mr-2">-Ksh {deduction.toLocaleString()}</span>
+                                  <span className="font-bold text-emerald-400">→ Ksh {endBal.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {courseFeeTotal <= 0 && (
+                            <p className="text-center text-gray-500 py-4 italic text-xs">Please configure a course fee amount to view the breakdown table.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Section: Active Plans & Live Deduction Application (col-span-7) */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="bg-[#111] p-6 rounded-3xl border border-white/5 space-y-6 shadow-sm">
+                    <div className="border-b border-white/5 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+                          <Users size={18} className="text-primary" />
+                          Student Plan & Quick Deductions
+                        </h3>
+                        <p className="text-xs text-text-muted mt-1">Select an enrolled student to view and record monthly installment payments.</p>
+                      </div>
+                    </div>
+
+                    {/* Student Selection Dropdown List */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Select Enrolled Student Profile</label>
+                      <select
+                        value={installmentStudentId}
+                        onChange={(e) => setInstallmentStudentId(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#111115] border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary outline-none font-bold text-text-primary text-sm shadow-inner"
+                      >
+                        <option value="">-- Choose a Student --</option>
+                        {students.map(s => {
+                          const balanceObj = feeBalances.find(b => b.studentId === s.uid);
+                          const balanceAmount = balanceObj?.balance ?? 0;
+                          return (
+                            <option key={s.uid} value={s.uid}>
+                              {s.name} ({s.admissionNumber || s.email.split('@')[0].toUpperCase()}) — Bal: Ksh {balanceAmount.toLocaleString()}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Live Student Enrollment Card */}
+                    {(() => {
+                      const student = students.find(s => s.uid === installmentStudentId);
+                      if (!student) {
+                        return (
+                          <div className="p-8 text-center bg-[#111115]/40 rounded-3xl border border-dashed border-white/5">
+                            <Users size={36} className="text-gray-600 mx-auto mb-3" />
+                            <p className="text-gray-400 font-bold text-xs uppercase tracking-wider">No Student Selected</p>
+                            <p className="text-xs text-gray-500 mt-1">Please select an enrolled student to manage real deductions and statements.</p>
+                          </div>
+                        );
+                      }
+
+                      const balanceObj = feeBalances.find(b => b.studentId === student.uid);
+                      const currentBal = balanceObj?.balance ?? 0;
+                      const paidToDate = balanceObj?.paidAmount ?? 0;
+                      const originalTotal = balanceObj?.totalAmount ?? courseFeeTotal; // Uses recorded total, fallback is simulated total (70,000)
+
+                      // Trigger Deduction Action Function
+                      const triggerInstallmentDeduction = async () => {
+                        const description = `Monthly Plan Payment: ${format(new Date(), 'MMMM yyyy')} Installment`;
+                        const now = new Date().toISOString();
+                        
+                        // We check if student already paid this month
+                        const monthName = format(new Date(), 'MMMM');
+                        const isDuplicate = balanceObj?.history?.some(h => 
+                          h.type === 'payment' && h.description.includes(monthName) && h.description.includes('Installment')
+                        );
+
+                        if (isDuplicate) {
+                          if (!confirm(`Warning: Student "${student.name}" has already completed an installment payment containing "${monthName}" in their history. Continue anyway?`)) {
+                            return;
+                          }
+                        } else {
+                          if (!confirm(`Are you sure you want to record an end-of-month deduction payment of Ksh ${monthlyInstalment.toLocaleString()} for ${student.name}? This will update the student's ledger balance.`)) {
+                            return;
+                          }
+                        }
+
+                        // Write to Firebase
+                        setIsUpdating(true);
+                        try {
+                          const historyItem = {
+                            date: now,
+                            amount: Number(monthlyInstalment),
+                            type: 'payment' as const,
+                            description,
+                            attachmentUrl: '',
+                            attachmentName: ''
+                          };
+
+                          if (balanceObj) {
+                            const newPaid = Number(balanceObj.paidAmount || 0) + Number(monthlyInstalment);
+                            const newHistory = [...(balanceObj.history || []), historyItem];
+                            await updateDoc(doc(db, 'fees', balanceObj.id), {
+                              paidAmount: newPaid,
+                              balance: Number(balanceObj.totalAmount || 0) - newPaid,
+                              lastUpdated: now,
+                              history: newHistory
+                            });
+                          } else {
+                            // If no record exists, build a proper ledger based on Course Fee (70,000) minus first payment
+                            await setDoc(doc(db, 'fees', student.uid), {
+                              studentId: student.uid,
+                              totalAmount: Number(courseFeeTotal),
+                              paidAmount: Number(monthlyInstalment),
+                              balance: Number(courseFeeTotal) - Number(monthlyInstalment),
+                              lastUpdated: now,
+                              history: [historyItem]
+                            });
+                          }
+
+                          // Trigger notification
+                          await addDoc(collection(db, 'notifications'), {
+                            userId: student.uid,
+                            title: 'Installment Deduction Applied',
+                            message: `End-of-month installment premium payment of Ksh ${monthlyInstalment.toLocaleString()} has been received and deducted successfully.`,
+                            type: 'fee',
+                            read: false,
+                            createdAt: now,
+                            link: '/fees'
+                          });
+
+                          addToast(`Successfully recorded end-of-month deduction of Ksh ${monthlyInstalment.toLocaleString()} for ${student.name}!`, 'success');
+                        } catch (err: any) {
+                          console.error(err);
+                          addToast(err.message || "Failed to record transaction", 'error');
+                        } finally {
+                          setIsUpdating(false);
+                        }
+                      };
+
+                      // Display Student Details and personalized projection
+                      return (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                          
+                          {/* Live Ledger Card */}
+                          <div className="bg-[#111115]/70 p-6 rounded-3xl border border-white/5 space-y-4">
+                            <div className="flex justify-between items-start border-b border-white/5 pb-4">
+                              <div>
+                                <h4 className="text-base font-bold text-white leading-none">{student.name}</h4>
+                                <p className="text-xs text-text-muted mt-1.5 font-bold uppercase tracking-wider">
+                                  ADM: {student.admissionNumber || student.email.split('@')[0].toUpperCase()}
+                                </p>
+                              </div>
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                currentBal > 0 
+                                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' 
+                                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              }`}>
+                                {currentBal > 0 ? 'Billing Active' : 'Fully Clear'}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Course Fee</span>
+                                <span className="block text-sm font-extrabold text-white mt-1">Ksh {originalTotal.toLocaleString()}</span>
+                              </div>
+                              <div className="bg-emerald-500/5 p-3 rounded-2xl border border-emerald-500/10">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount Paid</span>
+                                <span className="block text-sm font-extrabold text-emerald-400 mt-1">Ksh {paidToDate.toLocaleString()}</span>
+                              </div>
+                              <div className="bg-rose-500/5 p-3 rounded-2xl border border-rose-500/10 font-bold">
+                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Outstanding Balance</span>
+                                <span className="block text-sm font-extrabold text-rose-400 mt-1">Ksh {currentBal.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {/* Bullet Actions */}
+                            <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                              <button
+                                onClick={triggerInstallmentDeduction}
+                                disabled={isUpdating || currentBal <= 0}
+                                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none text-white py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-950/20 flex items-center justify-center gap-2 transition-all mt-2"
+                              >
+                                <CreditCard size={16} />
+                                Apply End-Of-Month Ksh {monthlyInstalment.toLocaleString()} Deduction
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Personal Dynamic Projection Schedule */}
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                              <Calendar size={14} className="text-primary" />
+                              Personal Payment Projection List
+                            </h4>
+                            
+                            {currentBal <= 0 ? (
+                              <div className="p-6 text-center bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+                                <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-2" />
+                                <p className="text-emerald-400 font-bold text-xs uppercase tracking-wider">Plan Completed</p>
+                                <p className="text-xs text-gray-500 mt-1">Student has paid the full course amount. No outstanding deductions remain.</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                                {Array.from({ length: Math.ceil(currentBal / Math.max(1, monthlyInstalment)) }).map((_, idx) => {
+                                  const index = idx + 1;
+                                  const startAmt = currentBal - (idx * monthlyInstalment);
+                                  const deduct = Math.min(startAmt, monthlyInstalment);
+                                  const resultingAmt = startAmt - deduct;
+                                  
+                                  const futureDateObj = new Date();
+                                  futureDateObj.setMonth(futureDateObj.getMonth() + idx);
+                                  
+                                  return (
+                                    <div key={idx} className="flex justify-between items-center bg-[#111115]/30 p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-xs">
+                                      <div>
+                                        <p className="font-bold text-white text-[11px] flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 w-1.5 h-1.5"></span>
+                                          End {format(futureDateObj, 'MMMM yyyy')} Premium
+                                        </p>
+                                        <p className="text-[10px] text-gray-400 mt-0.5 ml-2.5">Outstanding Prior: Ksh {startAmt.toLocaleString()}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="text-emerald-400 font-extrabold mr-2">-Ksh {deduct.toLocaleString()}</span>
+                                        <span className="font-bold text-gray-400">→ Ksh {resultingAmt.toLocaleString()}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })()}
+
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           )}
         </div>
