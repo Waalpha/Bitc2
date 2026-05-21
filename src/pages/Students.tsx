@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 
@@ -64,6 +64,372 @@ export const Students: React.FC = () => {
   const isTeacher = userData?.role === 'teacher';
   const isAdmin = userData?.role === 'admin';
   const canManageStudents = isTeacher || isAdmin;
+
+  const handlePrintTerminationLetter = (student: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    // Professional default text
+    const defaultMisconduct = "Gross misconduct and persistent violation of the Institution's Code of Conduct and Student Handbook. This includes but is not limited to significant breaches of disciplinary protocols that have compromised the learning environment and safety of the institutional community.";
+    
+    const html = `
+      <html>
+        <head>
+          <title>Termination Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.5; 
+              color: #1a202c; 
+              padding: 30px 40px;
+              max-width: 850px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #e2e8f0; 
+              padding-bottom: 10px; 
+              margin-bottom: 20px; 
+            }
+            .logo { max-height: 70px; margin-bottom: 10px; }
+            .school-name { font-size: 24px; font-weight: 800; color: #1a365d; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 12px; color: #4a5568; margin: 2px 0; font-weight: 500; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .date { font-weight: 700; color: #2d3748; font-size: 13px; }
+            .ref-no { font-size: 11px; color: #718096; }
+            
+            .recipient { margin-bottom: 20px; border-left: 2px solid #e2e8f0; padding-left: 15px; }
+            .recipient p { margin: 2px 0; color: #2d3748; text-transform: uppercase; font-size: 13px; }
+            .recipient-label { font-size: 10px; color: #718096; font-weight: 700; letter-spacing: 0.5px; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 20px;
+              font-size: 16px;
+              text-align: center;
+              color: #2d3748;
+            }
+            
+            .content p { margin-bottom: 15px; text-align: justify; font-size: 14px; }
+            .misconduct-box { 
+              background: #fdf2f2; 
+              border: 1px solid #feb2b2;
+              border-left: 4px solid #f56565; 
+              padding: 15px 20px; 
+              margin: 15px 0; 
+              font-style: normal;
+              font-weight: 500;
+              color: #9b2c2c;
+              border-radius: 4px;
+              font-size: 14px;
+            }
+            
+            .closing { margin-top: 30px; page-break-inside: avoid; }
+            .signature-space { height: 70px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -15px; left: 15px; max-height: 90px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #1a202c; width: 250px; margin-top: 10px; }
+            .signatory-name { font-weight: 800; margin-top: 5px; font-size: 14px; }
+            .signatory-title { font-size: 12px; color: #4a5568; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 40px; 
+              font-size: 9px; 
+              border-top: 1px solid #edf2f7; 
+              padding-top: 10px;
+              text-align: center;
+              color: #a0aec0;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 30px 40px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : ''}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${today}</div>
+            <div class="ref-no">REF: BITC/REG/DISC/${new Date().getFullYear()}/${student.admissionNumber || 'ADM'}</div>
+          </div>
+
+          <div class="recipient">
+            <p><span class="recipient-label">TO:</span> ${student.name.toUpperCase()}</p>
+            <p><span class="recipient-label">ADM NO:</span> ${student.admissionNumber || 'N/A'}</p>
+            <p><span class="recipient-label">COURSE:</span> ${student.course || 'N/A'}</p>
+          </div>
+
+          <div class="subject">
+            FORMAL NOTICE OF TERMINATION OF STUDENTSHIP
+          </div>
+
+          <div class="content">
+            <p>Dear ${student.name.split(' ')[0]},</p>
+            
+            <p>
+              This is to formally notify you that the Management Board of <strong>${schoolName}</strong> has reached a definitive 
+              and final decision to terminate your studentship with the institution, effective immediately as of 
+              <strong>${today}</strong>.
+            </p>
+
+            <p>
+              This administrative action has been taken following a thorough review of your conduct, which has been found to be 
+              in manifest violation of the Institutional Code of Conduct. The specific grounds for this termination are 
+              identified as:
+            </p>
+            
+            <div class="misconduct-box">
+              "${defaultMisconduct}"
+            </div>
+
+            <p>
+              Your actions represent a fundamental breach of the contract between <strong>${schoolName}</strong> and yourself. 
+              The Institution maintains a strict policy on discipline to ensure an environment conducive to academic 
+              excellence and personal growth for all students. Your continued association with the institution has been deemed 
+              untenable.
+            </p>
+
+            <p>
+              Consequently, you are hereby directed to:
+            </p>
+            <ol style="margin-bottom: 15px; font-size: 14px;">
+              <li>Surrender your Student Identification Card and any other institutional property to the Registrar's Office.</li>
+              <li>Clear any outstanding administrative requirements with the Finance Department.</li>
+              <li>Vacate the institution's premises with immediate effect.</li>
+            </ol>
+
+            <p>
+              Please be advised that you are no longer authorized to access the campus or represent yourself as a student of 
+              this college. Any unauthorized entry onto the premises will be treated as trespass.
+            </p>
+
+            <p>We wish you the best in your future endeavors as you seek alternate paths for your development.</p>
+          </div>
+
+          <div class="closing">
+            <p>Yours Faithfully,</p>
+            <div class="signature-space">
+              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : ''}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">OFFICE OF THE REGISTRAR</div>
+            <div class="signatory-title">${schoolName}</div>
+          </div>
+
+          <div class="footer">
+            THIS IS AN OFFICIAL ELECTRONICALLY GENERATED COMMUNICATION OF ${schoolName}. NO ALTERATIONS PERMITTED.
+          </div>
+
+          <script>
+            window.onload = function() { 
+              window.print(); 
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handlePrintWarningLetter = (student: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    const defaultIssue = "Frequent absenteeism, lack of engagement in academic activities, and minor breaches of the institutional code of conduct. This behavior is inconsistent with the standards expected of a student at this institution.";
+    
+    const html = `
+      <html>
+        <head>
+          <title>Warning Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.4; 
+              color: #1a202c; 
+              padding: 20px 40px;
+              max-width: 850px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #e2e8f0; 
+              padding-bottom: 8px; 
+              margin-bottom: 15px; 
+            }
+            .logo { max-height: 60px; margin-bottom: 8px; }
+            .school-name { font-size: 22px; font-weight: 800; color: #1a365d; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 11px; color: #4a5568; margin: 2px 0; font-weight: 500; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 15px; }
+            .date { font-weight: 700; color: #2d3748; font-size: 12px; }
+            .ref-no { font-size: 10px; color: #718096; }
+            
+            .recipient { margin-bottom: 15px; border-left: 2px solid #e2e8f0; padding-left: 15px; }
+            .recipient p { margin: 2px 0; color: #2d3748; text-transform: uppercase; font-size: 12px; }
+            .recipient-label { font-size: 9px; color: #718096; font-weight: 700; letter-spacing: 0.5px; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 15px;
+              font-size: 14px;
+              text-align: center;
+              color: #2d3748;
+            }
+            
+            .content p { margin-bottom: 10px; text-align: justify; font-size: 13.5px; }
+            .warning-box { 
+              background: #fffbef; 
+              border: 1px solid #fbd38d;
+              border-left: 4px solid #ed8936; 
+              padding: 12px 18px; 
+              margin: 12px 0; 
+              color: #744210;
+              border-radius: 4px;
+              font-size: 13px;
+              font-weight: 500;
+            }
+            
+            .closing { margin-top: 25px; page-break-inside: avoid; }
+            .signature-space { height: 60px; margin-top: 10px; position: relative; }
+            .stamp { position: absolute; top: -10px; left: 10px; max-height: 80px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #1a202c; width: 220px; margin-top: 8px; }
+            .signatory-name { font-weight: 800; margin-top: 5px; font-size: 13px; }
+            .signatory-title { font-size: 11px; color: #4a5568; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 30px; 
+              font-size: 8px; 
+              border-top: 1px solid #edf2f7; 
+              padding-top: 8px;
+              text-align: center;
+              color: #a0aec0;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 20px 40px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : ''}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${today}</div>
+            <div class="ref-no">REF: BITC/REG/WARN/${new Date().getFullYear()}/${student.admissionNumber || 'ADM'}</div>
+          </div>
+
+          <div class="recipient">
+            <p><span class="recipient-label">TO:</span> ${student.name.toUpperCase()}</p>
+            <p><span class="recipient-label">ADM NO:</span> ${student.admissionNumber || 'N/A'}</p>
+            <p><span class="recipient-label">COURSE:</span> ${student.course || 'N/A'}</p>
+          </div>
+
+          <div class="subject">
+            FIRST OFFICIAL WARNING REGARDING CONDUCT AND ACADEMICS
+          </div>
+
+          <div class="content">
+            <p>Dear ${student.name.split(' ')[0]},</p>
+            
+            <p>
+              This is to formally caution you regarding your recent conduct and academic performance at <strong>${schoolName}</strong>. 
+              Our records and reports from various departments indicate areas of concern that require your immediate attention.
+            </p>
+
+            <p>The specific grounds for this warning include:</p>
+            
+            <div class="warning-box">
+              "${defaultIssue}"
+            </div>
+
+            <p>
+              We wish to remind you that by enrolling in this institution, you committed to upholding high standards of discipline 
+              and academic excellence. Your current trajectory is inconsistent with these commitments and the Institutional 
+              Code of Conduct.
+            </p>
+
+            <p>
+              By virtue of this letter, you are hereby advised to:
+            </p>
+            <ol style="margin-bottom: 15px; font-size: 14px;">
+              <li>Show immediate and sustained improvement in your conduct and attendance.</li>
+              <li>Seek guidance from the Dean of Students or your Academic Advisor if you are facing challenges.</li>
+              <li>Familiarize yourself once again with the Student Handbook.</li>
+            </ol>
+
+            <p>
+              Please be advised that this is your first official warning. Should there be no significant improvement or further 
+              breaches of regulations, the institution will be compelled to take more severe disciplinary measures, which 
+              may include suspension or termination of studentship.
+            </p>
+
+            <p>We believe in your potential and hope that this notice serves as a constructive call to realign yourself with 
+            the values of BITC.</p>
+          </div>
+
+          <div class="closing">
+            <p>Yours Faithfully,</p>
+            <div class="signature-space">
+              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : ''}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">OFFICE OF THE REGISTRAR</div>
+            <div class="signatory-title">${schoolName}</div>
+          </div>
+
+          <div class="footer">
+            THIS IS AN OFFICIAL ELECTRONICALLY GENERATED COMMUNICATION OF ${schoolName}. NO ALTERATIONS PERMITTED.
+          </div>
+
+          <script>
+            window.onload = function() { 
+              window.print(); 
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
@@ -193,6 +559,7 @@ export const Students: React.FC = () => {
     try {
       await updateDoc(doc(db, 'users', editingStudent.uid), {
         name: editingStudent.name,
+        disabled: editingStudent.disabled || false,
         admissionNumber: editingStudent.admissionNumber || '',
         classIds: editingStudent.classIds || [],
         phone: editingStudent.phone || '',
@@ -456,6 +823,11 @@ export const Students: React.FC = () => {
                       {student.admissionNumber}
                     </span>
                   )}
+                  {student.disabled && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-extrabold uppercase whitespace-nowrap">
+                      🔴 Deactivated
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -507,6 +879,24 @@ export const Students: React.FC = () => {
                   >
                     <MessageSquare size={20} />
                   </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() => handlePrintWarningLetter(student)}
+                        className="text-gray-400 hover:text-amber-600 transition-colors"
+                        title="Generate Warning Letter"
+                      >
+                        <AlertCircle size={20} />
+                      </button>
+                      <button
+                        onClick={() => handlePrintTerminationLetter(student)}
+                        className="text-gray-400 hover:text-rose-600 transition-colors"
+                        title="Generate Termination Letter"
+                      >
+                        <FileText size={20} />
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -878,6 +1268,22 @@ export const Students: React.FC = () => {
                         placeholder="e.g. Computer Science"
                         className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Account Status</label>
+                      <select
+                        value={editingStudent.disabled ? 'disabled' : 'active'}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, disabled: e.target.value === 'disabled' })}
+                        className={`w-full px-5 py-3 border rounded-2xl focus:ring-4 outline-none transition-all text-sm font-bold ${
+                          editingStudent.disabled
+                            ? 'bg-rose-50 border-rose-200 text-rose-700 focus:ring-rose-100 focus:border-rose-500'
+                            : 'bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-emerald-100 focus:border-emerald-500'
+                        }`}
+                      >
+                        <option value="active">🟢 Active Student</option>
+                        <option value="disabled">🔴 Disabled / Deactivated</option>
+                      </select>
                     </div>
 
                     {/* Personal Details */}
