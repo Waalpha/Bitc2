@@ -25,7 +25,8 @@ import {
   MessageSquare,
   Calendar,
   Lock,
-  Maximize
+  Maximize,
+  XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -79,6 +80,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isRestricted = settings?.denyAccessOnBalance && 
                      userData?.role === 'student' && 
                      (feeBalance?.balance || 0) > 0;
+
+  const isDisabled = userData?.disabled === true;
 
   const navGroups = [
     {
@@ -248,6 +251,77 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
     </div>
   );
+
+  if (isDisabled) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 selection:bg-rose-100 selection:text-rose-700" style={dynamicStyles}>
+        {/* Background decoration */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-rose-500/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] bg-red-650/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] pointer-events-none">
+            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+          </div>
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 max-w-xl w-full"
+        >
+          <div className="bg-white rounded-[48px] p-10 sm:p-14 text-center shadow-2xl shadow-black/50 border border-white/10 relative overflow-hidden">
+            {/* Disabled tag */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-red-600 px-6 py-2 rounded-b-2xl">
+              <p className="text-xs font-bold text-white uppercase tracking-[0.3em]">Account Status</p>
+            </div>
+
+            <div className="mb-10 inline-flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-rose-500/20 blur-2xl opacity-20 animate-pulse" />
+                <div className="bg-rose-50 p-8 rounded-[40px] text-rose-600 relative">
+                  <XCircle size={64} className="stroke-[2.5]" />
+                </div>
+              </div>
+            </div>
+
+            <h1 className="text-4xl font-bold text-slate-900 uppercase tracking-tighter mb-4 leading-none">
+              Account <span className="text-red-600">Deactivated</span>
+            </h1>
+            
+            <p className="text-slate-500 font-bold max-w-sm mx-auto mb-10 leading-relaxed uppercase text-xs tracking-widest">
+              Your academic portal has been deactivated by the administrator. Please contact the administration office for assistance.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-3xl font-bold text-xs uppercase tracking-widest shadow-2xl hover:bg-black transition-all hover:scale-105 active:scale-95"
+              >
+                Refresh Status
+              </button>
+            </div>
+
+            <div className="mt-12 pt-10 border-t border-slate-100 flex flex-col items-center gap-6">
+              <div className="flex items-center gap-3 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-xs font-bold">
+                  {userData?.name?.charAt(0)}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-900 uppercase truncate max-w-[120px]">{userData?.name}</p>
+                  <p className="text-xs font-bold text-red-500 uppercase tracking-widest leading-none">Deactivated</p>
+                </div>
+              </div>
+              <LogoutButton />
+            </div>
+          </div>
+
+          <p className="mt-8 text-center text-white/40 text-xs font-bold uppercase tracking-[0.4em] px-10 leading-relaxed">
+            Please contact the administration office for full reinstatement details.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (isRestricted && location.pathname !== '/fees') {
     return (
