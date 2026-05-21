@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense } from '../types';
 import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail } from 'lucide-react';
@@ -163,6 +163,7 @@ export const AdminSettings: React.FC = () => {
     try {
       await updateDoc(doc(db, 'users', editingUser.uid), {
         role: editingUser.role,
+        disabled: editingUser.disabled || false,
         classIds: editingUser.classIds || [],
         name: editingUser.name,
         biometricId: editingUser.biometricId || '',
@@ -201,12 +202,11 @@ export const AdminSettings: React.FC = () => {
     setIsSaving(true);
     try {
       // Split settings to avoid 1MB limit per document
-      const { publicHeroImages, portalGallery, publicHeroSlides, ...coreSettings } = appSettings;
+      const { publicHeroImages, portalGallery, ...coreSettings } = appSettings;
 
       await Promise.all([
         setDoc(doc(db, 'settings', 'global'), coreSettings),
         setDoc(doc(db, 'settings', 'hero_legacy'), { images: publicHeroImages || [] }),
-        setDoc(doc(db, 'settings', 'hero_slides'), { slides: publicHeroSlides || [] }),
         setDoc(doc(db, 'settings', 'gallery'), { images: portalGallery || [] })
       ]);
 
@@ -331,6 +331,28 @@ export const AdminSettings: React.FC = () => {
 
   const handleDeleteUser = async (uid: string) => {
     try {
+      // Find user details to check their role
+      const targetUser = users.find(u => u.uid === uid);
+      if (targetUser && targetUser.role === 'student') {
+        const feesQ = query(collection(db, 'fees'), where('studentId', '==', uid));
+        const feesSnap = await getDocs(feesQ);
+        let outstandingBalance = 0;
+        
+        feesSnap.forEach((doc) => {
+          const data = doc.data();
+          if (data && typeof data.balance === 'number' && data.balance > 0) {
+            outstandingBalance = data.balance;
+          }
+        });
+
+        if (outstandingBalance > 0) {
+          // Prevent deleting and disable instead
+          await updateDoc(doc(db, 'users', uid), { disabled: true });
+          addToast(`Student "${targetUser.name}" has an outstanding fee balance of Ksh ${outstandingBalance.toLocaleString()}. Account deactivated instead of deleted of to protect history.`, "success");
+          return;
+        }
+      }
+
       await deleteDoc(doc(db, 'users', uid));
       addToast("User deleted successfully!");
     } catch (error) {
@@ -645,7 +667,12 @@ export const AdminSettings: React.FC = () => {
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                              {user.disabled && (
+                                <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-extrabold uppercase tracking-wider">Deactivated</span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500">{user.email}</p>
                           </div>
                         </div>
@@ -1488,6 +1515,22 @@ export const AdminSettings: React.FC = () => {
                       {roles.map(r => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Account Status</label>
+                    <select
+                      value={editingUser.disabled ? 'disabled' : 'active'}
+                      onChange={(e) => setEditingUser({ ...editingUser, disabled: e.target.value === 'disabled' })}
+                      className={`w-full px-4 py-2 border rounded-xl focus:ring-2 outline-none font-bold ${
+                        editingUser.disabled 
+                          ? 'bg-red-50 border-red-200 text-red-700 focus:ring-red-500' 
+                          : 'bg-green-50 border-green-200 text-green-700 focus:ring-green-500'
+                      }`}
+                    >
+                      <option value="active">🟢 Active</option>
+                      <option value="disabled">🔴 Deactivated / Disabled</option>
                     </select>
                   </div>
 
