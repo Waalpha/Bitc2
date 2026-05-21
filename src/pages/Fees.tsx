@@ -113,6 +113,374 @@ export const Fees: React.FC = () => {
     }
   };
 
+  const handlePrintStudentStatement = (student: User, balance: FeeBalance) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Sort history chronologically (oldest to newest) to calculate running balance correctly
+    const sortedHistory = [...(balance.history || [])].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    let currentTermBalance = 0;
+    const ledger = sortedHistory.map(item => {
+      const amt = Number(item.amount) || 0;
+      if (item.type === 'payment') {
+        currentTermBalance -= amt;
+      } else {
+        currentTermBalance += amt;
+      }
+      return {
+        ...item,
+        running: currentTermBalance
+      };
+    }).reverse(); // Reverse for display (newest first)
+
+    // Find class names for student if any
+    const studentClasses = classes.filter(c => student.classIds?.includes(c.id)).map(c => c.name).join(', ') || 'N/A';
+
+    const html = `
+      <html>
+        <head>
+          <title>Fee Statement - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 40px; 
+              color: #1e293b; 
+              line-height: 1.5; 
+              background-color: #ffffff;
+            }
+            .statement-container { 
+              max-width: 800px; 
+              margin: 0 auto; 
+            }
+            .header-flex {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 24px;
+              margin-bottom: 30px;
+            }
+            .school-info h1 {
+              font-size: 26px;
+              font-weight: 800;
+              color: #1e3a8a;
+              margin: 0;
+              letter-spacing: -0.02em;
+            }
+            .school-info p {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.15em;
+              margin: 4px 0 0 0;
+            }
+            .doc-title {
+              text-align: right;
+            }
+            .doc-title h2 {
+              font-size: 20px;
+              font-weight: 900;
+              color: #0f172a;
+              margin: 0;
+              letter-spacing: -0.01em;
+              text-transform: uppercase;
+            }
+            .doc-title p {
+              font-size: 12px;
+              color: #64748b;
+              margin: 4px 0 0 0;
+            }
+            .profile-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-bottom: 30px;
+              background: #f8fafc;
+              padding: 20px;
+              border-radius: 16px;
+              border: 1px solid #f1f5f9;
+            }
+            .profile-block h3 {
+              font-size: 11px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              letter-spacing: 0.05em;
+              margin: 0 0 10px 0;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 6px;
+            }
+            .profile-block p {
+              margin: 4px 0;
+              font-size: 13px;
+              color: #334155;
+            }
+            .profile-block p strong {
+              color: #0f172a;
+              font-weight: 600;
+            }
+            .summary-cards {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+              margin-bottom: 35px;
+            }
+            .summary-card {
+              padding: 16px;
+              border-radius: 14px;
+              border: 1px solid #e2e8f0;
+              background-color: #ffffff;
+            }
+            .summary-card.accent-due {
+              background-color: #fffafb;
+              border-color: #fee2e2;
+            }
+            .summary-card.accent-credit {
+              background-color: #f0fdf4;
+              border-color: #dcfce7;
+            }
+            .card-label {
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #64748b;
+              letter-spacing: 0.05em;
+              margin-bottom: 6px;
+            }
+            .summary-card.accent-due .card-label {
+              color: #ef4444;
+            }
+            .summary-card.accent-credit .card-label {
+              color: #10b981;
+            }
+            .card-value {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .summary-card.accent-due .card-value {
+              color: #991b1b;
+            }
+            .summary-card.accent-credit .card-value {
+              color: #065f46;
+            }
+            .card-status {
+              font-size: 11px;
+              font-weight: 700;
+              margin-top: 4px;
+              display: inline-block;
+            }
+            .ledger-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 40px;
+            }
+            .ledger-table th {
+              background-color: #f1f5f9;
+              padding: 12px 16px;
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              letter-spacing: 0.05em;
+              border-bottom: 2px solid #e2e8f0;
+              text-align: left;
+            }
+            .ledger-table td {
+              padding: 12px 16px;
+              font-size: 13px;
+              border-bottom: 1px solid #f1f5f9;
+              color: #334155;
+            }
+            .ledger-table tr:hover {
+              background-color: #f8fafc;
+            }
+            .badge {
+              display: inline-flex;
+              align-items: center;
+              padding: 2px 8px;
+              border-radius: 6px;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .badge-charge {
+              background-color: #fef2f2;
+              color: #ef4444;
+            }
+            .badge-payment {
+              background-color: #f0fdf4;
+              color: #16a34a;
+            }
+            .amount-col {
+              text-align: right;
+              font-weight: 600;
+            }
+            .amount-charge {
+              color: #b91c1c;
+            }
+            .amount-payment {
+              color: #15803d;
+            }
+            .stamp-section {
+              margin-top: 50px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              position: relative;
+            }
+            .stamp-container { 
+              position: absolute; 
+              right: 40px;
+              bottom: 20px;
+              opacity: 0.85; 
+              pointer-events: none; 
+              z-index: 50; 
+            }
+            .stamp { width: 110px; height: 110px; object-fit: contain; transform: rotate(-5deg); }
+            .statement-footer {
+              text-align: center;
+              font-size: 11px;
+              color: #94a3b8;
+              margin-top: 60px;
+              font-weight: 500;
+            }
+            @media print {
+              .no-print { display: none; }
+              body { padding: 20px; background-color: #ffffff; }
+              .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="statement-container">
+            <div class="header-flex">
+              <div class="school-info">
+                ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 55px; width: auto; margin-bottom: 8px;" />` : ''}
+                <h1>${settings?.appTitle || 'BITC School'}</h1>
+                <p>Official School Statement of Account</p>
+              </div>
+              <div class="doc-title">
+                <h2>Statement of Account</h2>
+                <p>Generated on ${format(new Date(), 'MMMM dd, yyyy')}</p>
+              </div>
+            </div>
+
+            <div class="profile-grid">
+              <div class="profile-block">
+                <h3>Student Information</h3>
+                <p><strong>Name:</strong> ${student.name}</p>
+                <p><strong>Email:</strong> ${student.email}</p>
+                ${student.admissionNumber ? `<p><strong>Admission No:</strong> ${student.admissionNumber}</p>` : ''}
+                ${student.phone ? `<p><strong>Phone:</strong> ${student.phone}</p>` : ''}
+              </div>
+              <div class="profile-block">
+                <h3>Academic & Billing Details</h3>
+                <p><strong>Enrolled Class:</strong> ${studentClasses}</p>
+                ${student.guardianName ? `<p><strong>Parent/Guardian:</strong> ${student.guardianName}</p>` : ''}
+                ${student.guardianPhone ? `<p><strong>Guardian Phone:</strong> ${student.guardianPhone}</p>` : ''}
+                <p><strong>Status:</strong> <span style="font-weight:bold; color:#2563EB;">Active Member</span></p>
+              </div>
+            </div>
+
+            <div class="summary-cards">
+              <div class="summary-card">
+                <div class="card-label">Total Invoiced (Fees)</div>
+                <div class="card-value">Ksh ${balance.totalAmount.toLocaleString()}</div>
+              </div>
+              <div class="summary-card" style="border-left: 3px solid #10b981;">
+                <div class="card-label" style="color:#10b981;">Total Paid</div>
+                <div class="card-value" style="color:#065f46;">Ksh ${balance.paidAmount.toLocaleString()}</div>
+              </div>
+              <div class="summary-card ${balance.balance > 0 ? 'accent-due' : 'accent-credit'}" style="border-left: 3px solid ${balance.balance > 0 ? '#ef4444' : '#10b981'};">
+                <div class="card-label">${balance.balance > 0 ? 'Outstanding Balance' : 'Prepaid Credit Status'}</div>
+                <div class="card-value">
+                  Ksh ${Math.abs(balance.balance).toLocaleString()}
+                </div>
+                <div class="card-status" style="color: ${balance.balance > 0 ? '#b91c1c' : '#047857'};">
+                  ${balance.balance > 0 ? '⚠️ Payment Outstanding' : '🎉 Account Fully Paid / Credit Held'}
+                </div>
+              </div>
+            </div>
+
+            <h3>Detailed Ledger Transactions</h3>
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th width="15%">Date</th>
+                  <th width="14%">Type</th>
+                  <th width="41%">Description</th>
+                  <th width="15%" style="text-align: right;">Amount</th>
+                  <th width="15%" style="text-align: right;">Running Bal.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ledger.map(item => `
+                  <tr>
+                    <td>${format(new Date(item.date), 'MMM dd, yyyy')}</td>
+                    <td>
+                      <span class="badge ${item.type === 'charge' ? 'badge-charge' : 'badge-payment'}">
+                        ${item.type}
+                      </span>
+                    </td>
+                    <td style="font-weight: 500; color: #0f172a;">${item.description}</td>
+                    <td class="amount-col ${item.type === 'charge' ? 'amount-charge' : 'amount-payment'}">
+                      ${item.type === 'payment' ? '-' : '+'}Ksh ${item.amount.toLocaleString()}
+                    </td>
+                    <td class="amount-col" style="color: ${item.running > 0 ? '#b91c1c' : '#15803d'};">
+                      Ksh ${item.running.toLocaleString()}
+                    </td>
+                  </tr>
+                `).join('')}
+                ${ledger.length === 0 ? `
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">
+                      No transactional ledger entries found.
+                    </td>
+                  </tr>
+                ` : ''}
+              </tbody>
+            </table>
+
+            <div class="stamp-section">
+              <div>
+                <p style="font-size: 12px; margin: 0; font-weight: 600; color: #475569;">Authorized Signature / Finance Office</p>
+                <div style="border-bottom: 1px dashed #cbd5e1; width: 220px; height: 40px;"></div>
+                <p style="font-size: 11px; margin-top: 6px; color: #94a3b8;">Printed on standard physical register on ${format(new Date(), 'yyyy-MM-dd HH:mm')}</p>
+              </div>
+
+              <div class="stamp-container">
+                ${settings?.stampUrl 
+                  ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" />` 
+                  : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" />`
+                }
+              </div>
+            </div>
+
+            <div class="statement-footer">
+              <p>Thank you for keeping your account up to date. This statement provides an official record of tuition invoices and payments received.</p>
+              <p style="margin-top: 8px;">Breakthrough International • Smart Learning Management Console</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handlePrintReceipt = (student: User, payment: { amount: number, date: string, description: string }, balance: { total: number, paid: number, remaining: number }) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -1475,6 +1843,16 @@ export const Fees: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
+                            {balance && (
+                              <button
+                                onClick={() => handlePrintStudentStatement(student, balance)}
+                                className="text-emerald-700 hover:text-emerald-800 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 transition-colors hover:bg-emerald-100 flex items-center gap-1"
+                                title="Print Statement of Account"
+                              >
+                                <FileText size={14} />
+                                Statement
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setSelectedStudent(student);
@@ -1982,6 +2360,19 @@ export const Fees: React.FC = () => {
                   <p className="text-lg font-bold text-green-500">Ksh {myBalance?.paidAmount?.toLocaleString() || 0}</p>
                 </div>
               </div>
+
+              {myBalance && (
+                <button
+                  onClick={() => {
+                    const studentProfile = { name: userData?.name || 'Student', email: userData?.email || '', admissionNumber: userData?.admissionNumber, phone: userData?.phone, guardianName: userData?.guardianName, guardianPhone: userData?.guardianPhone, classIds: userData?.classIds } as User;
+                    handlePrintStudentStatement(studentProfile, myBalance);
+                  }}
+                  className="w-full mt-6 bg-[#111] text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-[0.98]"
+                >
+                  <FileText size={16} className="text-blue-400" />
+                  Print Statement of Account
+                </button>
+              )}
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -2259,15 +2650,29 @@ export const Fees: React.FC = () => {
                   <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
                   <p className="text-sm text-gray-500">{selectedStudent.name} ({selectedStudent.email})</p>
                 </div>
-                <button 
-                  onClick={() => {
-                    setIsHistoryOpen(false);
-                    setSelectedStudent(null);
-                  }} 
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle size={24} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const studentBalance = feeBalances.find(b => b.studentId === selectedStudent.uid);
+                    return studentBalance ? (
+                      <button
+                        onClick={() => handlePrintStudentStatement(selectedStudent, studentBalance)}
+                        className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm hover:bg-emerald-100 transition-all uppercase tracking-wider"
+                      >
+                        <Printer size={14} />
+                        Print Statement
+                      </button>
+                    ) : null;
+                  })()}
+                  <button 
+                    onClick={() => {
+                      setIsHistoryOpen(false);
+                      setSelectedStudent(null);
+                    }} 
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 shadow-inner bg-gray-50/30 rounded-xl">
