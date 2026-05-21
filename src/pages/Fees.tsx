@@ -16,6 +16,7 @@ export const Fees: React.FC = () => {
   const [courseFeeTotal, setCourseFeeTotal] = useState<number>(70000);
   const [monthlyInstalment, setMonthlyInstalment] = useState<number>(4500);
   const [enrollmentDeposit, setEnrollmentDeposit] = useState<number>(10000);
+  const [individualDeposits, setIndividualDeposits] = useState<Record<string, number>>({});
   const [installmentClassId, setInstallmentClassId] = useState<string>('');
   const [customScheduleMonths, setCustomScheduleMonths] = useState<number>(16);
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
@@ -2622,22 +2623,23 @@ export const Fees: React.FC = () => {
                             });
                           } else {
                             // Setup brand new file balance with Deposit + Monthly Installment
+                            const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
                             const historyItems = [];
                             let totalPaid = 0;
 
-                            if (enrollmentDeposit > 0) {
+                            if (customDeposit > 0) {
                               historyItems.push({
                                 date: now,
-                                amount: Number(enrollmentDeposit),
+                                amount: Number(customDeposit),
                                 type: 'payment' as const,
                                 description: 'Plan Enrollment Deposit',
                                 attachmentUrl: '',
                                 attachmentName: ''
                               });
-                              totalPaid += enrollmentDeposit;
+                              totalPaid += customDeposit;
                             }
 
-                            const remainingAfterDeposit = courseFeeTotal - enrollmentDeposit;
+                            const remainingAfterDeposit = courseFeeTotal - customDeposit;
                             const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, monthlyInstalment) : 0;
 
                             if (finalDeductVal > 0) {
@@ -2665,7 +2667,7 @@ export const Fees: React.FC = () => {
                             await addDoc(collection(db, 'notifications'), {
                               userId: student.uid,
                               title: 'Plan Enrollment & Deposit Posted',
-                              message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${enrollmentDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                              message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                               type: 'fee',
                               read: false,
                               createdAt: now,
@@ -2687,12 +2689,13 @@ export const Fees: React.FC = () => {
 
                     // Helper to initialize plan with only deposit
                     const triggerInitializeWithDeposit = async (student: User) => {
-                      if (enrollmentDeposit <= 0) {
+                      const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
+                      if (customDeposit <= 0) {
                         addToast("Please set an enrollment deposit greater than Ksh 0.", "error");
                         return;
                       }
 
-                      if (!confirm(`Initialize installment plan of Ksh ${courseFeeTotal.toLocaleString()} for student "${student.name}" and record an Enrollment Deposit of Ksh ${enrollmentDeposit.toLocaleString()}?`)) {
+                      if (!confirm(`Initialize installment plan of Ksh ${courseFeeTotal.toLocaleString()} for student "${student.name}" and record an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()}?`)) {
                         return;
                       }
 
@@ -2701,7 +2704,7 @@ export const Fees: React.FC = () => {
                         const now = new Date().toISOString();
                         const historyItem = {
                           date: now,
-                          amount: Number(enrollmentDeposit),
+                          amount: Number(customDeposit),
                           type: 'payment' as const,
                           description: 'Plan Enrollment Deposit',
                           attachmentUrl: '',
@@ -2711,8 +2714,8 @@ export const Fees: React.FC = () => {
                         await setDoc(doc(db, 'fees', student.uid), {
                           studentId: student.uid,
                           totalAmount: Number(courseFeeTotal),
-                          paidAmount: Number(enrollmentDeposit),
-                          balance: Number(courseFeeTotal) - Number(enrollmentDeposit),
+                          paidAmount: Number(customDeposit),
+                          balance: Number(courseFeeTotal) - Number(customDeposit),
                           lastUpdated: now,
                           history: [historyItem]
                         });
@@ -2721,14 +2724,14 @@ export const Fees: React.FC = () => {
                         await addDoc(collection(db, 'notifications'), {
                           userId: student.uid,
                           title: 'Plan Enrollment & Deposit Posted',
-                          message: `Your course fee installment plan has been setup showing an Enrollment Deposit of Ksh ${enrollmentDeposit.toLocaleString()} paid successfully.`,
+                          message: `Your course fee installment plan has been setup showing an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} paid successfully.`,
                           type: 'fee',
                           read: false,
                           createdAt: now,
                           link: '/fees'
                         });
 
-                        addToast(`Successfully initialized plan with Ksh ${enrollmentDeposit.toLocaleString()} deposit for ${student.name}!`, 'success');
+                        addToast(`Successfully initialized plan with Ksh ${customDeposit.toLocaleString()} deposit for ${student.name}!`, 'success');
                       } catch (err: any) {
                         console.error(err);
                         addToast(err.message || 'Initialization failed', 'error');
@@ -2787,22 +2790,23 @@ export const Fees: React.FC = () => {
                           });
                         } else {
                           // Setup brand new balance with Deposit + Monthly Installment
+                          const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
                           const historyItems = [];
                           let totalPaid = 0;
 
-                          if (enrollmentDeposit > 0) {
+                          if (customDeposit > 0) {
                             historyItems.push({
                               date: now,
-                              amount: Number(enrollmentDeposit),
+                              amount: Number(customDeposit),
                               type: 'payment' as const,
                               description: 'Plan Enrollment Deposit',
                               attachmentUrl: '',
                               attachmentName: ''
                             });
-                            totalPaid += enrollmentDeposit;
+                            totalPaid += customDeposit;
                           }
 
-                          const remainingAfterDeposit = courseFeeTotal - enrollmentDeposit;
+                          const remainingAfterDeposit = courseFeeTotal - customDeposit;
                           const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, monthlyInstalment) : 0;
 
                           if (finalDeductVal > 0) {
@@ -2830,7 +2834,7 @@ export const Fees: React.FC = () => {
                           await addDoc(collection(db, 'notifications'), {
                             userId: student.uid,
                             title: 'Plan Enrollment & Deposit Posted',
-                            message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${enrollmentDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                            message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                             type: 'fee',
                             read: false,
                             createdAt: now,
@@ -2902,6 +2906,7 @@ export const Fees: React.FC = () => {
                                 <thead className="bg-[#16161a] text-gray-400 font-bold uppercase text-[10px] tracking-widest border-b border-white/5">
                                   <tr>
                                     <th className="py-4 px-4">Student Profile</th>
+                                    <th className="py-4 px-4 text-emerald-400">Enrollment Deposit</th>
                                     <th className="py-4 px-4">Total Owed</th>
                                     <th className="py-4 px-4 text-emerald-400">Paid To Date</th>
                                     <th className="py-4 px-4 text-rose-455">Current Balance</th>
@@ -2915,6 +2920,9 @@ export const Fees: React.FC = () => {
                                     const pAmt = bObj?.paidAmount ?? 0;
                                     const curBal = bObj?.balance ?? tAmt;
 
+                                    const depositItem = bObj?.history?.find(h => h.description === 'Plan Enrollment Deposit' || h.description.includes('Deposit'));
+                                    const depositAmt = depositItem?.amount ?? 0;
+
                                     return (
                                       <tr key={item.uid} className="hover:bg-white/[0.02] transition-colors">
                                         <td className="py-3 px-4">
@@ -2924,6 +2932,27 @@ export const Fees: React.FC = () => {
                                               {item.admissionNumber || 'ADM-NO-REQ'}
                                             </p>
                                           </div>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                          {bObj ? (
+                                            <span className="font-mono font-bold text-gray-400">
+                                              Ksh {depositAmt.toLocaleString()}
+                                            </span>
+                                          ) : (
+                                            <div className="relative w-32 max-w-full">
+                                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-[10px] select-none">Ksh</span>
+                                              <input
+                                                type="number"
+                                                value={individualDeposits[item.uid] !== undefined ? individualDeposits[item.uid] : enrollmentDeposit}
+                                                onChange={(e) => {
+                                                  const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                  setIndividualDeposits(prev => ({ ...prev, [item.uid]: val }));
+                                                }}
+                                                className="w-full pl-9 pr-2 py-1.5 bg-[#111115]/80 border border-white/10 rounded-xl text-text-primary text-xs font-bold font-mono outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all"
+                                                placeholder="10,000"
+                                              />
+                                            </div>
+                                          )}
                                         </td>
                                         <td className="py-3 px-4 font-mono font-bold text-gray-300">
                                           Ksh {tAmt.toLocaleString()}
