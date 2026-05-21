@@ -2109,59 +2109,48 @@ export const Fees: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Invoiced This Month</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Invoiced (This Month)</p>
                     <h3 className="text-2xl font-bold text-gray-900">Ksh {reportStats.monthCharged.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-blue-600">
                     <BookOpen size={16} />
-                    <span className="text-xs font-bold">Total Fees Applied in {format(new Date(), 'MMM')}</span>
+                    <span className="text-xs font-bold">Total billed in {format(new Date(), 'MMMM')}</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Collections (This Month)</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Paid (This Month)</p>
                     <h3 className="text-2xl font-bold text-emerald-600">Ksh {reportStats.monthCollected.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-emerald-600">
                     <TrendingUp size={16} />
-                    <span className="text-xs font-bold">{reportStats.monthCharged > 0 ? ((reportStats.monthCollected / reportStats.monthCharged) * 100).toFixed(1) : '100'}% Monthly Target</span>
+                    <span className="text-xs font-bold">{reportStats.monthCharged > 0 ? ((reportStats.monthCollected / reportStats.monthCharged) * 100).toFixed(1) : '100'}% Paid of Month's Invoice</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Balance</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Balance Left</p>
                     <h3 className="text-2xl font-bold text-amber-600">Ksh {reportStats.monthBalance.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-amber-600">
                     <History size={16} />
-                    <span className="text-xs font-bold">Outstanding from {format(new Date(), 'MMMM')}</span>
+                    <span className="text-xs font-bold">Unpaid balance for {format(new Date(), 'MMMM')}</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Standard Term Expected</p>
-                    <h3 className="text-2xl font-bold text-indigo-600">Ksh {reportStats.totalProjected.toLocaleString()}</h3>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Balance Left Overall</p>
+                    <h3 className="text-2xl font-bold text-rose-600">Ksh {reportStats.totalBalance.toLocaleString()}</h3>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-indigo-600">
-                    <Users size={16} />
-                    <span className="text-xs font-bold">Projected for Current Term</span>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-50/40 p-6 rounded-[24px] border border-emerald-100/50 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">Prepaid Credits Pool</p>
-                    <h3 className="text-2xl font-bold text-emerald-700">Ksh {reportStats.totalPrepaidCredits.toLocaleString()}</h3>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2 text-emerald-600">
-                    <Sparkles size={16} className="animate-pulse" />
-                    <span className="text-xs font-bold">Overpayments across {reportStats.totalOverpaidStudentsCount} students</span>
+                  <div className="mt-4 flex items-center gap-2 text-rose-600">
+                    <Wallet size={16} />
+                    <span className="text-xs font-bold">Total outstanding fees due from students</span>
                   </div>
                 </div>
               </div>
@@ -2181,9 +2170,9 @@ export const Fees: React.FC = () => {
                       <thead className="bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-widest">
                         <tr>
                           <th className="px-6 py-4">Class</th>
-                          <th className="px-6 py-4">Total Fee Assets</th>
-                          <th className="px-6 py-4">Total Collected</th>
-                          <th className="px-6 py-4">Outstanding</th>
+                          <th className="px-6 py-4">Total Invoiced (All-Time)</th>
+                          <th className="px-6 py-4">Total Paid (All-Time)</th>
+                          <th className="px-6 py-4">Balance Left</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
