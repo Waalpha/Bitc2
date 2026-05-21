@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, db, handleFirestoreError, OperationType, isFirebaseReady } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, serverTimestamp, query, collection, where } from 'firebase/firestore';
@@ -85,7 +85,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Fetch split global settings
     const globalRef = doc(db, 'settings', 'global');
     const heroLegacyRef = doc(db, 'settings', 'hero_legacy');
-    const heroSlidesRef = doc(db, 'settings', 'hero_slides');
     const galleryRef = doc(db, 'settings', 'gallery');
 
     const subs = [
@@ -100,12 +99,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSettings(prev => ({ ...prev, publicHeroImages: snap.data().images || [] } as AppSettings));
         }
       }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/hero_legacy')),
-
-      onSnapshot(heroSlidesRef, (snap) => {
-        if (snap.exists()) {
-          setSettings(prev => ({ ...prev, publicHeroSlides: snap.data().slides || [] } as AppSettings));
-        }
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/hero_slides')),
 
       onSnapshot(galleryRef, (snap) => {
         if (snap.exists()) {
@@ -201,10 +194,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user]);
 
-  const hasPermission = (permission: string) => {
+  const hasPermission = useCallback((permission: string) => {
     if (userData?.role === 'admin') return true;
     return permissions.includes(permission);
-  };
+  }, [userData?.role, permissions]);
 
   const logout = async () => {
     if (auth) {
