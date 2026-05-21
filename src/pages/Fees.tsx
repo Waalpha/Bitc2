@@ -2492,6 +2492,7 @@ export const Fees: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </div>
                            {/* Right Section: Active Class Enrollees & Mass Execution (col-span-8) */}
                 <div className="lg:col-span-8 space-y-6">
                   
@@ -3010,8 +3011,6 @@ export const Fees: React.FC = () => {
                 </div>           </div>
 
               </div>
-
-            </div>
           )}
         </div>
       ) : (
