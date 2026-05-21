@@ -353,7 +353,7 @@ export const Dashboard: React.FC = () => {
 
         const classesSnap = await getDocs(statsClassesQ);
         setStats(prev => ({ ...prev, classes: classesSnap.size }));
-        setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+        setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Class)));
 
         const unitsSnap = await getDocs(query(collection(db, 'units')));
         setStats(prev => ({ ...prev, units: unitsSnap.size }));
@@ -364,7 +364,7 @@ export const Dashboard: React.FC = () => {
         
         const examsSnap = await getDocs(examsQ);
         setStats(prev => ({ ...prev, exams: examsSnap.size }));
-        const allExams = examsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
+        const allExams = examsSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Exam));
         setExams(allExams);
         setRecentExams(allExams.slice(0, 3));
         
@@ -382,7 +382,7 @@ export const Dashboard: React.FC = () => {
           limit(50)
         );
         const notifSnap = await getDocs(notifQ);
-        const allNotifs = notifSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+        const allNotifs = notifSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as AppNotification));
         setNotifications(allNotifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
         const sentQ = query(
@@ -391,7 +391,7 @@ export const Dashboard: React.FC = () => {
           limit(50)
         );
         const sentSnap = await getDocs(sentQ);
-        const allSent = sentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+        const allSent = sentSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as AppNotification));
         setSentAnnouncements(allSent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
         // Users
@@ -418,7 +418,7 @@ export const Dashboard: React.FC = () => {
         setStats(prev => ({ ...prev, attendance: attendanceSnap.size }));
         if (userData?.role === 'student') {
           const studentRecords = attendanceSnap.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as AttendanceRecord))
+            .map(doc => ({ id: doc.id, ...(doc.data() as any) } as AttendanceRecord))
             .filter(r => r.records[user.uid])
             .sort((a, b) => b.date.localeCompare(a.date));
           setMyAttendance(studentRecords);
@@ -429,13 +429,13 @@ export const Dashboard: React.FC = () => {
           ? query(collection(db, 'submissions'), where('studentId', '==', user.uid))
           : query(collection(db, 'submissions'));
         const subSnap = await getDocs(subQ);
-        setSubmissions(subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
+        setSubmissions(subSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Submission)));
 
         // My Units
         if (userData?.role === 'student' && userData.classIds?.length) {
           const myUnitsQ = query(collection(db, 'units'), where('classId', 'in', userData.classIds));
           const myUnitsSnap = await getDocs(myUnitsQ);
-          setMyUnits(myUnitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
+          setMyUnits(myUnitsSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Unit)));
         }
 
         // Timetable
@@ -447,7 +447,7 @@ export const Dashboard: React.FC = () => {
         }
         if (timetableQ) {
           const timetableSnap = await getDocs(timetableQ);
-          const entries = timetableSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry));
+          const entries = timetableSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as TimetableEntry));
           const currentDay = format(now, 'EEEE') as DayOfWeek;
           const currentTimeStr = format(now, 'HH:mm');
           const todayLessons = entries.filter(e => e.day === currentDay).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -460,14 +460,14 @@ export const Dashboard: React.FC = () => {
           const feesQ = query(collection(db, 'fees'), where('studentId', '==', user.uid));
           const feesSnap = await getDocs(feesQ);
           if (!feesSnap.empty) {
-            setFeeBalance({ id: feesSnap.docs[0].id, ...feesSnap.docs[0].data() } as FeeBalance);
+            setFeeBalance({ id: feesSnap.docs[0].id, ...(feesSnap.docs[0].data() as any) } as FeeBalance);
           }
         }
         if (hasPermission('view_finance')) {
           const allFeesSnap = await getDocs(collection(db, 'fees'));
-          setAllFeeBalances(allFeesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance)));
+          setAllFeeBalances(allFeesSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as FeeBalance)));
           const allExpensesSnap = await getDocs(collection(db, 'expenses'));
-          setAllExpenses(allExpensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
+          setAllExpenses(allExpensesSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Expense)));
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'dashboard-data');
@@ -475,7 +475,7 @@ export const Dashboard: React.FC = () => {
     };
 
     fetchAllData();
-  }, [user, isTeacher, userData?.role, userData?.uid, userData?.classIds, hasPermission]);
+  }, [user, isTeacher, userData?.role, userData?.uid, userData?.classIds?.join(','), hasPermission]);
 
   // Deduplicate fee balances by studentId to prevent double-counting
   const uniqueFeeBalances = React.useMemo(() => {
