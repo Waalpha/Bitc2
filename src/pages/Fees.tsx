@@ -13,9 +13,9 @@ export const Fees: React.FC = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports' | 'installments'>('individual');
   const [installmentStudentId, setInstallmentStudentId] = useState<string>('');
-  const [courseFeeTotal, setCourseFeeTotal] = useState<number>(70000);
-  const [monthlyInstalment, setMonthlyInstalment] = useState<number>(4500);
-  const [enrollmentDeposit, setEnrollmentDeposit] = useState<number>(10000);
+  const [courseFeeTotal, setCourseFeeTotal] = useState<number | "">(70000);
+  const [monthlyInstalment, setMonthlyInstalment] = useState<number | "">(4500);
+  const [enrollmentDeposit, setEnrollmentDeposit] = useState<number | "">(10000);
   const [individualDeposits, setIndividualDeposits] = useState<Record<string, number>>({});
   const [installmentClassId, setInstallmentClassId] = useState<string>('');
   const [customScheduleMonths, setCustomScheduleMonths] = useState<number>(16);
@@ -662,23 +662,23 @@ export const Fees: React.FC = () => {
             </div>
           </div>
           
-          <h2>Class Financial Summary (Total & Monthly)</h2>
+          <h2>Class Monthly Financial Summary (${format(new Date(), 'MMMM yyyy')})</h2>
           <table>
             <thead>
               <tr>
                 <th>Class Name</th>
                 <th style="text-align: center;">Students</th>
-                <th>Total Invoiced</th>
-                <th>Total Paid</th>
-                <th style="color: #dc2626;">Total Balance</th>
-                <th>Invoiced (${format(new Date(), 'MMM')})</th>
-                <th>Paid (${format(new Date(), 'MMM')})</th>
+                <th>Est. Monthly Rate/Std</th>
+                <th>Expected Revenue (Month)</th>
+                <th>Invoiced (This Month)</th>
+                <th>Paid (This Month)</th>
+                <th style="color: #dc2626;">Balance Left (This Month)</th>
               </tr>
             </thead>
             <tbody>
               ${stats.classBreakdown.map((cls: any) => {
                 const classUnits = units.filter(s => s.classId === cls.id).map(s => s.name).join(', ');
-                const totalBal = cls.expected - cls.collected;
+                const monthlyBal = cls.monthCharged - cls.monthCollected;
                 return `
                 <tr>
                   <td>
@@ -686,11 +686,11 @@ export const Fees: React.FC = () => {
                     ${classUnits ? `<div style="font-size: 9px; color: #6b7280; font-weight: normal; margin-top: 2px;">Units: ${classUnits}</div>` : ''}
                   </td>
                   <td style="text-align: center;">${cls.count}</td>
-                  <td style="font-weight: bold;">Ksh ${cls.expected.toLocaleString()}</td>
-                  <td style="color: #059669; font-weight: bold;">Ksh ${cls.collected.toLocaleString()}</td>
-                  <td style="color: ${totalBal > 0 ? '#dc2626' : '#059669'}; font-weight: 700;">Ksh ${totalBal.toLocaleString()}</td>
+                  <td>Ksh ${cls.monthlyRate.toLocaleString()}</td>
+                  <td style="font-weight: bold; color: #2563EB;">Ksh ${cls.projected.toLocaleString()}</td>
                   <td>Ksh ${cls.monthCharged.toLocaleString()}</td>
-                  <td style="color: #059669;">Ksh ${cls.monthCollected.toLocaleString()}</td>
+                  <td style="color: #059669; font-weight: bold;">Ksh ${cls.monthCollected.toLocaleString()}</td>
+                  <td style="color: ${monthlyBal > 0 ? '#dc2626' : '#059669'}; font-weight: 700;">Ksh ${monthlyBal.toLocaleString()}</td>
                 </tr>
               `;}).join('')}
             </tbody>
@@ -698,10 +698,10 @@ export const Fees: React.FC = () => {
 
           ${stats.classBreakdown.filter((c: any) => c.count > 0).map((cls: any) => `
             <div class="page-break">
-              <h2>${cls.name} - Fee Balance List</h2>
+              <h2>${cls.name} - Monthly Fee Balance List</h2>
               <div style="margin-bottom: 15px; display: flex; gap: 20px;">
                 <div style="font-size: 11px; font-weight: bold; color: #6b7280;">Total Students: <span style="color: #111827;">${cls.count}</span></div>
-                <div style="font-size: 11px; font-weight: bold; color: #6b7280;">Class Bal: <span style="color: ${cls.balance > 0 ? '#dc2626' : '#059669'};">Ksh ${cls.balance.toLocaleString()}</span></div>
+                <div style="font-size: 11px; font-weight: bold; color: #6b7280;">Month's Bal Left: <span style="color: ${(cls.monthCharged - cls.monthCollected) > 0 ? '#dc2626' : '#059669'}; font-weight: bold;">Ksh ${(cls.monthCharged - cls.monthCollected).toLocaleString()}</span></div>
               </div>
               <table>
                 <thead>
@@ -1465,16 +1465,43 @@ export const Fees: React.FC = () => {
           }
         });
       });
+
+      const monthlyRate = classFees
+        .filter(f => String(f.classId) === String(cls.id) || f.classId === 'all')
+        .reduce((acc, f) => {
+          let amt = Number(f.amount) || 0;
+          if (f.period === 'yearly') {
+            return acc + (amt / 12);
+          } else if (f.period === 'semester') {
+            return acc + (amt / 4);
+          }
+          return acc + amt;
+        }, 0);
+
+      const monthlyProjected = monthlyRate * classStudents.length;
       
       const studentBalances = classStudents.map(s => {
         const bal = activeFeeBalances.find(fb => fb.studentId === s.uid);
+        
+        let studentMonthCollected = 0;
+        let studentMonthCharged = 0;
+        if (bal) {
+          (bal.history || []).forEach(h => {
+            const itemDate = new Date(h.date);
+            if (itemDate >= monthStart && itemDate <= monthEnd) {
+              if (h.type === 'payment') studentMonthCollected += Number(h.amount) || 0;
+              if (h.type === 'charge') studentMonthCharged += Number(h.amount) || 0;
+            }
+          });
+        }
+
         return {
           name: s.name,
           email: s.email,
           admNo: s.admissionNumber || s.email.split('@')[0].toUpperCase(),
-          total: bal?.totalAmount || 0,
-          paid: bal?.paidAmount || 0,
-          balance: (bal?.totalAmount || 0) - (bal?.paidAmount || 0)
+          total: studentMonthCharged,
+          paid: studentMonthCollected,
+          balance: studentMonthCharged - studentMonthCollected
         };
       }).sort((a,b) => b.balance - a.balance);
 
@@ -1485,12 +1512,13 @@ export const Fees: React.FC = () => {
         collected,
         monthCollected: clsMonthCollected,
         monthCharged: clsMonthCharged,
-        projected: (classFees.filter(f => f.classId === cls.id).reduce((acc, f) => acc + (Number(f.amount) || 0), 0)) * classStudents.length,
+        monthlyRate,
+        projected: monthlyProjected,
         balance: expected - collected,
         count: classStudents.length,
         studentBalances
       };
-    }).sort((a, b) => b.projected - a.expected);
+    }).sort((a, b) => b.projected - a.projected);
 
     const totalProjected = classBreakdown.reduce((acc, curr) => acc + curr.projected, 0);
 
@@ -1537,7 +1565,7 @@ export const Fees: React.FC = () => {
         monthCharged: studentMonthCharged,
         monthCollected: studentMonthCollected,
         monthBalance: studentMonthCharged - studentMonthCollected,
-        runningBalance: balance?.balance || 0
+        runningBalance: studentMonthCharged - studentMonthCollected
       };
     });
 
@@ -2019,8 +2047,13 @@ export const Fees: React.FC = () => {
 
                     <div className="space-y-4 mb-6">
                       <div>
-                        <p className="text-3xl font-bold text-gray-900">Ksh {fee.amount}</p>
-                        <p className="text-xs text-gray-400 mt-1">Amount to be charged</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          Ksh {fee.period === 'yearly' ? (Number(fee.amount) / 12).toLocaleString() : fee.period === 'semester' ? (Number(fee.amount) / 4).toLocaleString() : Number(fee.amount).toLocaleString()}
+                          <span className="text-sm font-semibold text-gray-400">/month</span>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {fee.period === 'yearly' ? `Billed as Ksh ${Number(fee.amount).toLocaleString()} annually` : fee.period === 'semester' ? `Billed as Ksh ${Number(fee.amount).toLocaleString()} per semester` : 'Monthly installment rate'}
+                        </p>
                       </div>
 
                       {fee.classId === 'all' && (
@@ -2107,61 +2140,48 @@ export const Fees: React.FC = () => {
                 >
                   <Sparkles size={16} className="text-emerald-600" /> Prepayments Report
                 </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Invoiced This Month</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Invoiced (This Month)</p>
                     <h3 className="text-2xl font-bold text-gray-900">Ksh {reportStats.monthCharged.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-blue-600">
                     <BookOpen size={16} />
-                    <span className="text-xs font-bold">Total Fees Applied in {format(new Date(), 'MMM')}</span>
+                    <span className="text-xs font-bold">Total billed in {format(new Date(), 'MMMM')}</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Collections (This Month)</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Paid (This Month)</p>
                     <h3 className="text-2xl font-bold text-emerald-600">Ksh {reportStats.monthCollected.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-emerald-600">
                     <TrendingUp size={16} />
-                    <span className="text-xs font-bold">{reportStats.monthCharged > 0 ? ((reportStats.monthCollected / reportStats.monthCharged) * 100).toFixed(1) : '100'}% Monthly Target</span>
+                    <span className="text-xs font-bold">{reportStats.monthCharged > 0 ? ((reportStats.monthCollected / reportStats.monthCharged) * 100).toFixed(1) : '100'}% Paid of Month's Invoice</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Balance</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Balance Left</p>
                     <h3 className="text-2xl font-bold text-amber-600">Ksh {reportStats.monthBalance.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-amber-600">
                     <History size={16} />
-                    <span className="text-xs font-bold">Outstanding from {format(new Date(), 'MMMM')}</span>
+                    <span className="text-xs font-bold">Unpaid balance for {format(new Date(), 'MMMM')}</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Standard Term Expected</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Expected Monthly Revenue</p>
                     <h3 className="text-2xl font-bold text-indigo-600">Ksh {reportStats.totalProjected.toLocaleString()}</h3>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-indigo-600">
-                    <Users size={16} />
-                    <span className="text-xs font-bold">Projected for Current Term</span>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-50/40 p-6 rounded-[24px] border border-emerald-100/50 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">Prepaid Credits Pool</p>
-                    <h3 className="text-2xl font-bold text-emerald-700">Ksh {reportStats.totalPrepaidCredits.toLocaleString()}</h3>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2 text-emerald-600">
-                    <Sparkles size={16} className="animate-pulse" />
-                    <span className="text-xs font-bold">Overpayments across {reportStats.totalOverpaidStudentsCount} students</span>
+                    <Layers size={16} />
+                    <span className="text-xs font-bold">Normalized monthly billing expectation</span>
                   </div>
                 </div>
               </div>
@@ -2170,10 +2190,10 @@ export const Fees: React.FC = () => {
                 <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                   <div className="p-6 border-b border-gray-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="bg-red-50 p-2 rounded-xl text-red-600">
+                      <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
                         <Wallet size={20} />
                       </div>
-                      <h3 className="font-bold text-gray-900 uppercase tracking-tight text-sm">Class Outstanding Balances</h3>
+                      <h3 className="font-bold text-gray-900 uppercase tracking-tight text-sm">Class Monthly Expected Revenue</h3>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
@@ -2181,40 +2201,40 @@ export const Fees: React.FC = () => {
                       <thead className="bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-widest">
                         <tr>
                           <th className="px-6 py-4">Class</th>
-                          <th className="px-6 py-4">Total Fee Assets</th>
-                          <th className="px-6 py-4">Total Collected</th>
-                          <th className="px-6 py-4">Outstanding</th>
+                          <th className="px-6 py-4">Monthly Rate / Student</th>
+                          <th className="px-6 py-4">Expected Monthly Billing</th>
+                          <th className="px-6 py-4">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {reportStats.classBreakdown.filter(c => c.balance > 0).sort((a,b) => b.balance - a.balance).map(cls => (
-                          <tr key={cls.id} className="hover:bg-red-50/30 transition-colors">
+                        {reportStats.classBreakdown.sort((a,b) => b.projected - a.projected).map(cls => (
+                          <tr key={cls.id} className="hover:bg-blue-50/30 transition-colors">
                             <td className="px-6 py-4">
                               <p className="text-sm font-bold text-gray-900">{cls.name}</p>
                               <p className="text-xs text-gray-400 font-bold uppercase tracking-tight">{cls.count} Students</p>
                             </td>
                             <td className="px-6 py-4 text-xs font-bold text-gray-900">
-                              Ksh {cls.expected.toLocaleString()}
+                              Ksh {cls.monthlyRate.toLocaleString()}
                             </td>
-                            <td className="px-6 py-4 text-xs font-bold text-emerald-600">
-                              Ksh {cls.collected.toLocaleString()}
+                            <td className="px-6 py-4 text-xs font-bold text-indigo-600">
+                              Ksh {cls.projected.toLocaleString()}
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">
-                                Ksh {cls.balance.toLocaleString()}
+                              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                                Active Structure
                               </span>
                             </td>
                           </tr>
                         ))}
-                        {reportStats.classBreakdown.filter(c => c.balance > 0).length === 0 && (
+                        {reportStats.classBreakdown.length === 0 && (
                           <tr>
-                            <td colSpan={4} className="px-6 py-12 text-center text-gray-400 italic">No outstanding balances found.</td>
+                            <td colSpan={4} className="px-6 py-12 text-center text-gray-400 italic">No classes found.</td>
                           </tr>
                         )}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </div>   </div>
 
                 <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                   <div className="p-6 border-b border-gray-50 flex items-center justify-between">
@@ -2351,7 +2371,7 @@ export const Fees: React.FC = () => {
                   </div>
                   <h2 className="text-3xl font-extrabold tracking-tight">Class Fee Installment & Deduction Tracker</h2>
                   <p className="text-white/70 text-sm mt-2 max-w-2xl leading-relaxed">
-                    Set up your class-specific pricing structures and projection matrices. Deduct standard monthly premium installments (such as <strong>Ksh {monthlyInstalment.toLocaleString()}</strong>) from the final targets (such as <strong>Ksh {courseFeeTotal.toLocaleString()}</strong>) for individual students or apply them class-wide.
+                    Set up your class-specific pricing structures and projection matrices. Deduct standard monthly premium installments (such as <strong>Ksh {(Number(monthlyInstalment) || 0).toLocaleString()}</strong>) from the final targets (such as <strong>Ksh {(Number(courseFeeTotal) || 0).toLocaleString()}</strong>) for individual students or apply them class-wide.
                   </p>
                 </div>
               </div>
@@ -2378,8 +2398,11 @@ export const Fees: React.FC = () => {
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">Ksh</span>
                           <input
                             type="number"
-                            value={courseFeeTotal}
-                            onChange={(e) => setCourseFeeTotal(Math.max(0, parseFloat(e.target.value) || 0))}
+                            value={courseFeeTotal === "" ? "" : courseFeeTotal}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setCourseFeeTotal(v === "" ? "" : Math.max(0, parseFloat(v) || 0));
+                            }}
                             placeholder="70,000"
                             className="w-full pl-14 pr-4 py-3 bg-[#111115] border border-white/5 rounded-2xl focus:ring-2 focus:ring-primary outline-none text-text-primary font-bold"
                           />
@@ -2394,8 +2417,11 @@ export const Fees: React.FC = () => {
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">Ksh</span>
                           <input
                             type="number"
-                            value={monthlyInstalment}
-                            onChange={(e) => setMonthlyInstalment(Math.max(1, parseFloat(e.target.value) || 0))}
+                            value={monthlyInstalment === "" ? "" : monthlyInstalment}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setMonthlyInstalment(v === "" ? "" : Math.max(0, parseFloat(v) || 0));
+                            }}
                             placeholder="4,500"
                             className="w-full pl-14 pr-4 py-3 bg-[#111115] border border-white/5 rounded-2xl focus:ring-2 focus:ring-primary outline-none text-text-primary font-bold"
                           />
@@ -2410,8 +2436,11 @@ export const Fees: React.FC = () => {
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">Ksh</span>
                           <input
                             type="number"
-                            value={enrollmentDeposit}
-                            onChange={(e) => setEnrollmentDeposit(Math.max(0, parseFloat(e.target.value) || 0))}
+                            value={enrollmentDeposit === "" ? "" : enrollmentDeposit}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEnrollmentDeposit(v === "" ? "" : Math.max(0, parseFloat(v) || 0));
+                            }}
                             placeholder="10,000"
                             className="w-full pl-14 pr-4 py-3 bg-[#111115] border border-white/5 rounded-2xl focus:ring-2 focus:ring-primary outline-none text-text-primary font-bold"
                           />
@@ -2420,76 +2449,94 @@ export const Fees: React.FC = () => {
                       </div>
 
                       {/* Calculations Summary Card */}
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Enrollment Deposit:</span>
-                          <span className="font-bold text-emerald-400 font-mono">
-                            Ksh {enrollmentDeposit.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Net Plan Financing:</span>
-                          <span className="font-bold text-text-primary font-mono">
-                            Ksh {Math.max(0, courseFeeTotal - enrollmentDeposit).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Plan Projection Term:</span>
-                          <span className="font-bold text-text-primary">
-                            {Math.ceil(Math.max(0, courseFeeTotal - enrollmentDeposit) / Math.max(1, monthlyInstalment))} Months
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Final Installment Value:</span>
-                          <span className="font-bold text-text-primary font-mono">
-                            Ksh {(Math.max(0, courseFeeTotal - enrollmentDeposit) % Math.max(1, monthlyInstalment) || Math.max(1, monthlyInstalment)).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Target Schedule Term:</span>
-                          <span className="font-bold text-emerald-400">Clears to Ksh 0</span>
-                        </div>
-                      </div>
+                      {(() => {
+                        const safeCourseFeeTotal = Math.max(0, Number(courseFeeTotal) || 0);
+                        const safeMonthlyInstalment = Math.max(1, Number(monthlyInstalment) || 4500);
+                        const safeEnrollmentDeposit = Math.max(0, Number(enrollmentDeposit) || 0);
+                        const netFinancing = Math.max(0, safeCourseFeeTotal - safeEnrollmentDeposit);
+                        const totalTermMonths = Math.ceil(netFinancing / safeMonthlyInstalment);
+                        const finalDeductVal = netFinancing % safeMonthlyInstalment || safeMonthlyInstalment;
 
-                      {/* Simulative Matrix */}
-                      <div className="pt-4 border-t border-white/5">
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1 text-center font-sans">Plan Projection Schedule</label>
-                        <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 rounded-xl">
-                          {enrollmentDeposit > 0 && (
-                            <div className="flex justify-between items-center bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-extrabold text-emerald-400 uppercase text-[9px] tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded">Deposit</span>
-                                <span className="text-gray-400 font-mono">Course: Ksh {courseFeeTotal.toLocaleString()}</span>
+                        return (
+                          <>
+                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Enrollment Deposit:</span>
+                                <span className="font-bold text-emerald-400 font-mono">
+                                  Ksh {safeEnrollmentDeposit.toLocaleString()}
+                                </span>
                               </div>
-                              <div className="text-right font-mono">
-                                <span className="text-emerald-400 font-extrabold mr-2">-Ksh {enrollmentDeposit.toLocaleString()}</span>
-                                <span className="font-bold text-gray-400">→ Ksh {(courseFeeTotal - enrollmentDeposit).toLocaleString()}</span>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Net Plan Financing:</span>
+                                <span className="font-bold text-text-primary font-mono">
+                                  Ksh {netFinancing.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Plan Projection Term:</span>
+                                <span className="font-bold text-text-primary">
+                                  {totalTermMonths} Months
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Final Installment Value:</span>
+                                <span className="font-bold text-text-primary font-mono">
+                                  Ksh {finalDeductVal.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Target Schedule Term:</span>
+                                <span className="font-bold text-emerald-400">Clears to Ksh 0</span>
                               </div>
                             </div>
-                          )}
-                          {Array.from({ length: Math.ceil(Math.max(0, courseFeeTotal - enrollmentDeposit) / Math.max(1, monthlyInstalment)) }).map((_, index) => {
-                            const monthNum = index + 1;
-                            const begBal = Math.max(0, courseFeeTotal - enrollmentDeposit) - (index * monthlyInstalment);
-                            const deduction = Math.min(begBal, monthlyInstalment);
-                            const endBal = Math.max(0, begBal - deduction);
-                            return (
-                              <div key={index} className="flex justify-between items-center bg-[#18181b]/30 p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-xs">
-                                <div>
-                                  <span className="font-bold text-white uppercase text-[9px] tracking-wide bg-white/10 px-1.5 py-0.5 rounded mr-2">Month {monthNum}</span>
-                                  <span className="text-gray-400 font-mono">Rem: Ksh {begBal.toLocaleString()}</span>
-                                </div>
-                                <div className="text-right font-mono">
-                                  <span className="text-rose-450 font-bold mr-2">-Ksh {deduction.toLocaleString()}</span>
-                                  <span className="font-bold text-emerald-400">→ Ksh {endBal.toLocaleString()}</span>
-                                </div>
+
+                            {/* Simulative Matrix */}
+                            <div className="pt-4 border-t border-white/5">
+                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1 text-center font-sans">Plan Projection Schedule</label>
+                              <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 rounded-xl">
+                                {safeEnrollmentDeposit > 0 && (
+                                  <div className="flex justify-between items-center bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 text-xs">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-extrabold text-emerald-400 uppercase text-[9px] tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded">Deposit</span>
+                                      <span className="text-gray-400 font-mono">Course: Ksh {safeCourseFeeTotal.toLocaleString()}</span>
+                                    </div>
+                                    <div className="text-right font-mono">
+                                      <span className="text-emerald-400 font-extrabold mr-2">-Ksh {safeEnrollmentDeposit.toLocaleString()}</span>
+                                      <span className="font-bold text-gray-400">→ Ksh {(safeCourseFeeTotal - safeEnrollmentDeposit).toLocaleString()}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {Array.from({ length: Math.min(36, totalTermMonths) }).map((_, index) => {
+                                  const monthNum = index + 1;
+                                  const begBal = netFinancing - (index * safeMonthlyInstalment);
+                                  const deduction = Math.min(begBal, safeMonthlyInstalment);
+                                  const endBal = Math.max(0, begBal - deduction);
+                                  return (
+                                    <div key={index} className="flex justify-between items-center bg-[#18181b]/30 p-3 rounded-xl border border-white/5 hover:border-white/10 transition-all text-xs">
+                                      <div>
+                                        <span className="font-bold text-white uppercase text-[9px] tracking-wide bg-white/10 px-1.5 py-0.5 rounded mr-2">Month {monthNum}</span>
+                                        <span className="text-gray-400 font-mono">Rem: Ksh {begBal.toLocaleString()}</span>
+                                      </div>
+                                      <div className="text-right font-mono">
+                                        <span className="text-rose-450 font-bold mr-2">-Ksh {deduction.toLocaleString()}</span>
+                                        <span className="font-bold text-emerald-400">→ Ksh {endBal.toLocaleString()}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {totalTermMonths > 36 && (
+                                  <p className="text-center text-gray-500 py-2 italic text-[10px] bg-[#18181b]/20 rounded-xl border border-dashed border-white/5">
+                                    ...and {totalTermMonths - 36} more periods to fully clear the balance.
+                                  </p>
+                                )}
+                                {safeCourseFeeTotal <= 0 && (
+                                  <p className="text-center text-gray-500 py-4 italic text-xs">Configure presets above to preview the projection matrix.</p>
+                                )}
                               </div>
-                            );
-                          })}
-                          {courseFeeTotal <= 0 && (
-                            <p className="text-center text-gray-500 py-4 italic text-xs">Configure presets above to preview the projection matrix.</p>
-                          )}
-                        </div>
-                      </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -2563,12 +2610,16 @@ export const Fees: React.FC = () => {
 
                     // Batch Deduction Execute Helper
                     const triggerBatchClassDeduction = async () => {
+                      const numCourseFeeTotal = Number(courseFeeTotal) || 0;
+                      const numMonthlyInstalment = Math.max(1, Number(monthlyInstalment) || 4500);
+                      const numEnrollmentDeposit = Number(enrollmentDeposit) || 0;
+
                       if (classStudentsCount === 0) {
                         addToast("This class currently has no enrolled students.", "error");
                         return;
                       }
 
-                      const activePremiumStr = `Ksh ${monthlyInstalment.toLocaleString()}`;
+                      const activePremiumStr = `Ksh ${numMonthlyInstalment.toLocaleString()}`;
                       if (!confirm(`⚡ EXECUTION ALERT ⚡\n\nAre you sure you want to apply end-of-month installment deductions of ${activePremiumStr} representing ${format(new Date(), 'MMMM yyyy')} to ALL students in class "${selectedClassObj.name}"?\n\nThis will permanently update their ledger tables and post transaction confirmations.`)) {
                         return;
                       }
@@ -2583,7 +2634,7 @@ export const Fees: React.FC = () => {
 
                         for (const student of classStudentsList) {
                           const balanceObj = feeBalances.find(b => b.studentId === student.uid);
-                          const currentBal = balanceObj?.balance ?? courseFeeTotal;
+                          const currentBal = Number(balanceObj?.balance ?? numCourseFeeTotal);
 
                           // Skip students who don't owe anything
                           if (currentBal <= 0) {
@@ -2592,7 +2643,7 @@ export const Fees: React.FC = () => {
                           }
 
                           // Target amount to pay (never deduct more than outstanding remaining)
-                          const deductVal = Math.min(currentBal, monthlyInstalment);
+                          const deductVal = Math.min(currentBal, numMonthlyInstalment);
                           const historyItem = {
                             date: now,
                             amount: Number(deductVal),
@@ -2624,7 +2675,7 @@ export const Fees: React.FC = () => {
                             });
                           } else {
                             // Setup brand new file balance with Deposit + Monthly Installment
-                            const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
+                            const customDeposit = Number(individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : numEnrollmentDeposit);
                             const historyItems = [];
                             let totalPaid = 0;
 
@@ -2640,8 +2691,8 @@ export const Fees: React.FC = () => {
                               totalPaid += customDeposit;
                             }
 
-                            const remainingAfterDeposit = courseFeeTotal - customDeposit;
-                            const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, monthlyInstalment) : 0;
+                            const remainingAfterDeposit = numCourseFeeTotal - customDeposit;
+                            const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, numMonthlyInstalment) : 0;
 
                             if (finalDeductVal > 0) {
                               historyItems.push({
@@ -2657,9 +2708,9 @@ export const Fees: React.FC = () => {
 
                             await setDoc(doc(db, 'fees', student.uid), {
                               studentId: student.uid,
-                              totalAmount: Number(courseFeeTotal),
+                              totalAmount: Number(numCourseFeeTotal),
                               paidAmount: Number(totalPaid),
-                              balance: Number(courseFeeTotal) - Number(totalPaid),
+                              balance: Number(numCourseFeeTotal) - Number(totalPaid),
                               lastUpdated: now,
                               history: historyItems
                             });
@@ -2668,7 +2719,7 @@ export const Fees: React.FC = () => {
                             await addDoc(collection(db, 'notifications'), {
                               userId: student.uid,
                               title: 'Plan Enrollment & Deposit Posted',
-                              message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                              message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                               type: 'fee',
                               read: false,
                               createdAt: now,
@@ -2690,13 +2741,15 @@ export const Fees: React.FC = () => {
 
                     // Helper to initialize plan with only deposit
                     const triggerInitializeWithDeposit = async (student: User) => {
-                      const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
+                      const numCourseFeeTotal = Number(courseFeeTotal) || 0;
+                      const numEnrollmentDeposit = Number(enrollmentDeposit) || 0;
+                      const customDeposit = Number(individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : numEnrollmentDeposit);
                       if (customDeposit <= 0) {
                         addToast("Please set an enrollment deposit greater than Ksh 0.", "error");
                         return;
                       }
 
-                      if (!confirm(`Initialize installment plan of Ksh ${courseFeeTotal.toLocaleString()} for student "${student.name}" and record an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()}?`)) {
+                      if (!confirm(`Initialize installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} for student "${student.name}" and record an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()}?`)) {
                         return;
                       }
 
@@ -2714,9 +2767,9 @@ export const Fees: React.FC = () => {
 
                         await setDoc(doc(db, 'fees', student.uid), {
                           studentId: student.uid,
-                          totalAmount: Number(courseFeeTotal),
+                          totalAmount: Number(numCourseFeeTotal),
                           paidAmount: Number(customDeposit),
-                          balance: Number(courseFeeTotal) - Number(customDeposit),
+                          balance: Number(numCourseFeeTotal) - Number(customDeposit),
                           lastUpdated: now,
                           history: [historyItem]
                         });
@@ -2743,15 +2796,19 @@ export const Fees: React.FC = () => {
 
                     // Single direct row action deduction helper
                     const triggerIndividualDeduction = async (student: User) => {
+                      const numCourseFeeTotal = Number(courseFeeTotal) || 0;
+                      const numMonthlyInstalment = Math.max(1, Number(monthlyInstalment) || 4500);
+                      const numEnrollmentDeposit = Number(enrollmentDeposit) || 0;
+
                       const balanceObj = feeBalances.find(b => b.studentId === student.uid);
-                      const currentBal = balanceObj?.balance ?? courseFeeTotal;
+                      const currentBal = Number(balanceObj?.balance ?? numCourseFeeTotal);
 
                       if (currentBal <= 0) {
                         addToast(`Student "${student.name}" has no remaining billing outstanding under this plan.`, 'success');
                         return;
                       }
 
-                      const deductVal = Math.min(currentBal, monthlyInstalment);
+                      const deductVal = Math.min(currentBal, numMonthlyInstalment);
                       if (!confirm(`Deduct end-of-month installment of Ksh ${deductVal.toLocaleString()} for student "${student.name}"?`)) {
                         return;
                       }
@@ -2791,7 +2848,7 @@ export const Fees: React.FC = () => {
                           });
                         } else {
                           // Setup brand new balance with Deposit + Monthly Installment
-                          const customDeposit = individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : enrollmentDeposit;
+                          const customDeposit = Number(individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : numEnrollmentDeposit);
                           const historyItems = [];
                           let totalPaid = 0;
 
@@ -2807,8 +2864,8 @@ export const Fees: React.FC = () => {
                             totalPaid += customDeposit;
                           }
 
-                          const remainingAfterDeposit = courseFeeTotal - customDeposit;
-                          const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, monthlyInstalment) : 0;
+                          const remainingAfterDeposit = numCourseFeeTotal - customDeposit;
+                          const finalDeductVal = remainingAfterDeposit > 0 ? Math.min(remainingAfterDeposit, numMonthlyInstalment) : 0;
 
                           if (finalDeductVal > 0) {
                             historyItems.push({
@@ -2824,9 +2881,9 @@ export const Fees: React.FC = () => {
 
                           await setDoc(doc(db, 'fees', student.uid), {
                             studentId: student.uid,
-                            totalAmount: Number(courseFeeTotal),
+                            totalAmount: Number(numCourseFeeTotal),
                             paidAmount: Number(totalPaid),
-                            balance: Number(courseFeeTotal) - Number(totalPaid),
+                            balance: Number(numCourseFeeTotal) - Number(totalPaid),
                             lastUpdated: now,
                             history: historyItems
                           });
@@ -2835,7 +2892,7 @@ export const Fees: React.FC = () => {
                           await addDoc(collection(db, 'notifications'), {
                             userId: student.uid,
                             title: 'Plan Enrollment & Deposit Posted',
-                            message: `Your installment plan of Ksh ${courseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                            message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                             type: 'fee',
                             read: false,
                             createdAt: now,
@@ -2917,9 +2974,9 @@ export const Fees: React.FC = () => {
                                 <tbody className="divide-y divide-white/5">
                                   {classStudentsList.map(item => {
                                     const bObj = feeBalances.find(bf => bf.studentId === item.uid);
-                                    const tAmt = bObj?.totalAmount ?? courseFeeTotal;
-                                    const pAmt = bObj?.paidAmount ?? 0;
-                                    const curBal = bObj?.balance ?? tAmt;
+                                    const tAmt = Number(bObj?.totalAmount ?? courseFeeTotal);
+                                    const pAmt = Number(bObj?.paidAmount ?? 0);
+                                    const curBal = Number(bObj?.balance ?? tAmt);
 
                                     const depositItem = bObj?.history?.find(h => h.description === 'Plan Enrollment Deposit' || h.description.includes('Deposit'));
                                     const depositAmt = depositItem?.amount ?? 0;
@@ -2975,7 +3032,7 @@ export const Fees: React.FC = () => {
                                         </td>
                                         <td className="py-3 px-4 text-center">
                                           <div className="flex items-center justify-center gap-2">
-                                            {!bObj && enrollmentDeposit > 0 && (
+                                            {!bObj && Number(enrollmentDeposit) > 0 && (
                                               <button
                                                 onClick={() => triggerInitializeWithDeposit(item)}
                                                 disabled={isUpdating}
