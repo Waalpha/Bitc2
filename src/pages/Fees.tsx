@@ -774,12 +774,20 @@ export const Fees: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const fetchFeesData = async () => {
-      try {
-        if (isAdminView) {
-          // Admin sees all balances and all students
-          const snapBalances = await getDocs(collection(db, 'fees'));
-          const allBalances = snapBalances.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
+    let unsubFees: (() => void) | undefined;
+    let unsubUsers: (() => void) | undefined;
+    let unsubClasses: (() => void) | undefined;
+    let unsubFeeConfigs: (() => void) | undefined;
+    let unsubUnits: (() => void) | undefined;
+    let unsubFeeTypes: (() => void) | undefined;
+    let unsubFeeGroups: (() => void) | undefined;
+    let unsubMyFees: (() => void) | undefined;
+
+    try {
+      if (isAdminView) {
+        // Admin sees all balances and all students
+        unsubFees = onSnapshot(collection(db, 'fees'), (snap) => {
+          const allBalances = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
           
           const dedupedMap = new Map<string, FeeBalance>();
           const sorted = [...allBalances].sort((a, b) => (a.lastUpdated || '').localeCompare(b.lastUpdated || ''));
@@ -803,29 +811,50 @@ export const Fees: React.FC = () => {
             }
           });
           setFeeBalances(Array.from(dedupedMap.values()));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'fees');
+        });
 
-          const snapUsers = await getDocs(collection(db, 'users'));
-          const allUsers = snapUsers.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+        unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+          const allUsers = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
           setStudents(allUsers.filter(u => String(u.role).toLowerCase() === 'student'));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'users');
+        });
 
-          const snapClasses = await getDocs(collection(db, 'classes'));
-          setClasses(snapClasses.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+        unsubClasses = onSnapshot(collection(db, 'classes'), (snap) => {
+          setClasses(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'classes');
+        });
 
-          const snapFeeConfigs = await getDocs(collection(db, 'feeConfigs'));
-          setClassFees(snapFeeConfigs.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassFee)));
+        unsubFeeConfigs = onSnapshot(collection(db, 'feeConfigs'), (snap) => {
+          setClassFees(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassFee)));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'feeConfigs');
+        });
 
-          const snapUnits = await getDocs(collection(db, 'units'));
-          setUnits(snapUnits.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
+        unsubUnits = onSnapshot(collection(db, 'units'), (snap) => {
+          setUnits(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'units');
+        });
 
-          const snapFeeTypes = await getDocs(collection(db, 'feeTypes'));
-          setFeeTypes(snapFeeTypes.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeType)));
+        unsubFeeTypes = onSnapshot(collection(db, 'feeTypes'), (snap) => {
+          setFeeTypes(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeType)));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'feeTypes');
+        });
 
-          const snapFeeGroups = await getDocs(collection(db, 'feeGroups'));
-          setFeeGroups(snapFeeGroups.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
-        } else {
-          // Student sees only their own balance
-          const q = query(collection(db, 'fees'), where('studentId', '==', user.uid));
-          const snap = await getDocs(q);
+        unsubFeeGroups = onSnapshot(collection(db, 'feeGroups'), (snap) => {
+          setFeeGroups(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'feeGroups');
+        });
+      } else {
+        // Student sees only their own balance
+        const q = query(collection(db, 'fees'), where('studentId', '==', user.uid));
+        unsubMyFees = onSnapshot(q, (snap) => {
           if (!snap.empty) {
             const balances = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
             const studentUid = String(user.uid).trim();
@@ -837,13 +866,24 @@ export const Fees: React.FC = () => {
             });
             setMyBalance(sorted[0]);
           }
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'fees-data');
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'fees-student');
+        });
       }
-    };
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'fees-data-registration');
+    }
 
-    fetchFeesData();
+    return () => {
+      if (unsubFees) unsubFees();
+      if (unsubUsers) unsubUsers();
+      if (unsubClasses) unsubClasses();
+      if (unsubFeeConfigs) unsubFeeConfigs();
+      if (unsubUnits) unsubUnits();
+      if (unsubFeeTypes) unsubFeeTypes();
+      if (unsubFeeGroups) unsubFeeGroups();
+      if (unsubMyFees) unsubMyFees();
+    };
   }, [user, isAdminView]);
 
   const handleEditHistoryItem = (student: User, item: any, index: number) => {
