@@ -2660,7 +2660,7 @@ export const Fees: React.FC = () => {
                       }
 
                       const activePremiumStr = `Ksh ${numMonthlyInstalment.toLocaleString()}`;
-                      if (!confirm(`⚡ EXECUTION ALERT ⚡\n\nAre you sure you want to apply end-of-month installment deductions of ${activePremiumStr} representing ${format(new Date(), 'MMMM yyyy')} to ALL students in class "${selectedClassObj.name}"?\n\nThis will permanently update their ledger tables and post transaction confirmations.`)) {
+                      if (!confirm(`⚡ EXECUTION ALERT ⚡\n\nAre you sure you want to apply end-of-month installment charges of ${activePremiumStr} representing ${format(new Date(), 'MMMM yyyy')} to ALL students in class "${selectedClassObj.name}"?\n\nThis will permanently update their ledger tables and post transaction confirmations.`)) {
                         return;
                       }
 
@@ -2670,64 +2670,77 @@ export const Fees: React.FC = () => {
 
                       try {
                         const now = new Date().toISOString();
-                        const description = `Monthly Plan Payment: ${format(new Date(), 'MMMM yyyy')} Installment`;
+                        const description = `Monthly Plan Installment: ${format(new Date(), 'MMMM yyyy')}`;
 
                         for (const student of classStudentsList) {
                           const balanceObj = feeBalances.find(b => b.studentId === student.uid);
-                          const currentBal = Number(balanceObj?.balance ?? numCourseFeeTotal);
-
-                          // Skip students who don't owe anything
-                          if (currentBal <= 0) {
-                            skippedQty++;
-                            continue;
-                          }
-
-                          // Target amount to pay (never deduct more than outstanding remaining)
-                          const deductVal = Math.min(currentBal, numMonthlyInstalment);
-                          const historyItem = {
-                            date: now,
-                            amount: Number(deductVal),
-                            type: 'payment' as const,
-                            description,
-                            attachmentUrl: '',
-                            attachmentName: ''
-                          };
 
                           if (balanceObj) {
-                            const newPaid = Number(balanceObj.paidAmount || 0) + Number(deductVal);
-                            const newHistory = [...(balanceObj.history || []), historyItem];
+                            // Check the plan total ceiling limit
+                            const planCeiling = Number(balanceObj.installmentPlanTotal ?? numCourseFeeTotal);
+                            const billedSoFar = Number(balanceObj.totalAmount || 0);
+                            const remainingUncharged = Math.max(0, planCeiling - billedSoFar);
+
+                            if (remainingUncharged <= 0) {
+                              skippedQty++;
+                              continue;
+                            }
+
+                            // Charge this month's installment up to remaining plan allotment
+                            const deductVal = Math.min(remainingUncharged, numMonthlyInstalment);
+                            const chargeItem = {
+                              date: now,
+                              amount: Number(deductVal),
+                              type: 'charge' as const, // This is a CHARGE!
+                              description,
+                              attachmentUrl: '',
+                              attachmentName: ''
+                            };
+
+                            const newTotal = billedSoFar + Number(deductVal);
+                            const newHistory = [...(balanceObj.history || []), chargeItem];
                             await updateDoc(doc(db, 'fees', balanceObj.id), {
-                              paidAmount: newPaid,
-                              balance: Number(balanceObj.totalAmount || 0) - newPaid,
+                              totalAmount: newTotal,
+                              balance: newTotal - Number(balanceObj.paidAmount || 0),
                               lastUpdated: now,
                               history: newHistory
                             });
 
-                            // Notifications trigger for existing balance
+                            // Notification trigger for installment charge
                             await addDoc(collection(db, 'notifications'), {
                               userId: student.uid,
-                              title: 'Monthly Installment Deducted',
-                              message: `End-of-month premium installment of Ksh ${deductVal.toLocaleString()} was successfully posted. Remaining course balance updated.`,
+                              title: 'Monthly Installment Charged',
+                              message: `End-of-month installment charge of Ksh ${deductVal.toLocaleString()} was successfully posted. This has been added to your outstanding balance.`,
                               type: 'fee',
                               read: false,
                               createdAt: now,
                               link: '/fees'
                             });
                           } else {
-                            // Setup brand new file balance with Deposit + Monthly Installment
+                            // Setup brand new file balance with Deposit (Charge + Payment) and initial Monthly Installment (Charge)
                             const customDeposit = Number(individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : numEnrollmentDeposit);
                             const historyItems = [];
+                            let totalBilled = 0;
                             let totalPaid = 0;
 
                             if (customDeposit > 0) {
                               historyItems.push({
                                 date: now,
                                 amount: Number(customDeposit),
-                                type: 'payment' as const,
-                                description: 'Plan Enrollment Deposit',
+                                type: 'charge' as const,
+                                description: 'Plan Enrollment Deposit Charge',
                                 attachmentUrl: '',
                                 attachmentName: ''
                               });
+                              historyItems.push({
+                                date: now,
+                                amount: Number(customDeposit),
+                                type: 'payment' as const,
+                                description: 'Plan Enrollment Deposit Payment',
+                                attachmentUrl: '',
+                                attachmentName: ''
+                              });
+                              totalBilled += customDeposit;
                               totalPaid += customDeposit;
                             }
 
@@ -2738,28 +2751,30 @@ export const Fees: React.FC = () => {
                               historyItems.push({
                                 date: now,
                                 amount: Number(finalDeductVal),
-                                type: 'payment' as const,
+                                type: 'charge' as const, // First installment is a CHARGE!
                                 description,
                                 attachmentUrl: '',
                                 attachmentName: ''
                               });
-                              totalPaid += finalDeductVal;
+                              totalBilled += finalDeductVal;
                             }
 
                             await setDoc(doc(db, 'fees', student.uid), {
                               studentId: student.uid,
-                              totalAmount: Number(numCourseFeeTotal),
+                              totalAmount: Number(totalBilled),
                               paidAmount: Number(totalPaid),
-                              balance: Number(numCourseFeeTotal) - Number(totalPaid),
+                              balance: Number(totalBilled) - Number(totalPaid),
+                              installmentPlanTotal: Number(numCourseFeeTotal),
+                              installmentPlanRate: numMonthlyInstalment,
                               lastUpdated: now,
                               history: historyItems
                             });
 
-                            // Notifications trigger for new balance with deposit
+                            // Notification trigger for new balance with deposit
                             await addDoc(collection(db, 'notifications'), {
                               userId: student.uid,
                               title: 'Plan Enrollment & Deposit Posted',
-                              message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                              message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment charge of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                               type: 'fee',
                               read: false,
                               createdAt: now,
@@ -2770,7 +2785,7 @@ export const Fees: React.FC = () => {
                           updatedQty++;
                         }
 
-                        addToast(`Successfully applied end-of-month deductions for ${updatedQty} active student portfolios in ${selectedClassObj.name}! (${skippedQty} portfolios skipped or clear).`, 'success');
+                        addToast(`Successfully applied end-of-month installment charges for ${updatedQty} active student portfolios in ${selectedClassObj.name}! (${skippedQty} portfolios skipped or clear).`, 'success');
                       } catch (err: any) {
                         console.error(err);
                         addToast(err.message || 'Error occurred during batch updates', 'error');
@@ -2796,22 +2811,34 @@ export const Fees: React.FC = () => {
                       setIsUpdating(true);
                       try {
                         const now = new Date().toISOString();
-                        const historyItem = {
+                        
+                        const depositChargeItem = {
+                          date: now,
+                          amount: Number(customDeposit),
+                          type: 'charge' as const,
+                          description: 'Plan Enrollment Deposit Charge',
+                          attachmentUrl: '',
+                          attachmentName: ''
+                        };
+
+                        const depositPaymentItem = {
                           date: now,
                           amount: Number(customDeposit),
                           type: 'payment' as const,
-                          description: 'Plan Enrollment Deposit',
+                          description: 'Plan Enrollment Deposit Payment',
                           attachmentUrl: '',
                           attachmentName: ''
                         };
 
                         await setDoc(doc(db, 'fees', student.uid), {
                           studentId: student.uid,
-                          totalAmount: Number(numCourseFeeTotal),
-                          paidAmount: Number(customDeposit),
-                          balance: Number(numCourseFeeTotal) - Number(customDeposit),
+                          totalAmount: Number(customDeposit), // Amount charged so far (deposit only)
+                          paidAmount: Number(customDeposit),   // Paid so far
+                          balance: 0,                           // Current outstanding is 0 after deposit payment
+                          installmentPlanTotal: Number(numCourseFeeTotal),
+                          installmentPlanRate: Number(monthlyInstalment) || 4500,
                           lastUpdated: now,
-                          history: [historyItem]
+                          history: [depositChargeItem, depositPaymentItem]
                         });
 
                         // Notification
@@ -2841,37 +2868,44 @@ export const Fees: React.FC = () => {
                       const numEnrollmentDeposit = Number(enrollmentDeposit) || 0;
 
                       const balanceObj = feeBalances.find(b => b.studentId === student.uid);
-                      const currentBal = Number(balanceObj?.balance ?? numCourseFeeTotal);
+                      
+                      let deductVal = numMonthlyInstalment;
+                      if (balanceObj) {
+                        const planCeiling = Number(balanceObj.installmentPlanTotal ?? numCourseFeeTotal);
+                        const billedSoFar = Number(balanceObj.totalAmount || 0);
+                        const remainingUncharged = Math.max(0, planCeiling - billedSoFar);
 
-                      if (currentBal <= 0) {
-                        addToast(`Student "${student.name}" has no remaining billing outstanding under this plan.`, 'success');
-                        return;
+                        if (remainingUncharged <= 0) {
+                          addToast(`Student "${student.name}" has reached the target billing limit under this plan.`, 'success');
+                          return;
+                        }
+                        deductVal = Math.min(remainingUncharged, numMonthlyInstalment);
                       }
 
-                      const deductVal = Math.min(currentBal, numMonthlyInstalment);
-                      if (!confirm(`Deduct end-of-month installment of Ksh ${deductVal.toLocaleString()} for student "${student.name}"?`)) {
+                      if (!confirm(`Apply monthly installment charge of Ksh ${deductVal.toLocaleString()} for student "${student.name}"?`)) {
                         return;
                       }
 
                       setIsUpdating(true);
                       try {
                         const now = new Date().toISOString();
-                        const description = `Monthly Plan Payment: ${format(new Date(), 'MMMM yyyy')} Installment`;
-                        const historyItem = {
-                          date: now,
-                          amount: Number(deductVal),
-                          type: 'payment' as const,
-                          description,
-                          attachmentUrl: '',
-                          attachmentName: ''
-                        };
+                        const description = `Monthly Plan Installment: ${format(new Date(), 'MMMM yyyy')}`;
 
                         if (balanceObj) {
-                          const newPaid = Number(balanceObj.paidAmount || 0) + Number(deductVal);
-                          const newHistory = [...(balanceObj.history || []), historyItem];
+                          const chargeItem = {
+                            date: now,
+                            amount: Number(deductVal),
+                            type: 'charge' as const, // It is a CHARGE!
+                            description,
+                            attachmentUrl: '',
+                            attachmentName: ''
+                          };
+
+                          const newTotal = Number(balanceObj.totalAmount || 0) + Number(deductVal);
+                          const newHistory = [...(balanceObj.history || []), chargeItem];
                           await updateDoc(doc(db, 'fees', balanceObj.id), {
-                            paidAmount: newPaid,
-                            balance: Number(balanceObj.totalAmount || 0) - newPaid,
+                            totalAmount: newTotal,
+                            balance: newTotal - Number(balanceObj.paidAmount || 0),
                             lastUpdated: now,
                             history: newHistory
                           });
@@ -2879,28 +2913,38 @@ export const Fees: React.FC = () => {
                           // Notification
                           await addDoc(collection(db, 'notifications'), {
                             userId: student.uid,
-                            title: 'Installment Deduction Applied',
-                            message: `End-of-month premium installment of Ksh ${deductVal.toLocaleString()} has been received and deducted successfully.`,
+                            title: 'Installment Charge Applied',
+                            message: `End-of-month installment charge of Ksh ${deductVal.toLocaleString()} has been posted successfully.`,
                             type: 'fee',
                             read: false,
                             createdAt: now,
                             link: '/fees'
                           });
                         } else {
-                          // Setup brand new balance with Deposit + Monthly Installment
+                          // Setup brand new balance with Deposit (Charge + Payment) and first installment (Charge)
                           const customDeposit = Number(individualDeposits[student.uid] !== undefined ? individualDeposits[student.uid] : numEnrollmentDeposit);
                           const historyItems = [];
+                          let totalBilled = 0;
                           let totalPaid = 0;
 
                           if (customDeposit > 0) {
                             historyItems.push({
                               date: now,
                               amount: Number(customDeposit),
-                              type: 'payment' as const,
-                              description: 'Plan Enrollment Deposit',
+                              type: 'charge' as const,
+                              description: 'Plan Enrollment Deposit Charge',
                               attachmentUrl: '',
                               attachmentName: ''
                             });
+                            historyItems.push({
+                              date: now,
+                              amount: Number(customDeposit),
+                              type: 'payment' as const,
+                              description: 'Plan Enrollment Deposit Payment',
+                              attachmentUrl: '',
+                              attachmentName: ''
+                            });
+                            totalBilled += customDeposit;
                             totalPaid += customDeposit;
                           }
 
@@ -2911,19 +2955,21 @@ export const Fees: React.FC = () => {
                             historyItems.push({
                               date: now,
                               amount: Number(finalDeductVal),
-                              type: 'payment' as const,
+                              type: 'charge' as const, // First installment is a CHARGE!
                               description,
                               attachmentUrl: '',
                               attachmentName: ''
                             });
-                            totalPaid += finalDeductVal;
+                            totalBilled += finalDeductVal;
                           }
 
                           await setDoc(doc(db, 'fees', student.uid), {
                             studentId: student.uid,
-                            totalAmount: Number(numCourseFeeTotal),
+                            totalAmount: Number(totalBilled),
                             paidAmount: Number(totalPaid),
-                            balance: Number(numCourseFeeTotal) - Number(totalPaid),
+                            balance: Number(totalBilled) - Number(totalPaid),
+                            installmentPlanTotal: Number(numCourseFeeTotal),
+                            installmentPlanRate: numMonthlyInstalment,
                             lastUpdated: now,
                             history: historyItems
                           });
@@ -2932,7 +2978,7 @@ export const Fees: React.FC = () => {
                           await addDoc(collection(db, 'notifications'), {
                             userId: student.uid,
                             title: 'Plan Enrollment & Deposit Posted',
-                            message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
+                            message: `Your installment plan of Ksh ${numCourseFeeTotal.toLocaleString()} has been initialized with an Enrollment Deposit of Ksh ${customDeposit.toLocaleString()} and monthly installment charge of Ksh ${finalDeductVal.toLocaleString()} posted successfully.`,
                             type: 'fee',
                             read: false,
                             createdAt: now,
@@ -2940,10 +2986,10 @@ export const Fees: React.FC = () => {
                           });
                         }
 
-                        addToast(`Success! Posted installment payment for ${student.name}.`, 'success');
+                        addToast(`Success! Posted installment charge for ${student.name}.`, 'success');
                       } catch (err: any) {
                         console.error(err);
-                        addToast(err.message || 'Deduction failed', 'error');
+                        addToast(err.message || 'Charge failed', 'error');
                       } finally {
                         setIsUpdating(false);
                       }
@@ -2976,16 +3022,16 @@ export const Fees: React.FC = () => {
                               Batch End-Of-Month Execution Hub
                             </h4>
                             <p className="text-xs text-text-muted mt-2 max-w-lg leading-relaxed">
-                              Instantly deduct a monthly premium of <strong>Ksh {monthlyInstalment.toLocaleString()}</strong> from all <strong>{outstandingCount} outstanding Student account(s)</strong> belonging to <strong>{selectedClassObj.name}</strong>. If a student owes less than this premium, we will gracefully pay off their exact final balance.
+                              Instantly apply a monthly premium installment charge of <strong>Ksh {monthlyInstalment.toLocaleString()}</strong> to all <strong>{outstandingCount} outstanding Student account(s)</strong> belonging to <strong>{selectedClassObj.name}</strong>. This charge will deduct from each student's remaining plan ceiling limit.
                             </p>
                           </div>
                           <button
                             onClick={triggerBatchClassDeduction}
-                            disabled={isUpdating || outstandingCount === 0}
+                            disabled={isUpdating || classStudentsCount === 0}
                             className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-[0.98] transition-all py-4 px-6 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 w-full md:w-auto justify-center disabled:opacity-30 disabled:pointer-events-none whitespace-nowrap"
                           >
                             <Sparkles size={16} />
-                            ⚡ Apply Deductions Class-Wide ({outstandingCount})
+                            ⚡ Apply Installment Charges ({classStudentsCount})
                           </button>
                         </div>
 
@@ -3005,7 +3051,8 @@ export const Fees: React.FC = () => {
                                   <tr>
                                     <th className="py-4 px-4">Student Profile</th>
                                     <th className="py-4 px-4 text-emerald-400">Enrollment Deposit</th>
-                                    <th className="py-4 px-4">Total Owed</th>
+                                    <th className="py-4 px-4 text-gray-400">Plan Target</th>
+                                    <th className="py-4 px-4 text-indigo-400">Billed To Date</th>
                                     <th className="py-4 px-4 text-emerald-400">Paid To Date</th>
                                     <th className="py-4 px-4 text-rose-455">Current Balance</th>
                                     <th className="py-4 px-4 text-center">Action Column</th>
@@ -3014,11 +3061,13 @@ export const Fees: React.FC = () => {
                                 <tbody className="divide-y divide-white/5">
                                   {classStudentsList.map(item => {
                                     const bObj = feeBalances.find(bf => bf.studentId === item.uid);
-                                    const tAmt = Number(bObj?.totalAmount ?? courseFeeTotal);
+                                    
+                                    const planTotal = Number(bObj?.installmentPlanTotal ?? courseFeeTotal);
+                                    const tAmt = Number(bObj?.totalAmount ?? 0);
                                     const pAmt = Number(bObj?.paidAmount ?? 0);
-                                    const curBal = Number(bObj?.balance ?? tAmt);
+                                    const curBal = Number(bObj?.balance ?? 0);
 
-                                    const depositItem = bObj?.history?.find(h => h.description === 'Plan Enrollment Deposit' || h.description.includes('Deposit'));
+                                    const depositItem = bObj?.history?.find(h => h.description.includes('Deposit'));
                                     const depositAmt = depositItem?.amount ?? 0;
 
                                     return (
@@ -3052,21 +3101,26 @@ export const Fees: React.FC = () => {
                                             </div>
                                           )}
                                         </td>
-                                        <td className="py-3 px-4 font-mono font-bold text-gray-300">
-                                          Ksh {tAmt.toLocaleString()}
+                                        <td className="py-3 px-4 font-mono font-bold text-gray-400">
+                                          Ksh {planTotal.toLocaleString()}
+                                        </td>
+                                        <td className="py-3 px-4 font-mono font-bold text-indigo-400">
+                                          {bObj ? `Ksh ${tAmt.toLocaleString()}` : '--'}
                                         </td>
                                         <td className="py-3 px-4 font-mono font-bold text-emerald-400">
-                                          Ksh {pAmt.toLocaleString()}
+                                          {bObj ? `Ksh ${pAmt.toLocaleString()}` : '--'}
                                         </td>
                                         <td className="py-3 px-4 font-mono">
                                           <div className="flex items-center gap-2">
-                                            <span className="font-mono font-extrabold text-rose-450 font-black">Ksh {curBal.toLocaleString()}</span>
-                                            {curBal <= 0 ? (
+                                            <span className="font-mono font-extrabold text-rose-450 font-black">
+                                              {bObj ? `Ksh ${curBal.toLocaleString()}` : '--'}
+                                            </span>
+                                            {bObj && curBal <= 0 ? (
                                               <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-wider">Paid</span>
                                             ) : !bObj ? (
                                               <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[9px] font-black uppercase tracking-wider">No Plan</span>
                                             ) : (
-                                              <span className="inline-block px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-wider">Owed</span>
+                                              <span className="inline-block px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-wider font-mono">Owed</span>
                                             )}
                                           </div>
                                         </td>
@@ -3084,11 +3138,11 @@ export const Fees: React.FC = () => {
                                             )}
                                             <button
                                               onClick={() => triggerIndividualDeduction(item)}
-                                              disabled={isUpdating || curBal <= 0}
+                                              disabled={isUpdating || (bObj && (planTotal - tAmt) <= 0)}
                                               className="px-3 py-2 bg-white/5 hover:bg-indigo-500/10 hover:text-indigo-400 border border-white/5 hover:border-indigo-500/20 rounded-xl font-bold uppercase tracking-wider text-[10px] transition-all disabled:opacity-20 disabled:pointer-events-none"
-                                              title={!bObj ? "Initialize plan with both enrollment deposit and first deduction" : "Deduct standard monthly installment premium"}
+                                              title={!bObj ? "Initialize plan with both enrollment deposit and first installment" : "Charge standard monthly installment premium"}
                                             >
-                                              {!bObj ? "First Deduction" : "Apply Deduction"}
+                                              {!bObj ? "First Deduction" : (bObj && (planTotal - tAmt) <= 0) ? "Plan Fully Billed" : "Apply Deduction"}
                                             </button>
                                           </div>
                                         </td>
@@ -3105,9 +3159,9 @@ export const Fees: React.FC = () => {
                     );
                   })()}
 
-                </div>           </div>
-
+                </div>
               </div>
+            </div>
           )}
         </div>
       ) : (
