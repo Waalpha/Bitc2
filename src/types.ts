@@ -197,6 +197,8 @@ export interface FeeBalance {
   paidAmount: number;
   balance: number;
   lastUpdated: string;
+  installmentPlanTotal?: number;
+  installmentPlanRate?: number;
   history?: { 
     date: string; 
     amount: number; 
