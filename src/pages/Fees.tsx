@@ -481,6 +481,285 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
+  const handlePrintOutstandingBalances = (studentsToPrint: User[], filterType: 'all' | 'outstanding' | 'overpaid') => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const titleText = filterType === 'outstanding' 
+      ? 'Outstanding Fee Balances Report' 
+      : filterType === 'overpaid' 
+        ? 'Prepaid Credits Report' 
+        : 'Student Fee Balances Summary';
+
+    // Calculate sum totals
+    let totalInvoiced = 0;
+    let totalPaid = 0;
+    let totalOutstanding = 0;
+    let totalCredits = 0;
+
+    const tableRows = studentsToPrint.map(student => {
+      const balanceObj = feeBalances.find(b => b.studentId === student.uid);
+      const total = balanceObj?.totalAmount ?? 0;
+      const paid = balanceObj?.paidAmount ?? 0;
+      const bal = balanceObj?.balance ?? 0;
+
+      totalInvoiced += total;
+      totalPaid += paid;
+      if (bal > 0) totalOutstanding += bal;
+      if (bal < 0) totalCredits += Math.abs(bal);
+
+      const enrolledClasses = classes.filter(c => student.classIds?.includes(c.id)).map(c => c.name).join(', ') || 'N/A';
+      
+      let balStyle = '';
+      let balText = 'Cleared';
+      if (bal > 0) {
+        balStyle = 'color: #b91c1c; font-weight: 700;';
+        balText = `Ksh ${bal.toLocaleString()}`;
+      } else if (bal < 0) {
+        balStyle = 'color: #15803d; font-weight: 700;';
+        balText = `-Ksh ${Math.abs(bal).toLocaleString()} (Cr)`;
+      } else {
+        balStyle = 'color: #64748b;';
+      }
+
+      return `
+        <tr>
+          <td>
+            <strong style="color: #0f172a; font-size: 13px;">${student.name}</strong><br/>
+            <span style="font-size: 11px; color: #64748b;">${student.email}</span>
+          </td>
+          <td style="font-size: 12px; font-weight: 500;">${student.admissionNumber || 'N/A'}</td>
+          <td style="font-size: 12px; color: #475569;">${enrolledClasses}</td>
+          <td style="text-align: right; font-size: 12px;">Ksh ${total.toLocaleString()}</td>
+          <td style="text-align: right; font-size: 12px; color: #16a34a; font-weight: 500;">Ksh ${paid.toLocaleString()}</td>
+          <td style="text-align: right; font-size: 12px; ${balStyle}">${balText}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const html = `
+      <html>
+        <head>
+          <title>${titleText}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 40px; 
+              color: #1e293b; 
+              line-height: 1.5; 
+              background-color: #ffffff;
+            }
+            .report-container { 
+              max-width: 900px; 
+              margin: 0 auto; 
+            }
+            .header-flex {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
+            }
+            .school-info h1 {
+              font-size: 24px;
+              font-weight: 800;
+              color: #1e3a8a;
+              margin: 0;
+            }
+            .school-info p {
+              font-size: 10px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              margin: 4px 0 0 0;
+            }
+            .doc-title {
+              text-align: right;
+            }
+            .doc-title h2 {
+              font-size: 18px;
+              font-weight: 800;
+              color: #0f172a;
+              margin: 0;
+              text-transform: uppercase;
+            }
+            .doc-title p {
+              font-size: 12px;
+              color: #64748b;
+              margin: 4px 0 0 0;
+            }
+            .metrics-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 12px;
+              margin-bottom: 30px;
+            }
+            .metric-card {
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 12px;
+              background-color: #f8fafc;
+            }
+            .metric-label {
+              font-size: 9px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #64748b;
+              margin-bottom: 4px;
+            }
+            .metric-value {
+              font-size: 16px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .balances-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .balances-table th {
+              background-color: #f1f5f9;
+              padding: 10px 12px;
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              border-bottom: 2px solid #e2e8f0;
+              text-align: left;
+            }
+            .balances-table td {
+              padding: 10px 12px;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 12px;
+            }
+            .balances-table tr:hover {
+              background-color: #f8fafc;
+            }
+            .stamp-section {
+              margin-top: 40px;
+              border-top: 1px dashed #e2e8f0;
+              padding-top: 24px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              position: relative;
+            }
+            .stamp-container { 
+              position: absolute; 
+              right: 20px;
+              bottom: 10px;
+              opacity: 0.85; 
+            }
+            .stamp { width: 95px; height: 95px; object-fit: contain; transform: rotate(-5deg); }
+            .report-footer {
+              text-align: center;
+              font-size: 10px;
+              color: #94a3b8;
+              margin-top: 50px;
+            }
+            @media print {
+              body { padding: 10px; }
+              .no-print { display: none; }
+              .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="report-container">
+            <div class="header-flex">
+              <div class="school-info">
+                ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 50px; width: auto; margin-bottom: 6px;" />` : ''}
+                <h1>${settings?.appTitle || 'BITC School'}</h1>
+                <p>Official School Audit / Financial Office</p>
+              </div>
+              <div class="doc-title">
+                <h2>${titleText}</h2>
+                <p>Generated on ${format(new Date(), 'MMMM dd, yyyy')}</p>
+              </div>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Invoiced Tuition</div>
+                <div class="metric-value">Ksh ${totalInvoiced.toLocaleString()}</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label" style="color: #10b981;">Total Collected</div>
+                <div class="metric-value" style="color: #047857;">Ksh ${totalPaid.toLocaleString()}</div>
+              </div>
+              <div class="metric-card" style="border-left: 3px solid #f43f5e;">
+                <div class="metric-label" style="color: #f43f5e;">Total Outstanding</div>
+                <div class="metric-value" style="color: #be123c;">Ksh ${totalOutstanding.toLocaleString()}</div>
+              </div>
+              <div class="metric-card" style="border-left: 3px solid #10b981;">
+                <div class="metric-label" style="color: #059669;">Prepaid Credits</div>
+                <div class="metric-value" style="color: #047857;">Ksh ${totalCredits.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: #334155; text-transform: uppercase; border-left: 3px solid #1e3a8a; padding-left: 8px;">Students Ledger Summary</h3>
+            <table class="balances-table">
+              <thead>
+                <tr>
+                  <th width="30%">Student</th>
+                  <th width="15%">Admission No.</th>
+                  <th width="20%">Class</th>
+                  <th width="12%" style="text-align: right;">Total Fee</th>
+                  <th width="12%" style="text-align: right;">Total Paid</th>
+                  <th width="11%" style="text-align: right;">Net Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+                ${studentsToPrint.length === 0 ? `
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">
+                      No student records found matching the current query.
+                    </td>
+                  </tr>
+                ` : ''}
+              </tbody>
+            </table>
+
+            <div class="stamp-section">
+              <div>
+                <p style="font-size: 11px; margin: 0; font-weight: 600; color: #475569;">Finance Office Authorized Signoff</p>
+                <div style="border-bottom: 1px dashed #cbd5e1; width: 220px; height: 35px;"></div>
+                <p style="font-size: 10px; margin-top: 4px; color: #94a3b8;">Printed: ${format(new Date(), 'yyyy-MM-dd HH:mm')}</p>
+              </div>
+
+              <div class="stamp-container">
+                ${settings?.stampUrl 
+                  ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" />` 
+                  : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" />`
+                }
+              </div>
+            </div>
+
+            <div class="report-footer">
+              <p>Breakthrough International Smart Finance Ledger Tool • Automated Print Spooler</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handlePrintReceipt = (student: User, payment: { amount: number, date: string, description: string }, balance: { total: number, paid: number, remaining: number }) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -1803,8 +2082,8 @@ export const Fees: React.FC = () => {
 
           {activeTab === 'individual' && (
             <>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
+              <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
+                <div className="relative flex-1 w-full">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
                   <input
                     type="text"
@@ -1814,38 +2093,48 @@ export const Fees: React.FC = () => {
                     className="w-full pl-10 pr-4 py-2 bg-bg-card border border-white/5 rounded-xl focus:ring-2 focus:ring-primary outline-none text-text-primary"
                   />
                 </div>
-                <div className="flex bg-[#111] p-1 rounded-xl border border-white/5 self-start sm:self-auto gap-1">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center w-full lg:w-auto">
+                  <div className="flex bg-[#111] p-1 rounded-xl border border-white/5 gap-1">
+                    <button
+                      onClick={() => setBalanceFilter('all')}
+                      className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                        balanceFilter === 'all'
+                          ? 'bg-white/15 text-white shadow-sm border border-white/10'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setBalanceFilter('outstanding')}
+                      className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        balanceFilter === 'outstanding'
+                          ? 'bg-rose-500/10 text-rose-500 shadow-sm border border-rose-500/20'
+                          : 'text-gray-400 hover:text-rose-400'
+                      }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      Outstanding
+                    </button>
+                    <button
+                      onClick={() => setBalanceFilter('overpaid')}
+                      className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        balanceFilter === 'overpaid'
+                          ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
+                          : 'text-gray-400 hover:text-emerald-400'
+                      }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      Credit / Prepaid
+                    </button>
+                  </div>
                   <button
-                    onClick={() => setBalanceFilter('all')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                      balanceFilter === 'all'
-                        ? 'bg-white/15 text-white shadow-sm border border-white/10'
-                        : 'text-gray-400 hover:text-gray-200'
-                    }`}
+                    onClick={() => handlePrintOutstandingBalances(filteredStudents, balanceFilter)}
+                    className="flex items-center justify-center gap-2 bg-primary text-white hover:bg-opacity-90 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/10 transition-all hover:shadow-primary/20 hover:shadow-md active:scale-95"
+                    title="Print report for the current filtered list of student balances"
                   >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setBalanceFilter('outstanding')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                      balanceFilter === 'outstanding'
-                        ? 'bg-rose-500/10 text-rose-500 shadow-sm border border-rose-500/20'
-                        : 'text-gray-400 hover:text-rose-400'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                    Outstanding
-                  </button>
-                  <button
-                    onClick={() => setBalanceFilter('overpaid')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                      balanceFilter === 'overpaid'
-                        ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
-                        : 'text-gray-400 hover:text-emerald-400'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    Credit / Prepaid
+                    <Printer size={16} />
+                    <span>Print balances</span>
                   </button>
                 </div>
               </div>
