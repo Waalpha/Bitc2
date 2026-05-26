@@ -611,16 +611,33 @@ export const Classes: React.FC = () => {
                           addToast("Geolocation is not supported by your browser.", "error");
                           return;
                         }
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setNewLatitude(pos.coords.latitude.toFixed(6));
-                            setNewLongitude(pos.coords.longitude.toFixed(6));
-                            addToast("Current GPS location filled successfully!");
-                          },
-                          (err) => {
-                            addToast(err.message || "Failed to fetch GPS coordinates automatically.", "error");
-                          }
-                        );
+                        addToast("Acquiring GPS location coordinates...", "success");
+                        const tryGetGps = (highAccuracy: boolean) => {
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              setNewLatitude(pos.coords.latitude.toFixed(6));
+                              setNewLongitude(pos.coords.longitude.toFixed(6));
+                              addToast("Current GPS location filled successfully!");
+                            },
+                            (err) => {
+                              if (highAccuracy && (err.code === 3 || err.code === 2)) {
+                                addToast("Precision GPS timed out. Trying standard localization fallback...", "success");
+                                tryGetGps(false);
+                              } else {
+                                const errMsg = err.code === 3 
+                                  ? "GPS query timed out. Please verify location settings are active." 
+                                  : err.message || "Failed to fetch GPS coordinates automatically.";
+                                addToast(errMsg, "error");
+                              }
+                            },
+                            { 
+                              enableHighAccuracy: highAccuracy, 
+                              timeout: highAccuracy ? 8000 : 25000, 
+                              maximumAge: highAccuracy ? 0 : 60000 
+                            }
+                          );
+                        };
+                        tryGetGps(true);
                       }}
                       className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
                     >
@@ -776,16 +793,33 @@ export const Classes: React.FC = () => {
                           addToast("Geolocation is not supported by your browser.", "error");
                           return;
                         }
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setEditLatitude(pos.coords.latitude.toFixed(6));
-                            setEditLongitude(pos.coords.longitude.toFixed(6));
-                            addToast("Current GPS location filled successfully!");
-                          },
-                          (err) => {
-                            addToast(err.message || "Failed to fetch GPS coordinates automatically.", "error");
-                          }
-                        );
+                        addToast("Acquiring GPS location coordinates...", "success");
+                        const tryGetGps = (highAccuracy: boolean) => {
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              setEditLatitude(pos.coords.latitude.toFixed(6));
+                              setEditLongitude(pos.coords.longitude.toFixed(6));
+                              addToast("Current GPS location filled successfully!");
+                            },
+                            (err) => {
+                              if (highAccuracy && (err.code === 3 || err.code === 2)) {
+                                addToast("Precision GPS timed out. Trying standard localization fallback...", "success");
+                                tryGetGps(false);
+                              } else {
+                                const errMsg = err.code === 3 
+                                  ? "GPS query timed out. Please verify location settings are active." 
+                                  : err.message || "Failed to fetch GPS coordinates automatically.";
+                                addToast(errMsg, "error");
+                              }
+                            },
+                            { 
+                              enableHighAccuracy: highAccuracy, 
+                              timeout: highAccuracy ? 8000 : 25000, 
+                              maximumAge: highAccuracy ? 0 : 60000 
+                            }
+                          );
+                        };
+                        tryGetGps(true);
                       }}
                       className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
                     >
