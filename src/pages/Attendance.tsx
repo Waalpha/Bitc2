@@ -309,100 +309,119 @@ void loop() {
     setIsGpsVerifying(true);
     addToast("Polled request: Checking location coordinates...", "success");
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const studentLat = position.coords.latitude;
-          const studentLon = position.coords.longitude;
-          const targetLat = targetClass.latitude!;
-          const targetLon = targetClass.longitude!;
-          const allowedRadius = targetClass.radius || 100;
+    const onGpsSuccess = async (position: GeolocationPosition) => {
+      try {
+        const studentLat = position.coords.latitude;
+        const studentLon = position.coords.longitude;
+        const targetLat = targetClass.latitude!;
+        const targetLon = targetClass.longitude!;
+        const allowedRadius = targetClass.radius || 100;
 
-          const distance = getDistanceInMeters(studentLat, studentLon, targetLat, targetLon);
+        const distance = getDistanceInMeters(studentLat, studentLon, targetLat, targetLon);
 
-          if (distance > allowedRadius) {
-            addToast(`Location error: You are ${Math.round(distance)}m from class (Required: < ${allowedRadius}m).`, "error");
-            setIsGpsVerifying(false);
-            return;
-          }
+        if (distance > allowedRadius) {
+          addToast(`Location error: You are ${Math.round(distance)}m from class (Required: < ${allowedRadius}m).`, "error");
+          setIsGpsVerifying(false);
+          return;
+        }
 
-          // Fee check first
-          if (actionType === 'checkIn') {
-            const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', user.uid));
-            const feeSnap = await getDocs(feeQuery);
-            if (!feeSnap.empty) {
-              const feeData = feeSnap.docs[0].data();
-              if (feeData.balance > 0) {
-                addToast(`Access Denied: You have unpaid fees (Balance: Kes ${feeData.balance}).`, "error");
-                setIsGpsVerifying(false);
-                return;
-              }
+        // Fee check first
+        if (actionType === 'checkIn') {
+          const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', user.uid));
+          const feeSnap = await getDocs(feeQuery);
+          if (!feeSnap.empty) {
+            const feeData = feeSnap.docs[0].data();
+            if (feeData.balance > 0) {
+              addToast(`Access Denied: You have unpaid fees (Balance: Kes ${feeData.balance}).`, "error");
+              setIsGpsVerifying(false);
+              return;
             }
           }
+        }
 
-          // Proceed with marking attendance
-          const dateStr = format(new Date(), 'yyyy-MM-dd');
-          const timeStr = format(new Date(), 'HH:mm:ss');
+        // Proceed with marking attendance
+        const dateStr = format(new Date(), 'yyyy-MM-dd');
+        const timeStr = format(new Date(), 'HH:mm:ss');
 
-          const q = query(
-            collection(db, 'attendance'),
-            where('date', '==', dateStr),
-            where('classId', '==', targetClassId)
-          );
+        const q = query(
+          collection(db, 'attendance'),
+          where('date', '==', dateStr),
+          where('classId', '==', targetClassId)
+        );
 
-          const snapshot = await getDocs(q);
-          const logEntry = {
-            time: timeStr,
-            method: 'gps' as const
+        const snapshot = await getDocs(q);
+        const logEntry = {
+          time: timeStr,
+          method: 'gps' as const
+        };
+
+        if (!snapshot.empty) {
+          const todayRecord = snapshot.docs[0];
+          const data = todayRecord.data() as AttendanceRecord;
+          const updatedRecords = actionType === 'checkIn' 
+            ? { ...data.records, [user.uid]: 'present' as const } 
+            : data.records;
+
+          const existingLogs = data.biometricLogs?.[user.uid] || {};
+          const updatedLogs = {
+            ...data.biometricLogs,
+            [user.uid]: {
+              ...existingLogs,
+              [actionType]: logEntry
+            }
           };
 
-          if (!snapshot.empty) {
-            const todayRecord = snapshot.docs[0];
-            const data = todayRecord.data() as AttendanceRecord;
-            const updatedRecords = actionType === 'checkIn' 
-              ? { ...data.records, [user.uid]: 'present' as const } 
-              : data.records;
-
-            const existingLogs = data.biometricLogs?.[user.uid] || {};
-            const updatedLogs = {
-              ...data.biometricLogs,
+          await updateDoc(doc(db, 'attendance', todayRecord.id), {
+            records: updatedRecords,
+            biometricLogs: updatedLogs
+          });
+        } else {
+          await addDoc(collection(db, 'attendance'), {
+            classId: targetClassId,
+            date: dateStr,
+            records: { [user.uid]: actionType === 'checkIn' ? 'present' : 'absent' },
+            biometricLogs: {
               [user.uid]: {
-                ...existingLogs,
                 [actionType]: logEntry
               }
-            };
-
-            await updateDoc(doc(db, 'attendance', todayRecord.id), {
-              records: updatedRecords,
-              biometricLogs: updatedLogs
-            });
-          } else {
-            await addDoc(collection(db, 'attendance'), {
-              classId: targetClassId,
-              date: dateStr,
-              records: { [user.uid]: actionType === 'checkIn' ? 'present' : 'absent' },
-              biometricLogs: {
-                [user.uid]: {
-                  [actionType]: logEntry
-                }
-              }
-            });
-          }
-
-          addToast(`GPS check-in verified successfully for ${targetClass.name}!`, "success");
-        } catch (error: any) {
-          console.error("GPS check-in error:", error);
-          addToast(error.message || "Failed to mark GPS attendance.", "error");
-        } finally {
-          setIsGpsVerifying(false);
+            }
+          });
         }
-      },
-      (geoError) => {
+
+        addToast(`GPS check-in verified successfully for ${targetClass.name}!`, "success");
+      } catch (error: any) {
+        console.error("GPS check-in error:", error);
+        addToast(error.message || "Failed to mark GPS attendance.", "error");
+      } finally {
         setIsGpsVerifying(false);
-        addToast(geoError.message || "Unable to acquire current location. Please grant GPS permissions.", "error");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+      }
+    };
+
+    const tryGps = (highAccuracy: boolean) => {
+      navigator.geolocation.getCurrentPosition(
+        onGpsSuccess,
+        (geoError) => {
+          if (highAccuracy && (geoError.code === 3 || geoError.code === 2)) {
+            // If high accuracy times out or is temporarily unavailable, attempt low accuracy instantly with durable settings
+            addToast("Precision GPS timed out. Trying standard localization fallback...", "success");
+            tryGps(false);
+          } else {
+            setIsGpsVerifying(false);
+            const errMsg = geoError.code === 3 
+              ? "GPS request timed out. Please ensure you are outdoors or next to a window and try again."
+              : geoError.message || "Unable to acquire current location. Please grant GPS permissions.";
+            addToast(errMsg, "error");
+          }
+        },
+        { 
+          enableHighAccuracy: highAccuracy, 
+          timeout: highAccuracy ? 8000 : 25000, 
+          maximumAge: highAccuracy ? 0 : 60000 
+        }
+      );
+    };
+
+    tryGps(true);
   };
 
   // Fetch classes based on role
