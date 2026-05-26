@@ -580,7 +580,8 @@ export const Students: React.FC = () => {
         guardianName: editingStudent.guardianName || '',
         guardianPhone: editingStudent.guardianPhone || '',
         year: editingStudent.year || '1',
-        course: editingStudent.course || ''
+        course: editingStudent.course || '',
+        earlyCheckoutAllowed: editingStudent.earlyCheckoutAllowed || false
       });
       setEditingStudent(null);
       addToast("Student profile updated successfully!");
@@ -1283,6 +1284,22 @@ export const Students: React.FC = () => {
                       >
                         <option value="active">🟢 Active Student</option>
                         <option value="disabled">🔴 Disabled / Deactivated</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Early Check-Out Permission</label>
+                      <select
+                        value={editingStudent.earlyCheckoutAllowed ? 'allowed' : 'restricted'}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, earlyCheckoutAllowed: e.target.value === 'allowed' })}
+                        className={`w-full px-5 py-3 border rounded-2xl focus:ring-4 outline-none transition-all text-sm font-bold ${
+                          editingStudent.earlyCheckoutAllowed
+                            ? 'bg-purple-50 border-purple-200 text-purple-700 focus:ring-purple-100 focus:border-purple-500'
+                            : 'bg-amber-50 border-amber-200 text-amber-700 focus:ring-amber-100 focus:border-amber-500'
+                        }`}
+                      >
+                        <option value="restricted">🚫 Locked (Pre-4PM restricted)</option>
+                        <option value="allowed">✅ Allowed (Can early checkout)</option>
                       </select>
                     </div>
 
