@@ -28,6 +28,7 @@ export interface User {
   category?: string;
   fcmTokens?: string[];
   lastActive?: string;
+  earlyCheckoutAllowed?: boolean;
   year?: string;
   specialization?: string;
   residence?: string;
@@ -94,6 +95,9 @@ export interface Class {
   unitIds?: string[]; // Renamed from units
   startTime?: string; // HH:mm
   endTime?: string;   // HH:mm
+  latitude?: number;
+  longitude?: number;
+  radius?: number; // Geofence Radius in meters
 }
 
 export interface Unit {
@@ -152,9 +156,9 @@ export interface AttendanceRecord {
   records: { [studentId: string]: 'present' | 'absent' | 'late' | 'excused' };
   biometricLogs?: { 
     [studentId: string]: { 
-      checkIn?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string };
-      checkOut?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string };
-      leaveOut?: { time: string; method: 'qr' | 'biometric'; supervisorId?: string; reason?: string };
+      checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
+      checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
+      leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string; reason?: string };
     } 
   };
 }
@@ -180,7 +184,7 @@ export interface AppNotification {
   userId: string;
   title: string;
   message: string;
-  type: 'exam' | 'grade' | 'announcement' | 'deadline' | 'fee' | 'broadcast' | 'chat';
+  type: 'exam' | 'grade' | 'announcement' | 'deadline' | 'fee' | 'broadcast' | 'chat' | 'attendance';
   read: boolean;
   createdAt: string;
   senderId?: string;
