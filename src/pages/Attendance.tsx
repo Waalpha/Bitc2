@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, addDoc, doc, updateDoc, getDocs, orderBy, limit, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, AttendanceRecord, User, SchoolCalendar } from '../types';
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi } from 'lucide-react';
+import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin } from 'lucide-react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -255,6 +255,155 @@ void loop() {
   const isTeacher = userData?.role === 'teacher';
   const isAdmin = userData?.role === 'admin';
   const isStudent = userData?.role === 'student';
+
+  const [isGpsVerifying, setIsGpsVerifying] = useState(false);
+  const [gpsSelectedClassId, setGpsSelectedClassId] = useState('');
+
+  // Haversine formula to compute distance in meters
+  const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000; // Earth radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const handleGpsCheckInOnClient = async (actionType: 'checkIn' | 'checkOut' = 'checkIn') => {
+    if (!user || !userData) {
+      addToast("User not authenticated.", "error");
+      return;
+    }
+
+    if (actionType === 'checkOut') {
+      const now = new Date();
+      if (now.getHours() < 16) {
+        if (!userData.earlyCheckoutAllowed) {
+          addToast("Access Denied: Checked out prior to 4:00 PM is restricted unless with admin permission.", "error");
+          return;
+        }
+      }
+    }
+    
+    const targetClassId = gpsSelectedClassId || (userData.classIds && userData.classIds[0]);
+    if (!targetClassId) {
+      addToast("No assigned class selected to check in.", "error");
+      return;
+    }
+
+    const targetClass = classes.find(c => c.id === targetClassId);
+    if (!targetClass) {
+      addToast("Selected class details could not be found.", "error");
+      return;
+    }
+
+    if (targetClass.latitude === undefined || targetClass.latitude === null ||
+        targetClass.longitude === undefined || targetClass.longitude === null) {
+      addToast("GPS Geofencing is not configured/enabled for this class.", "error");
+      return;
+    }
+
+    setIsGpsVerifying(true);
+    addToast("Polled request: Checking location coordinates...", "success");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const studentLat = position.coords.latitude;
+          const studentLon = position.coords.longitude;
+          const targetLat = targetClass.latitude!;
+          const targetLon = targetClass.longitude!;
+          const allowedRadius = targetClass.radius || 100;
+
+          const distance = getDistanceInMeters(studentLat, studentLon, targetLat, targetLon);
+
+          if (distance > allowedRadius) {
+            addToast(`Location error: You are ${Math.round(distance)}m from class (Required: < ${allowedRadius}m).`, "error");
+            setIsGpsVerifying(false);
+            return;
+          }
+
+          // Fee check first
+          if (actionType === 'checkIn') {
+            const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', user.uid));
+            const feeSnap = await getDocs(feeQuery);
+            if (!feeSnap.empty) {
+              const feeData = feeSnap.docs[0].data();
+              if (feeData.balance > 0) {
+                addToast(`Access Denied: You have unpaid fees (Balance: Kes ${feeData.balance}).`, "error");
+                setIsGpsVerifying(false);
+                return;
+              }
+            }
+          }
+
+          // Proceed with marking attendance
+          const dateStr = format(new Date(), 'yyyy-MM-dd');
+          const timeStr = format(new Date(), 'HH:mm:ss');
+
+          const q = query(
+            collection(db, 'attendance'),
+            where('date', '==', dateStr),
+            where('classId', '==', targetClassId)
+          );
+
+          const snapshot = await getDocs(q);
+          const logEntry = {
+            time: timeStr,
+            method: 'gps' as const
+          };
+
+          if (!snapshot.empty) {
+            const todayRecord = snapshot.docs[0];
+            const data = todayRecord.data() as AttendanceRecord;
+            const updatedRecords = actionType === 'checkIn' 
+              ? { ...data.records, [user.uid]: 'present' as const } 
+              : data.records;
+
+            const existingLogs = data.biometricLogs?.[user.uid] || {};
+            const updatedLogs = {
+              ...data.biometricLogs,
+              [user.uid]: {
+                ...existingLogs,
+                [actionType]: logEntry
+              }
+            };
+
+            await updateDoc(doc(db, 'attendance', todayRecord.id), {
+              records: updatedRecords,
+              biometricLogs: updatedLogs
+            });
+          } else {
+            await addDoc(collection(db, 'attendance'), {
+              classId: targetClassId,
+              date: dateStr,
+              records: { [user.uid]: actionType === 'checkIn' ? 'present' : 'absent' },
+              biometricLogs: {
+                [user.uid]: {
+                  [actionType]: logEntry
+                }
+              }
+            });
+          }
+
+          addToast(`GPS check-in verified successfully for ${targetClass.name}!`, "success");
+        } catch (error: any) {
+          console.error("GPS check-in error:", error);
+          addToast(error.message || "Failed to mark GPS attendance.", "error");
+        } finally {
+          setIsGpsVerifying(false);
+        }
+      },
+      (geoError) => {
+        setIsGpsVerifying(false);
+        addToast(geoError.message || "Unable to acquire current location. Please grant GPS permissions.", "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Fetch classes based on role
   useEffect(() => {
@@ -695,6 +844,18 @@ void loop() {
       
       const studentData = students.find(s => s.uid === uid) || (isStudent ? userData : null);
       if (!studentData) return;
+
+      // Restrict Early Checkout to pre-4:00 PM unless with admin permission (supervisor-led or flag earlyCheckoutAllowed is true)
+      if (action === 'checkOut' || action === 'leaveOut') {
+        const now = new Date();
+        if (now.getHours() < 16) {
+          const isSupervisorLed = isAdmin || isTeacher;
+          if (!isSupervisorLed && !studentData.earlyCheckoutAllowed) {
+            addToast(`Access Denied: Checked out prior to 4:00 PM is restricted for ${studentData.name} unless permitted by administrator.`, "error");
+            return null;
+          }
+        }
+      }
 
       // Fee Check for Check-In
       if (action === 'checkIn') {
@@ -2148,6 +2309,84 @@ void loop() {
                     <p className="text-slate-500 text-[10px] font-medium">Click to expand</p>
                  </div>
                </div>
+            </div>
+          </div>
+
+          {/* GPS Location Self Attendance Check-In */}
+          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+            <h3 className="font-bold text-gray-900 uppercase tracking-tight text-xs flex items-center gap-2">
+               <MapPin size={15} className="text-purple-600 animate-pulse" /> GPS Location Check-In
+            </h3>
+            
+            <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+              Verify your physical workspace location inside the class geofence limits to mark yourself present immediately.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5">Select Enrolled Class</label>
+                <select
+                  value={gpsSelectedClassId}
+                  onChange={(e) => setGpsSelectedClassId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 text-slate-800 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:ring-2 focus:ring-purple-500 transition-all font-sans"
+                >
+                  <option value="">-- Choose one of your classes --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.latitude ? ' (GPS enabled)' : ' (GPS disabled)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {gpsSelectedClassId && (() => {
+                const currentCls = classes.find(c => c.id === gpsSelectedClassId);
+                if (!currentCls) return null;
+                const hasGps = currentCls.latitude !== undefined && currentCls.latitude !== null;
+                return (
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-3xl space-y-2">
+                    <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${hasGps ? 'bg-purple-600 animate-pulse' : 'bg-rose-500'}`}></span>
+                      Geofence Status
+                    </p>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {hasGps 
+                        ? `Configured to: ${currentCls.latitude?.toFixed(4)}, ${currentCls.longitude?.toFixed(4)}` 
+                        : 'No geofence coordinates specified for this class.'}
+                    </p>
+                    {hasGps && (
+                      <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider bg-purple-50 px-2 py-0.5 rounded border border-purple-100 inline-block">
+                        Radius: {currentCls.radius || 100} meters
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isGpsVerifying || !gpsSelectedClassId || !classes.find(c => c.id === gpsSelectedClassId)?.latitude}
+                  onClick={() => handleGpsCheckInOnClient('checkIn')}
+                  className="flex-1 py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent transition-all rounded-2xl text-xs font-extrabold text-white uppercase tracking-wider text-center shadow-lg shadow-purple-100 disabled:shadow-none min-h-[50px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {isGpsVerifying ? (
+                    <span className="flex items-center gap-1">Checking...</span>
+                  ) : (
+                    <span>Check In</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isGpsVerifying || !gpsSelectedClassId || !classes.find(c => c.id === gpsSelectedClassId)?.latitude}
+                  onClick={() => handleGpsCheckInOnClient('checkOut')}
+                  className="flex-1 py-4 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 disabled:bg-slate-50 disabled:text-slate-300 disabled:border-slate-100 transition-all rounded-2xl text-xs font-extrabold uppercase tracking-wider text-center min-h-[50px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Check Out
+                </button>
+              </div>
             </div>
           </div>
 
