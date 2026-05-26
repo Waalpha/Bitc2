@@ -108,6 +108,45 @@ async function startServer() {
     });
   });
 
+  // API Route to resolve admission number to email address for unified login
+  apiRouter.post("/auth/lookup-email", async (req, res) => {
+    const { admissionNumber } = req.body;
+    if (!admissionNumber || typeof admissionNumber !== 'string') {
+      return res.status(400).json({ error: "Admission number or email address is required" });
+    }
+
+    const trimmed = admissionNumber.trim();
+    if (!db) {
+      return res.status(500).json({ error: "Database not initialized. Please try again later." });
+    }
+
+    try {
+      const usersRef = db.collection('users');
+      
+      // Match exactly as specified
+      let querySnapshot = await usersRef.where('admissionNumber', '==', trimmed).limit(1).get();
+      
+      // If not found, try uppercase match (for case insensitivity)
+      if (querySnapshot.empty) {
+        querySnapshot = await usersRef.where('admissionNumber', '==', trimmed.toUpperCase()).limit(1).get();
+      }
+
+      if (querySnapshot.empty) {
+        return res.status(404).json({ error: `No registered account found for Admission Number/Staff ID "${trimmed}"` });
+      }
+
+      const matchedUser = querySnapshot.docs[0].data();
+      if (!matchedUser.email) {
+        return res.status(400).json({ error: "The profile registered with this admission number does not have an associated email address." });
+      }
+
+      res.json({ email: matchedUser.email });
+    } catch (error: any) {
+      console.error("[AUTH_LOOKUP_EMAIL] Error looking up email:", error);
+      res.status(500).json({ error: "Internal server error resolving admission number." });
+    }
+  });
+
   // Cloudinary Config - Return 200 even if not configured, just with enabled: false
   apiRouter.get("/cloudinary-config", (req, res) => {
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
@@ -237,6 +276,230 @@ async function startServer() {
     }
     await sendPushNotification(userId, title, body, link);
     res.json({ success: true });
+  });
+
+  // --- NODEMCU COMPATIBILITY ENDPOINTS ---
+  
+  // Mark Attendance via NodeMCU (RFID/Fingerprint Scanner)
+  apiRouter.post("/nodemcu/attendance", async (req, res) => {
+    if (!db) {
+      return res.status(500).json({ error: "Database not initialized" });
+    }
+
+    const rawId = req.body.biometricId || req.query.biometricId || 
+                  req.body.hardwareId || req.query.hardwareId || 
+                  req.body.uid || req.query.uid || 
+                  req.body.cardId || req.query.cardId;
+
+    const action = req.body.action || req.query.action || 'checkIn';
+    const classIdFromReq = req.body.classId || req.query.classId;
+    const formatParam = req.body.format || req.query.format;
+    const isTextResponse = formatParam === 'text';
+
+    if (!rawId) {
+      const msg = "Missing identifier (biometricId, hardwareId, uid or cardId)";
+      if (isTextResponse) return res.status(400).send(`SEC_DENIED:SYSTEM:${msg}`);
+      return res.status(400).json({ success: false, error: msg });
+    }
+
+    try {
+      const trimmed = String(rawId).trim();
+      const usersRef = db.collection('users');
+      let studentSnap = await usersRef.where('biometricId', '==', trimmed).limit(1).get();
+
+      if (studentSnap.empty) {
+        studentSnap = await usersRef.where('biometricId', '==', `HW-${trimmed}`).limit(1).get();
+      }
+      if (studentSnap.empty) {
+        studentSnap = await usersRef.where('biometricId', '==', `HW-${trimmed.toUpperCase()}`).limit(1).get();
+      }
+      if (studentSnap.empty) {
+        studentSnap = await usersRef.where('biometricId', '==', trimmed.toUpperCase()).limit(1).get();
+      }
+      if (studentSnap.empty) {
+        studentSnap = await usersRef.where('admissionNumber', '==', trimmed).limit(1).get();
+      }
+      if (studentSnap.empty) {
+        studentSnap = await usersRef.where('admissionNumber', '==', trimmed.toUpperCase()).limit(1).get();
+      }
+
+      if (studentSnap.empty) {
+        const msg = `Unrecognized device key: "${trimmed}"`;
+        if (isTextResponse) return res.status(404).send(`SEC_DENIED:UNKNOWN:${msg}`);
+        return res.status(404).json({ success: false, error: msg });
+      }
+
+      const studentDoc = studentSnap.docs[0];
+      const studentId = studentDoc.id;
+      const studentData = studentDoc.data();
+
+      // Fee Balance Check (Ksh protection)
+      const feeSnap = await db.collection('fee_balances').where('studentId', '==', studentId).limit(1).get();
+      if (!feeSnap.empty) {
+        const feeData = feeSnap.docs[0].data();
+        if (feeData.balance > 0) {
+          const msg = `Access Denied: Unpaid Balance (Ksh ${feeData.balance})`;
+          if (isTextResponse) {
+            return res.status(403).send(`SEC_DENIED:${studentData.name}:${msg}`);
+          }
+          return res.status(403).json({ success: false, error: msg, student: studentData.name, balance: feeData.balance });
+        }
+      }
+
+      // Determine class ID
+      const targetClassId = classIdFromReq || 
+                            (studentData.classIds && studentData.classIds[0]) || 
+                            studentData.classId;
+
+      if (!targetClassId) {
+        const msg = "Student has no registered class in their profile.";
+        if (isTextResponse) return res.status(400).send(`SEC_DENIED:${studentData.name}:${msg}`);
+        return res.status(400).json({ success: false, error: msg, student: studentData.name });
+      }
+
+      // Format date in Africa/Nairobi offset Timezone for local consistency
+      const nairobiOffsetStr = new Date().toLocaleString("en-US", { timeZone: "Africa/Nairobi" });
+      const nairobiDateObj = new Date(nairobiOffsetStr);
+      const dateStr = nairobiDateObj.getFullYear() + '-' + 
+                      String(nairobiDateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(nairobiDateObj.getDate()).padStart(2, '0');
+      const timeStr = String(nairobiDateObj.getHours()).padStart(2, '0') + ':' + 
+                      String(nairobiDateObj.getMinutes()).padStart(2, '0') + ':' + 
+                      String(nairobiDateObj.getSeconds()).padStart(2, '0');
+
+      const actionType = action === 'checkOut' ? 'checkOut' : action === 'leaveOut' ? 'leaveOut' : 'checkIn';
+
+      const logEntry = {
+        time: timeStr,
+        method: 'biometric',
+        supervisorId: 'nodemcu'
+      };
+
+      const attRef = db.collection('attendance');
+      const q = attRef.where('date', '==', dateStr).where('classId', '==', targetClassId).limit(1);
+      const attQuerySnap = await q.get();
+
+      if (!attQuerySnap.empty) {
+        const todayDoc = attQuerySnap.docs[0];
+        const oldData = todayDoc.data();
+        
+        const updatedRecords = { 
+          ...oldData.records, 
+          [studentId]: actionType === 'checkIn' ? 'present' : (oldData.records?.[studentId] || 'present')
+        };
+        
+        const existingLogs = oldData.biometricLogs?.[studentId] || {};
+        const updatedLogs = {
+          ...oldData.biometricLogs,
+          [studentId]: {
+            ...existingLogs,
+            [actionType]: logEntry
+          }
+        };
+
+        await todayDoc.ref.update({
+          records: updatedRecords,
+          biometricLogs: updatedLogs
+        });
+      } else {
+        await attRef.add({
+          classId: targetClassId,
+          date: dateStr,
+          records: { [studentId]: actionType === 'checkIn' ? 'present' : 'absent' },
+          biometricLogs: {
+            [studentId]: {
+              [actionType]: logEntry
+            }
+          }
+        });
+      }
+
+      // Log notification
+      const logMsg = `${studentData.name} successfully registered ${actionType} at ${timeStr} using NodeMCU scanner.`;
+      await db.collection('notifications').add({
+        userId: studentId,
+        title: `${actionType === 'checkIn' ? 'Entry Granted' : 'Exit Recorded'} via IoT`,
+        message: logMsg,
+        type: 'attendance',
+        read: false,
+        createdAt: new Date().toISOString(),
+        link: '/attendance'
+      });
+
+      if (isTextResponse) {
+        return res.status(200).send(`SEC_GRANTED:${studentData.name}:${actionType}:${timeStr}`);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Attendance recorded successfully",
+        student: studentData.name,
+        admissionNumber: studentData.admissionNumber || 'N/A',
+        action: actionType,
+        time: timeStr,
+        date: dateStr
+      });
+
+    } catch (err: any) {
+      console.error("[NODEMCU_ATTENDANCE_ERROR]", err);
+      const errorMsg = err.message || "Internal database update failure";
+      if (isTextResponse) return res.status(500).send(`SEC_DENIED:SYSTEM:${errorMsg}`);
+      return res.status(500).json({ success: false, error: errorMsg });
+    }
+  });
+
+  // Link Hardware ID via NodeMCU
+  apiRouter.post("/nodemcu/link", async (req, res) => {
+    if (!db) {
+      return res.status(500).json({ error: "Database not initialized" });
+    }
+
+    const studentId = req.body.studentId || req.query.studentId;
+    const hardwareId = req.body.hardwareId || req.query.hardwareId || req.body.uid || req.query.uid;
+    const formatParam = req.body.format || req.query.format;
+    const isTextResponse = formatParam === 'text';
+
+    if (!studentId || !hardwareId) {
+      const msg = "Missing studentId or hardwareId";
+      if (isTextResponse) return res.status(400).send(`LINK_DENIED:${msg}`);
+      return res.status(400).json({ success: false, error: msg });
+    }
+
+    try {
+      const trimmedHardware = String(hardwareId).trim();
+      const usersRef = db.collection('users');
+      
+      // Check if student exists
+      const studentDoc = await usersRef.doc(studentId).get();
+      if (!studentDoc.exists) {
+        const msg = `Student with ID "${studentId}" not found`;
+        if (isTextResponse) return res.status(404).send(`LINK_DENIED:${msg}`);
+        return res.status(404).json({ success: false, error: msg });
+      }
+
+      await usersRef.doc(studentId).update({
+        biometricId: `HW-${trimmedHardware}`,
+        biometricLinkedAt: new Date().toISOString()
+      });
+
+      const studentName = studentDoc.data()?.name || "Student";
+      if (isTextResponse) {
+        return res.status(200).send(`LINK_OK:${studentName}:${trimmedHardware}`);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Biometric linked to hardware successfully",
+        student: studentName,
+        hardwareId: `HW-${trimmedHardware}`
+      });
+
+    } catch (err: any) {
+      console.error("[NODEMCU_LINK_ERROR]", err);
+      const errorMsg = err.message || "Internal database linking failure";
+      if (isTextResponse) return res.status(500).send(`LINK_DENIED:${errorMsg}`);
+      return res.status(500).json({ success: false, error: errorMsg });
+    }
   });
 
   // 5. File Upload Endpoint (Cloudinary with local fallback)
