@@ -369,6 +369,20 @@ async function startServer() {
 
       const actionType = action === 'checkOut' ? 'checkOut' : action === 'leaveOut' ? 'leaveOut' : 'checkIn';
 
+      // Enforce early checkout rule (No checkout prior to 4 PM / 16:00 unless with admin permission flag true on profile)
+      if (actionType === 'checkOut' || actionType === 'leaveOut') {
+        const hour = nairobiDateObj.getHours();
+        if (hour < 16) {
+          if (!studentData.earlyCheckoutAllowed) {
+            const msg = "Early exit restricted prior to 04:00 PM without administrator permission.";
+            if (isTextResponse) {
+              return res.status(403).send(`SEC_DENIED:${studentData.name}:${msg}`);
+            }
+            return res.status(403).json({ success: false, error: msg, student: studentData.name, earlyCheckoutAllowed: false });
+          }
+        }
+      }
+
       const logEntry = {
         time: timeStr,
         method: 'biometric',
