@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, Unit, User, FeeBalance } from '../types';
-import { Plus, Trash2, Users, BookOpen, UserPlus, X, CheckCircle, XCircle, Wallet, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Users, BookOpen, UserPlus, X, CheckCircle, XCircle, Wallet, Edit2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -17,10 +17,16 @@ export const Classes: React.FC = () => {
   const [newClassName, setNewClassName] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
+  const [newLatitude, setNewLatitude] = useState('');
+  const [newLongitude, setNewLongitude] = useState('');
+  const [newRadius, setNewRadius] = useState('100');
   const [editClassName, setEditClassName] = useState('');
   const [editTeacherId, setEditTeacherId] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+  const [editLatitude, setEditLatitude] = useState('');
+  const [editLongitude, setEditLongitude] = useState('');
+  const [editRadius, setEditRadius] = useState('100');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [initialSubjectName, setInitialSubjectName] = useState('');
   const [isAddingClass, setIsAddingClass] = useState(false);
@@ -112,6 +118,9 @@ export const Classes: React.FC = () => {
         teacherId: teacherId,
         startTime: newStartTime || null,
         endTime: newEndTime || null,
+        latitude: newLatitude ? parseFloat(newLatitude) : null,
+        longitude: newLongitude ? parseFloat(newLongitude) : null,
+        radius: newRadius ? parseFloat(newRadius) : 100,
         createdAt: new Date().toISOString()
       });
 
@@ -128,6 +137,9 @@ export const Classes: React.FC = () => {
       setNewClassName('');
       setSelectedTeacherId('');
       setInitialSubjectName('');
+      setNewLatitude('');
+      setNewLongitude('');
+      setNewRadius('100');
       setIsAddingClass(false);
       addToast("Class added successfully!");
     } catch (error) {
@@ -145,7 +157,10 @@ export const Classes: React.FC = () => {
         name: editClassName.trim(),
         teacherId: editTeacherId || editingClass.teacherId,
         startTime: editStartTime || null,
-        endTime: editEndTime || null
+        endTime: editEndTime || null,
+        latitude: editLatitude ? parseFloat(editLatitude) : null,
+        longitude: editLongitude ? parseFloat(editLongitude) : null,
+        radius: editRadius ? parseFloat(editRadius) : 100
       });
       
       if (selectedClass?.id === editingClass.id) {
@@ -154,7 +169,10 @@ export const Classes: React.FC = () => {
           name: editClassName.trim(), 
           teacherId: editTeacherId || editingClass.teacherId,
           startTime: editStartTime || null,
-          endTime: editEndTime || null
+          endTime: editEndTime || null,
+          latitude: editLatitude ? parseFloat(editLatitude) : null,
+          longitude: editLongitude ? parseFloat(editLongitude) : null,
+          radius: editRadius ? parseFloat(editRadius) : 100
         });
       }
 
@@ -283,6 +301,9 @@ export const Classes: React.FC = () => {
                         setEditTeacherId(cls.teacherId);
                         setEditStartTime(cls.startTime || '');
                         setEditEndTime(cls.endTime || '');
+                        setEditLatitude(cls.latitude?.toString() || '');
+                        setEditLongitude(cls.longitude?.toString() || '');
+                        setEditRadius(cls.radius?.toString() || '100');
                         setIsEditingClass(true);
                       }}
                       className="text-gray-400 hover:text-blue-600 transition-colors"
@@ -319,11 +340,23 @@ export const Classes: React.FC = () => {
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">{selectedClass.name}</h2>
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm text-gray-500">Class Management</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded">
+                      Class Room
+                    </span>
                     {selectedClass.startTime && (
                       <span className="text-xs font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                         {selectedClass.startTime} - {selectedClass.endTime}
+                      </span>
+                    )}
+                    {selectedClass.latitude !== undefined && selectedClass.latitude !== null && selectedClass.longitude !== undefined && selectedClass.longitude !== null ? (
+                      <span className="text-xs font-bold uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 flex items-center gap-1">
+                        <MapPin size={12} className="text-purple-600 animate-pulse" />
+                        GPS Geofence: {selectedClass.latitude}, {selectedClass.longitude} ({selectedClass.radius || 100}m)
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                        GPS disabled
                       </span>
                     )}
                   </div>
@@ -564,6 +597,73 @@ export const Classes: React.FC = () => {
                   </div>
                 </div>
 
+                {/* GPS Settings */}
+                <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                      GPS Attendance Geofence
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          addToast("Geolocation is not supported by your browser.", "error");
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setNewLatitude(pos.coords.latitude.toFixed(6));
+                            setNewLongitude(pos.coords.longitude.toFixed(6));
+                            addToast("Current GPS location filled successfully!");
+                          },
+                          (err) => {
+                            addToast(err.message || "Failed to fetch GPS coordinates automatically.", "error");
+                          }
+                        );
+                      }}
+                      className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
+                    >
+                      Autofill GPS
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. -1.2921"
+                        value={newLatitude}
+                        onChange={(e) => setNewLatitude(e.target.value)}
+                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. 36.8219"
+                        value={newLongitude}
+                        onChange={(e) => setNewLongitude(e.target.value)}
+                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Geofence Radius (meters)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 100"
+                      value={newRadius}
+                      onChange={(e) => setNewRadius(e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                    />
+                    <p className="text-[10px] text-gray-400 font-medium mt-1 leading-relaxed">Students must be within this range of coordinates to check in via mobile GPS.</p>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Initial Unit (Optional)</label>
                   <input
@@ -659,6 +759,73 @@ export const Classes: React.FC = () => {
                       onChange={(e) => setEditEndTime(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900"
                     />
+                  </div>
+                </div>
+
+                {/* Edit GPS Settings */}
+                <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                      GPS Attendance Geofence
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          addToast("Geolocation is not supported by your browser.", "error");
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setEditLatitude(pos.coords.latitude.toFixed(6));
+                            setEditLongitude(pos.coords.longitude.toFixed(6));
+                            addToast("Current GPS location filled successfully!");
+                          },
+                          (err) => {
+                            addToast(err.message || "Failed to fetch GPS coordinates automatically.", "error");
+                          }
+                        );
+                      }}
+                      className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
+                    >
+                      Autofill GPS
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. -1.2921"
+                        value={editLatitude}
+                        onChange={(e) => setEditLatitude(e.target.value)}
+                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="e.g. 36.8219"
+                        value={editLongitude}
+                        onChange={(e) => setEditLongitude(e.target.value)}
+                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Geofence Radius (meters)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 100"
+                      value={editRadius}
+                      onChange={(e) => setEditRadius(e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                    />
+                    <p className="text-[10px] text-gray-400 font-medium mt-1 leading-relaxed">Students must be within this range of coordinates to check in via mobile GPS.</p>
                   </div>
                 </div>
 
