@@ -217,40 +217,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     </div>
   );
 
-  const StudentBottomNav = () => (
-    <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
-      <div className="bg-[#1A1F2E]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center justify-around shadow-2xl relative overflow-hidden">
-        {/* Accent light for bottom nav */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-px bg-blue-500/50 shadow-[0_0_20px_blue]" />
-        
-        <Link to="/dashboard" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/dashboard' ? 'text-blue-400' : 'text-gray-500'}`}>
-          <Home size={22} />
-          <span className="text-xs font-bold uppercase tracking-tighter">Home</span>
-        </Link>
-        <Link to="/my-units" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/my-units' ? 'text-blue-400' : 'text-gray-500'}`}>
-          <BookOpen size={20} />
-          <span className="text-xs font-bold uppercase tracking-tighter">Learn</span>
-        </Link>
-        
-        {/* Central Scan/Action Button */}
-        <div className="relative -top-3">
-          <div className="absolute inset-0 bg-blue-600 blur-xl opacity-30 animate-pulse" />
-          <button className="bg-blue-600 text-white p-4 rounded-2xl shadow-xl shadow-blue-600/40 relative z-10 active:scale-95 transition-transform">
-            <Maximize size={24} />
-          </button>
-        </div>
-
-        <Link to="/fees" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/fees' ? 'text-blue-400' : 'text-gray-500'}`}>
-          <Wallet size={20} />
-          <span className="text-xs font-bold uppercase tracking-tighter">Fees</span>
-        </Link>
-        <Link to="/profile" className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${location.pathname === '/profile' ? 'text-blue-400' : 'text-gray-500'}`}>
-          <User size={20} />
-          <span className="text-xs font-bold uppercase tracking-tighter">Me</span>
-        </Link>
-      </div>
-    </div>
-  );
 
   if (isDisabled) {
     return (
@@ -416,10 +382,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </aside>
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10 scroll-smooth pb-32 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10 scroll-smooth pb-12 lg:pb-0">
         {/* Top Navbar */}
-        {!(isStudent && isDashboard) && (
-          <header className={`h-20 ${isStudent ? 'bg-[#0B1221]/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
+        <header className={`h-20 ${isStudent ? 'bg-[#0B1221]/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
             <div className="flex items-center gap-4 flex-1">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -492,7 +457,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </div>
             </div>
           </header>
-        )}
 
         {/* Page Content */}
         <main className={`p-6 sm:p-10 max-w-[1700px] w-full mx-auto relative min-h-full ${isStudent ? 'text-white' : ''}`}>
@@ -521,7 +485,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </footer>
         </main>
 
-        {isStudent && <StudentBottomNav />}
+
         <Toast messages={toasts} onRemove={removeToast} />
       </div>
 
