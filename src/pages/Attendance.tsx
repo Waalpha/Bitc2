@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, addDoc, doc, updateDoc, getDocs, orderBy, limit, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, AttendanceRecord, User, SchoolCalendar } from '../types';
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon } from 'lucide-react';
+import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi } from 'lucide-react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -45,6 +45,131 @@ export const Attendance: React.FC = () => {
   } | null>(null);
   const [scannerError, setScannerError] = useState(false);
   const [selectedStudentForBio, setSelectedStudentForBio] = useState<string | null>(null);
+  const [showNodeMcuPortal, setShowNodeMcuPortal] = useState(false);
+  const [nodeMcuTab, setNodeMcuTab] = useState<'overview' | 'arduino' | 'wiring' | 'api'>('overview');
+
+  const arduinoCodeString = useMemo(() => {
+    const origin = window.location.origin;
+    return `#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+// PIN Configurations for RFID RC522 to NodeMCU
+#define RST_PIN  D3  // Reset pin
+#define SS_PIN   D4  // Chip select / SDA pin
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+// Wi-Fi Config
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// Server Endpoint (Dynamically populated from current host)
+const char* serverUrl = "${origin}/api/nodemcu/attendance?format=text";
+
+// Indicator Pins (LED, Buzzer)
+const int GREEN_LED = D1;
+const int RED_LED = D2;
+const int BUZZER = D8;
+
+void setup() {
+  Serial.begin(115200);
+  SPI.begin();
+  mfrc522.PCD_Init();
+  
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  
+  // Power-on signal
+  digitalWrite(GREEN_LED, HIGH);
+  delay(200);
+  digitalWrite(GREEN_LED, LOW);
+  
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\\nConnected to WiFi!");
+  
+  // Quick beep to confirm setup complete
+  tone(BUZZER, 2000, 100);
+}
+
+void loop() {
+  // Look for new cards
+  if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
+    delay(50);
+    return;
+  }
+  
+  // Extract Card UID
+  String cardUID = "";
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    cardUID += String(mfrc522.uid.uidByte[i] < 0x10 ? "0" : "");
+    cardUID += String(mfrc522.uid.uidByte[i], HEX);
+  }
+  cardUID.toUpperCase();
+  Serial.println("Card Scanned: " + cardUID);
+  
+  // Sound buzzer on scan
+  tone(BUZZER, 1500, 80);
+  
+  // Send attendance check
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure(); // Allow HTTPs connect without loading root certificates
+    
+    HTTPClient http;
+    // URL format: serverUrl + "&uid=" + cardUID + "&action=checkIn"
+    String finalUrl = String(serverUrl) + "&uid=" + cardUID + "&action=checkIn";
+    
+    http.begin(client, finalUrl);
+    http.addHeader("Content-Type", "application/json");
+    
+    // Send empty POST body (as endpoint handles check-in)
+    int httpResponseCode = http.POST("{}");
+    
+    if (httpResponseCode > 0) {
+      String payload = http.getString();
+      Serial.println("HTTP Response code: " + String(httpResponseCode));
+      Serial.println("Payload: " + payload);
+      
+      if (payload.indexOf("SEC_GRANTED") >= 0) {
+        // Attendance recorded successfully! Unpaid fees clear!
+        digitalWrite(GREEN_LED, HIGH);
+        tone(BUZZER, 2500, 300);
+        delay(1000);
+        digitalWrite(GREEN_LED, LOW);
+      } else if (payload.indexOf("SEC_DENIED") >= 0) {
+        // Access Denied (e.g., Unpaid fees or student not found)
+        digitalWrite(RED_LED, HIGH);
+        tone(BUZZER, 800, 150);
+        delay(150);
+        tone(BUZZER, 800, 150);
+        delay(700);
+        digitalWrite(RED_LED, LOW);
+      }
+    } else {
+      Serial.print("Error on sending POST request: ");
+      Serial.println(httpResponseCode);
+      // Connection Error Signal
+      digitalWrite(RED_LED, HIGH);
+      delay(1000);
+      digitalWrite(RED_LED, LOW);
+    }
+    http.end();
+  }
+  
+  mfrc522.PICC_HaltA();
+  delay(1500); // Cooldown to avoid double scans
+}
+`;
+  }, []);
   const [showQR, setShowQR] = useState(false);
   const [qrStudent, setQrStudent] = useState<User | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -78,6 +203,45 @@ export const Attendance: React.FC = () => {
     return allAttendance.find(r => r.date === dateStr);
   }, [allAttendance, selectedDate]);
 
+  const consecutiveAbsencesMap = useMemo(() => {
+    const map: { [studentId: string]: number } = {};
+    if (!students.length || !allAttendance.length) return map;
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const allDatesSet = new Set(allAttendance.map(r => r.date));
+    allDatesSet.add(dateStr);
+    const sortedDates = Array.from(allDatesSet).sort();
+
+    students.forEach(student => {
+      let currentStreak = 0;
+      for (const d of sortedDates) {
+        let status: AttendanceStatus | undefined = undefined;
+        if (d === dateStr) {
+          status = attendance[student.uid];
+        } else {
+          const rec = allAttendance.find(r => r.date === d);
+          status = rec?.records[student.uid];
+        }
+
+        if (status === 'absent') {
+          currentStreak++;
+        } else if (status) {
+          currentStreak = 0;
+        }
+      }
+      map[student.uid] = currentStreak;
+    });
+
+    return map;
+  }, [students, allAttendance, attendance, selectedDate]);
+
+  const criticalAbsentStudents = useMemo(() => {
+    return students
+      .map(s => ({ student: s, count: consecutiveAbsencesMap[s.uid] || 0 }))
+      .filter(item => item.count >= 3)
+      .sort((a, b) => b.count - a.count);
+  }, [students, consecutiveAbsencesMap]);
+
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, text, type }]);
@@ -108,7 +272,7 @@ export const Attendance: React.FC = () => {
         }
 
         const snapshot = await getDocs(q);
-        const fetchedClasses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
+        const fetchedClasses = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Class));
         setClasses(fetchedClasses);
         if (fetchedClasses.length > 0 && !selectedClassId) {
           setSelectedClassId(fetchedClasses[0].id);
@@ -396,6 +560,70 @@ export const Attendance: React.FC = () => {
     }));
   };
 
+  const triggerConsecutiveAbsenceNotifications = async (currentAttendance: { [studentId: string]: AttendanceStatus }) => {
+    if (!selectedClassId) return;
+
+    const currentClass = classes.find(c => c.id === selectedClassId);
+    const targetTeacherId = currentClass?.teacherId;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    const recordsMap: { [date: string]: { [studentId: string]: AttendanceStatus } } = {};
+    
+    allAttendance.forEach(rec => {
+      recordsMap[rec.date] = { ...rec.records };
+    });
+
+    recordsMap[dateStr] = { ...currentAttendance };
+
+    const sortedDates = Object.keys(recordsMap).sort();
+
+    for (const student of students) {
+      const studentId = student.uid;
+      
+      const statuses: AttendanceStatus[] = [];
+      sortedDates.forEach(date => {
+        const s = recordsMap[date][studentId];
+        if (s) {
+          statuses.push(s);
+        }
+      });
+
+      let consecutiveCount = 0;
+      for (let i = statuses.length - 1; i >= 0; i--) {
+        if (statuses[i] === 'absent') {
+          consecutiveCount++;
+        } else {
+          break;
+        }
+      }
+
+      if (consecutiveCount > 3) {
+        const title = `Critical Absence Alert: ${student.name}`;
+        const message = `${student.name} has been marked absent for ${consecutiveCount} consecutive sessions in class "${currentClass?.name || 'Unknown Class'}".`;
+        const recipientId = targetTeacherId || user?.uid;
+
+        if (recipientId) {
+          const notificationId = `attendance_alert_${studentId}_${selectedClassId}_${consecutiveCount}_${dateStr}`;
+          try {
+            await setDoc(doc(db, 'notifications', notificationId), {
+              userId: recipientId,
+              title,
+              message,
+              type: 'attendance',
+              read: false,
+              createdAt: new Date().toISOString(),
+              senderId: user?.uid || 'system',
+              link: `/attendance?classId=${selectedClassId}`
+            });
+            console.log(`Consecutive absence alert logged into DB for ${student.name}: ${consecutiveCount}`);
+          } catch (err) {
+            console.error("Error creating attendance notification record:", err);
+          }
+        }
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedClassId || (!isTeacher && !isAdmin)) return;
     setSaving(true);
@@ -421,6 +649,7 @@ export const Attendance: React.FC = () => {
         });
       }
       addToast("Attendance saved successfully!");
+      await triggerConsecutiveAbsenceNotifications(attendance);
     } catch (error) {
       console.error("Error saving attendance:", error);
       addToast("Failed to save attendance", "error");
@@ -842,6 +1071,13 @@ export const Attendance: React.FC = () => {
                     >
                       <QrCode size={18} />
                       {isQRScannerMode ? 'Exit QR' : 'QR Scanner'}
+                    </button>
+                    <button
+                      onClick={() => setShowNodeMcuPortal(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap text-purple-600 hover:bg-purple-50 border border-purple-100"
+                    >
+                      <Cpu size={18} />
+                      NodeMCU IoT
                     </button>
                   </>
                 )}
@@ -1340,8 +1576,43 @@ export const Attendance: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
+                  <>
+                    {/* Real-time Consecutive Absence Warning Panel */}
+                    {criticalAbsentStudents.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-5 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col gap-3 shadow-sm mb-4"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 bg-rose-100 rounded-lg text-rose-600 animate-pulse">
+                            <AlertCircle size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-rose-950 uppercase tracking-wider">Critical Real-time Absence Watch</h4>
+                            <p className="text-[11px] text-rose-600 font-semibold leading-tight">Students with 3 or more consecutive absent sessions</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
+                          {criticalAbsentStudents.map(({ student, count }) => (
+                            <div key={`crit_${student.uid}`} className="flex items-center justify-between bg-white/70 backdrop-blur-sm border border-rose-100/50 rounded-xl p-3 shadow-xs">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-extrabold text-slate-800">{student.name}</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{student.admissionNumber || 'No ADM'}</span>
+                              </div>
+                              <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2 py-1 rounded-lg ${
+                                count > 3 ? 'bg-red-500 text-white animate-bounce' : 'bg-amber-500 text-white'
+                              }`}>
+                                {count} Days Abs.
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
                       <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
                           <tr>
@@ -1369,6 +1640,16 @@ export const Attendance: React.FC = () => {
                                           <p className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-fit uppercase tracking-tight">
                                             {student.admissionNumber}
                                           </p>
+                                        )}
+                                        {consecutiveAbsencesMap[student.uid] >= 3 && (
+                                          <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-xs font-bold uppercase animate-pulse ${
+                                            consecutiveAbsencesMap[student.uid] > 3 
+                                              ? 'bg-rose-50 border-rose-100 text-rose-600' 
+                                              : 'bg-amber-50 border-amber-100 text-amber-600'
+                                          }`}>
+                                            <AlertCircle size={10} />
+                                            {consecutiveAbsencesMap[student.uid]} absences
+                                          </div>
                                         )}
                                         {feeBalances[student.uid] > 0 && (
                                           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50 border border-red-100 text-xs font-bold uppercase text-red-600 animate-pulse">
@@ -1486,6 +1767,7 @@ export const Attendance: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  </>
                 )}
               </motion.div>
             )}
@@ -2201,6 +2483,225 @@ export const Attendance: React.FC = () => {
                     {saving ? 'Saving...' : 'Link Resource'}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* NodeMCU IoT Integration Portal Modal */}
+      <AnimatePresence>
+        {showNodeMcuPortal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNodeMcuPortal(false)}
+              className="absolute inset-0 bg-slate-950/75 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white rounded-[32px] shadow-2xl overflow-hidden max-w-3xl w-full border border-slate-100 z-10 flex flex-col relative max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-900 text-white p-6 relative">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-xl">
+                      <Cpu size={28} className="text-purple-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black uppercase tracking-tight leading-tight">NodeMCU ESP8266 IoT Link</h3>
+                      <p className="text-purple-200 text-xs font-semibold leading-relaxed">Connect external smart RFID physical barriers or turnstiles</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowNodeMcuPortal(false)}
+                    className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex border-b border-gray-100 bg-gray-50/50 p-2 gap-1 overflow-x-auto">
+                {(['overview', 'arduino', 'wiring', 'api'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setNodeMcuTab(tab)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                      nodeMcuTab === tab 
+                        ? 'bg-purple-600 text-white shadow-md' 
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-700">
+                {nodeMcuTab === 'overview' && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                      <h4 className="font-bold text-sm text-purple-950 uppercase tracking-wider mb-1">Autonomous IoT Gateways</h4>
+                      <p className="text-xs text-purple-800 leading-relaxed font-semibold">
+                        By deploying inexpensive ESP8266 NodeMCU or ESP32 microcontrollers, you can install real physical attendance stations outside classrooms, libraries, or school gates. When a scanner reads a tag or card pin, it updates our servers instantaneously!
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border border-slate-100 bg-slate-50 rounded-[20px] flex gap-3">
+                        <div className="p-2 bg-rose-100 rounded-xl text-rose-600 h-fit"><AlertCircle size={18} /></div>
+                        <div>
+                          <h5 className="font-extrabold text-xs uppercase tracking-tight text-slate-900">Unpaid Fees Lock</h5>
+                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">Financial Gates</p>
+                          <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                            NodeMCU requests screen outstanding fee accounts directly. If a student is in default, the LED flares solid <span className="text-rose-600 font-bold underline">RED</span> and locks barrier access!
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border border-slate-100 bg-slate-50 rounded-[20px] flex gap-3">
+                        <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600 h-fit"><CheckCircle size={18} /></div>
+                        <div>
+                          <h5 className="font-extrabold text-xs uppercase tracking-tight text-slate-900">Seamless Processing</h5>
+                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">Offline Kiosk Integration</p>
+                          <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                            Students present their smart RFID tags or scan fingerprints. Server registers their presence, sending instant live alerts across user screens.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {nodeMcuTab === 'arduino' && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-gray-900 text-gray-400 px-4 py-2 rounded-t-xl text-xs font-mono font-bold">
+                      <span>RFID_ESP8266_Gate.ino</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(arduinoCodeString);
+                          addToast("Source Code Copied!", "success");
+                        }}
+                        className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 uppercase tracking-wider bg-purple-950/50 px-2 py-1 rounded"
+                      >
+                        Copy Code
+                      </button>
+                    </div>
+                    <pre className="p-4 bg-gray-950 rounded-b-xl overflow-x-auto text-[10px] font-mono text-emerald-400 border border-gray-900 max-h-[350px]">
+                      <code>{arduinoCodeString}</code>
+                    </pre>
+                  </div>
+                )}
+
+                {nodeMcuTab === 'wiring' && (
+                  <div className="space-y-4">
+                    <h4 className="font-black text-xs uppercase tracking-wider text-slate-500">MFRC522 RFID to NodeMCU V3 Pinout</h4>
+                    <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                      <table className="w-full text-left text-xs text-slate-600">
+                        <thead className="bg-slate-50 text-slate-500 uppercase tracking-widest font-black text-[10px]">
+                          <tr>
+                            <th className="px-4 py-3">MFRC522 Connection Pin</th>
+                            <th className="px-4 py-3">NodeMCU ESP8266 Equivalent</th>
+                            <th className="px-4 py-3">Purpose</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          <tr>
+                            <td className="px-4 py-3 font-bold">SDA (SS)</td>
+                            <td className="px-4 py-3 text-purple-600 font-bold">D4 (GPIO 2)</td>
+                            <td className="px-4 py-3 text-slate-400">SPI Slave Select</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">SCK</td>
+                            <td className="px-4 py-3 text-purple-600 font-bold">D5 (GPIO 14)</td>
+                            <td className="px-4 py-3 text-slate-400">SPI Clock Signals</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">MOSI</td>
+                            <td className="px-4 py-3 text-purple-600 font-bold">D7 (GPIO 13)</td>
+                            <td className="px-4 py-3 text-slate-400">Master Out Slave In</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">MISO</td>
+                            <td className="px-4 py-3 text-purple-600 font-bold">D6 (GPIO 12)</td>
+                            <td className="px-4 py-3 text-slate-400">Master In Slave Out</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">GND</td>
+                            <td className="px-4 py-3 text-slate-900 font-bold">GND</td>
+                            <td className="px-4 py-3 text-slate-400">Ground Line Reference</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">RST</td>
+                            <td className="px-4 py-3 text-purple-600 font-bold">D3 (GPIO 0)</td>
+                            <td className="px-4 py-3 text-slate-400">Reset Signal Pin</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-bold">3.3V</td>
+                            <td className="px-4 py-3 text-red-600 font-bold">3V3</td>
+                            <td className="px-4 py-3 text-slate-400">Power Input (DO NOT connect to 5V!)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {nodeMcuTab === 'api' && (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-slate-900">IoT Communication Handshake APIs</h4>
+                    
+                    <div className="space-y-4 font-mono text-xs">
+                      <div className="p-4 bg-slate-900 text-slate-200 rounded-xl space-y-1">
+                        <span className="bg-emerald-500 text-white text-[10px] uppercase px-1.5 py-0.5 rounded font-black">POST</span>
+                        <div className="font-bold text-white leading-loose overflow-x-auto whitespace-nowrap">
+                          {window.location.origin}/api/nodemcu/attendance
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-sans mt-2 leading-relaxed">
+                          Marks checkIn / checkOut / leaveOut depending on `action` parameter. Supported parameters:
+                          <ul className="list-disc pl-5 mt-1 text-slate-400 space-y-0.5">
+                            <li><strong>biometricId</strong> or <strong>uid</strong>: RFID card serial / device biometric ID</li>
+                            <li><strong>action</strong>: <code className="text-amber-300">"checkIn"</code>, <code className="text-amber-300">"checkOut"</code>, or <code className="text-amber-300">"leaveOut"</code> (default checkIn)</li>
+                            <li><strong>format</strong>: set to <code className="text-amber-300">"text"</code> for plain-text responses</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-900 text-slate-200 rounded-xl space-y-1">
+                        <span className="bg-emerald-500 text-white text-[10px] uppercase px-1.5 py-0.5 rounded font-black">POST</span>
+                        <div className="font-bold text-white leading-loose overflow-x-auto whitespace-nowrap">
+                          {window.location.origin}/api/nodemcu/link
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-sans mt-2 leading-relaxed">
+                          Links an RFID chip serial or Fingerprint ID to a student's profile:
+                          <ul className="list-disc pl-5 mt-1 text-slate-400 space-y-0.5">
+                            <li><strong>studentId</strong>: The unique Firestore ID of the student</li>
+                            <li><strong>hardwareId</strong>: The scannable hex of the RFID raw tag</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Action */}
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button
+                  onClick={() => setShowNodeMcuPortal(false)}
+                  className="bg-purple-600 text-white font-black uppercase text-xs py-3 px-6 rounded-xl hover:bg-purple-700 transition"
+                >
+                  Close Setup Portal
+                </button>
               </div>
             </motion.div>
           </div>
