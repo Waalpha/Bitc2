@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, X, Check, Trash2, ExternalLink, Wallet, File as FileIcon, Image as ImageIcon, FileText, Download, MessageSquare } from 'lucide-react';
+import { Bell, X, Check, Trash2, ExternalLink, Wallet, File as FileIcon, Image as ImageIcon, FileText, Download, MessageSquare, Calendar } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, orderBy, updateDoc, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from './AuthProvider';
@@ -8,13 +8,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 
-export const NotificationBell: React.FC = () => {
+interface NotificationBellProps {
+  addToast?: (text: string, type: 'success' | 'error' | 'warning') => void;
+}
+
+export const NotificationBell: React.FC<NotificationBellProps> = ({ addToast }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
   const unreadCount = notifications.filter(n => !n.read).length;
+  const mountTime = React.useRef(new Date().toISOString());
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -40,6 +45,16 @@ export const NotificationBell: React.FC = () => {
       // Sort in memory to avoid composite index requirement
       docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setNotifications(docs);
+
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          // Only show toast if created after component mount and it's unread
+          if (data.createdAt > mountTime.current && !data.read && addToast) {
+            addToast(`${data.title}: ${data.message}`, 'success');
+          }
+        }
+      });
     }, (error) => {
       console.warn("Firestore Notification watch failed:", error.message);
       if (!navigator.onLine) {
@@ -88,6 +103,7 @@ export const NotificationBell: React.FC = () => {
       case 'announcement': return 'bg-purple-100 text-purple-600';
       case 'fee': return 'bg-orange-100 text-orange-600';
       case 'chat': return 'bg-emerald-100 text-emerald-600';
+      case 'attendance': return 'bg-rose-100 text-rose-600 border border-rose-200';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
@@ -96,6 +112,7 @@ export const NotificationBell: React.FC = () => {
     switch (type) {
       case 'fee': return <Wallet size={20} />;
       case 'chat': return <MessageSquare size={20} />;
+      case 'attendance': return <Calendar size={20} />;
       default: return <Bell size={20} />;
     }
   };
