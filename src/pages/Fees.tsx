@@ -93,6 +93,7 @@ export const Fees: React.FC = () => {
         history: newHistory
       });
       
+      await loadFeesData();
       addToast("Transaction deleted and balance adjusted");
     } catch (error) {
       console.error("Delete history item error:", error);
@@ -106,6 +107,7 @@ export const Fees: React.FC = () => {
     
     try {
       await deleteDoc(doc(db, 'fees', balanceId));
+      await loadFeesData();
       addToast("Student fee record deleted successfully");
     } catch (error) {
       console.error("Delete fee balance error:", error);
@@ -1043,88 +1045,83 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadFeesData = async (fullLoad = false) => {
+    if (!user || !isAdminView) return;
+    if (fullLoad) setIsLoading(true);
+    try {
+      // Load all balances
+      const feesSnap = await getDocs(collection(db, 'fees'));
+      const allBalances = feesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
+      
+      const dedupedMap = new Map<string, FeeBalance>();
+      const sorted = [...allBalances].sort((a, b) => (a.lastUpdated || '').localeCompare(b.lastUpdated || ''));
+      
+      sorted.forEach(bal => {
+        if (!bal.studentId) return;
+        const sId = String(bal.studentId).trim();
+        const existing = dedupedMap.get(sId);
+        if (!existing) {
+          dedupedMap.set(sId, bal);
+          return;
+        }
+        const balIsUidMatch = bal.id === sId;
+        const existingIsUidMatch = existing.id === sId;
+        if (balIsUidMatch && !existingIsUidMatch) {
+          dedupedMap.set(sId, bal);
+        } else if (balIsUidMatch === existingIsUidMatch) {
+          if ((bal.lastUpdated || '') >= (existing.lastUpdated || '')) {
+            dedupedMap.set(sId, bal);
+          }
+        }
+      });
+      setFeeBalances(Array.from(dedupedMap.values()));
+
+      // Load all students
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const allUsers = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+      setStudents(allUsers.filter(u => String(u.role).toLowerCase() === 'student'));
+
+      if (fullLoad) {
+        // Load classes
+        const classesSnap = await getDocs(collection(db, 'classes'));
+        setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+
+        // Load fee configs
+        const configsSnap = await getDocs(collection(db, 'feeConfigs'));
+        setClassFees(configsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassFee)));
+
+        // Load units
+        const unitsSnap = await getDocs(collection(db, 'units'));
+        setUnits(unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
+
+        // Load fee types
+        const typesSnap = await getDocs(collection(db, 'feeTypes'));
+        setFeeTypes(typesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeType)));
+
+        // Load fee groups
+        const groupsSnap = await getDocs(collection(db, 'feeGroups'));
+        setFeeGroups(groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
+      }
+    } catch (error) {
+      console.error("Load fees data error:", error);
+      addToast("Failed to load school fees data", "error");
+    } finally {
+      if (fullLoad) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
-    let unsubFees: (() => void) | undefined;
-    let unsubUsers: (() => void) | undefined;
-    let unsubClasses: (() => void) | undefined;
-    let unsubFeeConfigs: (() => void) | undefined;
-    let unsubUnits: (() => void) | undefined;
-    let unsubFeeTypes: (() => void) | undefined;
-    let unsubFeeGroups: (() => void) | undefined;
     let unsubMyFees: (() => void) | undefined;
 
     try {
       if (isAdminView) {
-        // Admin sees all balances and all students
-        unsubFees = onSnapshot(collection(db, 'fees'), (snap) => {
-          const allBalances = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
-          
-          const dedupedMap = new Map<string, FeeBalance>();
-          const sorted = [...allBalances].sort((a, b) => (a.lastUpdated || '').localeCompare(b.lastUpdated || ''));
-          
-          sorted.forEach(bal => {
-            if (!bal.studentId) return;
-            const sId = String(bal.studentId).trim();
-            const existing = dedupedMap.get(sId);
-            if (!existing) {
-              dedupedMap.set(sId, bal);
-              return;
-            }
-            const balIsUidMatch = bal.id === sId;
-            const existingIsUidMatch = existing.id === sId;
-            if (balIsUidMatch && !existingIsUidMatch) {
-              dedupedMap.set(sId, bal);
-            } else if (balIsUidMatch === existingIsUidMatch) {
-              if ((bal.lastUpdated || '') >= (existing.lastUpdated || '')) {
-                dedupedMap.set(sId, bal);
-              }
-            }
-          });
-          setFeeBalances(Array.from(dedupedMap.values()));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'fees');
-        });
-
-        unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
-          const allUsers = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-          setStudents(allUsers.filter(u => String(u.role).toLowerCase() === 'student'));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'users');
-        });
-
-        unsubClasses = onSnapshot(collection(db, 'classes'), (snap) => {
-          setClasses(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'classes');
-        });
-
-        unsubFeeConfigs = onSnapshot(collection(db, 'feeConfigs'), (snap) => {
-          setClassFees(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ClassFee)));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'feeConfigs');
-        });
-
-        unsubUnits = onSnapshot(collection(db, 'units'), (snap) => {
-          setUnits(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'units');
-        });
-
-        unsubFeeTypes = onSnapshot(collection(db, 'feeTypes'), (snap) => {
-          setFeeTypes(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeType)));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'feeTypes');
-        });
-
-        unsubFeeGroups = onSnapshot(collection(db, 'feeGroups'), (snap) => {
-          setFeeGroups(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, 'feeGroups');
-        });
+        loadFeesData(true);
       } else {
-        // Student sees only their own balance
+        // Student sees only their own balance - listen live to see balance update live on payment checks!
         const q = query(collection(db, 'fees'), where('studentId', '==', user.uid));
         unsubMyFees = onSnapshot(q, (snap) => {
           if (!snap.empty) {
@@ -1147,13 +1144,6 @@ export const Fees: React.FC = () => {
     }
 
     return () => {
-      if (unsubFees) unsubFees();
-      if (unsubUsers) unsubUsers();
-      if (unsubClasses) unsubClasses();
-      if (unsubFeeConfigs) unsubFeeConfigs();
-      if (unsubUnits) unsubUnits();
-      if (unsubFeeTypes) unsubFeeTypes();
-      if (unsubFeeGroups) unsubFeeGroups();
       if (unsubMyFees) unsubMyFees();
     };
   }, [user, isAdminView]);
@@ -1265,6 +1255,8 @@ export const Fees: React.FC = () => {
         });
       }
 
+      await loadFeesData();
+
       // Notify student (maybe only for new ones or if amount changed significantly? Let's notify for all updates)
       await addDoc(collection(db, 'notifications'), {
         userId: selectedStudent.uid,
@@ -1335,6 +1327,7 @@ export const Fees: React.FC = () => {
         });
         addToast("Class fee configuration created!");
       }
+      await loadFeesData(true);
       setIsAddingClassFee(false);
       setEditingFeeId(null);
       setClassFeeForm({ classId: '', title: '', amount: 0, period: 'monthly', feeType: '', feeGroup: '' });
@@ -1361,6 +1354,7 @@ export const Fees: React.FC = () => {
         });
         addToast("Fee type added!");
       }
+      await loadFeesData(true);
       setNewFeeTypeName('');
       setIsAddingFeeType(false);
     } catch (error) {
@@ -1386,6 +1380,7 @@ export const Fees: React.FC = () => {
         });
         addToast("Fee group added!");
       }
+      await loadFeesData(true);
       setNewFeeGroupName('');
       setIsAddingFeeGroup(false);
     } catch (error) {
@@ -1397,6 +1392,7 @@ export const Fees: React.FC = () => {
     if (!confirm("Are you sure?")) return;
     try {
       await deleteDoc(doc(db, 'feeTypes', id));
+      await loadFeesData(true);
       addToast("Fee type deleted");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'feeTypes');
@@ -1407,6 +1403,7 @@ export const Fees: React.FC = () => {
     if (!confirm("Are you sure?")) return;
     try {
       await deleteDoc(doc(db, 'feeGroups', id));
+      await loadFeesData(true);
       addToast("Fee group deleted");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'feeGroups');
@@ -1418,6 +1415,7 @@ export const Fees: React.FC = () => {
     
     try {
       await deleteDoc(doc(db, 'feeConfigs', id));
+      await loadFeesData(true);
       addToast("Fee package deleted successfully", "success");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'feeConfigs');
@@ -1569,6 +1567,8 @@ export const Fees: React.FC = () => {
         }
       }
 
+      await loadFeesData();
+
       if (appliedCount > 0) {
         addToast(`Successfully applied fee to ${appliedCount} students!${skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : ''}`, "success");
       } else if (skippedCount > 0) {
@@ -1702,6 +1702,8 @@ export const Fees: React.FC = () => {
       if (totalOps > 0) {
         await batch.commit();
       }
+
+      await loadFeesData();
 
       if (fixedCount > 0) {
         addToast(`Cleanup complete! Merged/Migrated records for ${fixedCount} students.`, "success");
@@ -2025,6 +2027,15 @@ export const Fees: React.FC = () => {
         </div>
         {isAdminView && (
           <div className="flex gap-2">
+            <button
+              onClick={() => loadFeesData(true)}
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-white/5 text-blue-500 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/10 text-sm font-medium"
+              title="Refresh ledger data"
+            >
+              <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+              {isLoading ? 'Reloading...' : 'Refresh'}
+            </button>
             <button
               onClick={handleCleanupDuplicates}
               disabled={isCleaning}
