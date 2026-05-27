@@ -35,7 +35,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const mountTime = React.useRef(new Date().toISOString());
   const location = useLocation();
 
   const addToast = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
@@ -47,35 +46,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
-
-  useEffect(() => {
-    if (!user) return;
-
-    // Listen for new notifications for real-time alerts
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(1)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const data = change.doc.data();
-          // Only show toast if created after component mount and it's unread
-          if (data.createdAt > mountTime.current && !data.read) {
-            addToast(`${data.title}: ${data.message}`, 'success');
-          }
-        }
-      });
-    }, (error) => {
-      console.warn("Layout notification listener failed:", error.message);
-      // We don't want to show a fatal error here since NotificationBell also handles this
-    });
-
-    return unsubscribe;
-  }, [user]);
 
   const isRestricted = settings?.denyAccessOnBalance && 
                      userData?.role === 'student' && 
@@ -414,7 +384,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </div>
 
               <div className="flex items-center gap-2 sm:gap-4 border-l border-white/10 pl-4 sm:pl-6">
-                <NotificationBell />
+                <NotificationBell addToast={addToast} />
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
