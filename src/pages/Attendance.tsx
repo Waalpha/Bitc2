@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, addDoc, doc, updateDoc, getDocs, orderBy, limit, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, AttendanceRecord, User, SchoolCalendar } from '../types';
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin } from 'lucide-react';
+import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin, Printer } from 'lucide-react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -258,6 +258,8 @@ void loop() {
 
   const [isGpsVerifying, setIsGpsVerifying] = useState(false);
   const [gpsSelectedClassId, setGpsSelectedClassId] = useState('');
+  const [showHolidayModal, setShowHolidayModal] = useState(false);
+  const [holidayReason, setHolidayReason] = useState('Public Holiday');
 
   // Haversine formula to compute distance in meters
   const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -635,6 +637,50 @@ void loop() {
     }
   };
 
+  const saveHolidayStatus = async (reasonText: string) => {
+    if (!isAdmin && !isTeacher) return;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const displayReason = reasonText.trim() || 'Holiday / Special Event';
+    
+    try {
+      setSaving(true);
+      await setDoc(doc(db, 'school_calendar', dateStr), {
+        id: dateStr,
+        date: dateStr,
+        status: 'closed',
+        reason: displayReason
+      });
+      
+      // Notify students
+      try {
+        const studentsSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student')));
+        const batch = writeBatch(db);
+        studentsSnap.docs.forEach(studentDoc => {
+          const notifRef = doc(collection(db, 'notifications'));
+          batch.set(notifRef, {
+            userId: studentDoc.id,
+            title: 'School Closure: ' + displayReason,
+            message: `The school will be closed on ${format(selectedDate, 'MMMM dd, yyyy')} due to ${displayReason}. Attendance is not required.`,
+            type: 'announcement',
+            read: false,
+            createdAt: new Date().toISOString()
+          });
+        });
+        await batch.commit();
+        addToast(`School marked as closed (${displayReason}) and students notified`);
+      } catch (notifError) {
+        console.error("Error sending closure notifications:", notifError);
+        addToast(`School marked as closed (${displayReason})`, "success");
+      }
+      setShowHolidayModal(false);
+    } catch (error) {
+      console.error("Error saving holiday status:", error);
+      addToast("Failed to mark as closed", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleSchoolStatus = async () => {
     if (!isAdmin && !isTeacher) return;
     
@@ -850,6 +896,225 @@ void loop() {
     }
   };
 
+  const handlePrintLeaveOutPermit = (eventLog: typeof lastEvent) => {
+    if (!eventLog) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const schoolName = globalSettings?.schoolName || 'Breakthrough International';
+    const logoHtml = globalSettings?.logoUrl 
+      ? `<img src="${globalSettings.logoUrl}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;" />`
+      : `<span style="font-size: 24px; font-weight: bold; color: white;">${schoolName.charAt(0)}</span>`;
+
+    const ticketId = `EXT-${Date.now().toString().slice(-6)}`;
+    const reason = eventLog.reason || 'General Leave';
+    const returnDateString = eventLog.returnDate || 'Not Specified';
+    const authorizedBy = userData?.name || 'Authorized Officer';
+
+    const html = `
+      <html>
+        <head>
+          <title>Exit Permit - ${eventLog.student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 40px; 
+              color: #1e293b; 
+              line-height: 1.5; 
+              background-color: #ffffff;
+            }
+            .permit-container { 
+              max-width: 650px; 
+              margin: 0 auto; 
+              border: 4px double #0f172a;
+              padding: 30px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #0f172a;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
+            }
+            .logo-title {
+              display: flex;
+              align-items: center;
+              gap: 15px;
+            }
+            .logo-placeholder {
+              width: 55px;
+              height: 55px;
+              background-color: #1e40af;
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+            }
+            .school-name {
+              font-size: 18px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: -0.025em;
+              margin: 0;
+            }
+            .subtitle {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              margin: 2px 0 0 0;
+            }
+            .permit-id-block {
+              text-align: right;
+            }
+            .label-xs {
+              font-size: 10px;
+              font-weight: 700;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin-bottom: 2px;
+            }
+            .val-bold {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 0;
+            }
+            .grid-2 {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 25px;
+            }
+            .card-box {
+              background-color: #f8fafc;
+              padding: 15px;
+              border-radius: 12px;
+              border: 1px solid #e2e8f0;
+            }
+            .card-box-accent {
+              background-color: #eff6ff;
+              padding: 15px;
+              border-radius: 12px;
+              border: 1px solid #dbeafe;
+            }
+            .footer-signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 40px;
+              border-top: 1px solid #cbd5e1;
+              padding-top: 20px;
+              margin-top: 35px;
+            }
+            .sig-line {
+              border-bottom: 1px solid #0f172a;
+              padding-bottom: 5px;
+              font-weight: bold;
+              font-size: 13px;
+            }
+            .bottom-note {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 10px;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.12em;
+              font-weight: 600;
+            }
+            @media print {
+              body { padding: 20px; }
+              .permit-container { border: 4px double #000000; }
+            }
+          </style>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </head>
+        <body>
+          <div class="permit-container">
+            <div class="header">
+              <div class="logo-title">
+                <div class="logo-placeholder">
+                  ${logoHtml}
+                </div>
+                <div>
+                  <h1 class="school-name">${schoolName}</h1>
+                  <p class="subtitle">Student Exit Permit / Leave-Out</p>
+                </div>
+              </div>
+              <div class="permit-id-block">
+                <div class="label-xs">Permit ID</div>
+                <p class="val-bold" style="color: #1e40af;">${ticketId}</p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <div class="label-xs">Student Name</div>
+                <div class="val-bold" style="font-size: 16px; text-transform: uppercase;">${eventLog.student.name}</div>
+              </div>
+              <div>
+                <div class="label-xs">Exit Time</div>
+                <div class="val-bold" style="font-size: 16px;">${eventLog.time}</div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <div class="label-xs">Student ID/Email</div>
+                <div class="val-bold" style="font-size: 13px; font-weight: 500; color: #475569;">${eventLog.student.email}</div>
+              </div>
+              <div>
+                <div class="label-xs">Date</div>
+                <div class="val-bold" style="font-size: 13px; font-weight: 500; color: #475569;">${format(new Date(), 'MMMM dd, yyyy')}</div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 10px;">
+              <div class="card-box">
+                <div class="label-xs" style="color: #64748b;">Reason for Leave-Out</div>
+                <div class="val-bold" style="font-style: italic; font-weight: 600; color: #1e293b; font-size: 13px;">"${reason}"</div>
+              </div>
+              <div class="card-box-accent">
+                <div class="label-xs" style="color: #2563eb;">Expected Return Date/Day</div>
+                <div class="val-bold" style="color: #1e3a8a; font-size: 13px;">${returnDateString}</div>
+              </div>
+            </div>
+
+            <div class="footer-signatures">
+              <div>
+                <div class="label-xs" style="margin-bottom: 30px;">Authorized By (Officer)</div>
+                <div class="sig-line">${authorizedBy}</div>
+              </div>
+              <div>
+                <div class="label-xs" style="margin-bottom: 30px;">School Stamp / Security Signature</div>
+                <div class="sig-line" style="min-height: 20px;"></div>
+              </div>
+            </div>
+
+            <div class="bottom-note">
+              This permit is valid only for the stated date and time above.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handleBiometricCheckIn = async (targetStudentId?: string) => {
     // If targetUid is provided, it's supervisor-led. 
     // Otherwise it's the current user (used if the user meant students can still auto-check in at a kiosk)
@@ -903,11 +1168,15 @@ void loop() {
       );
       
       const snapshot = await getDocs(q);
-      const logEntry = {
+      const logEntry: any = {
         time: timeStr,
         method: (isQRScannerMode ? 'qr' : 'biometric') as 'qr' | 'biometric',
         supervisorId: (isAdmin || isTeacher) ? user.uid : undefined
       };
+      if (action === 'leaveOut') {
+        logEntry.reason = leaveReason;
+        logEntry.returnDate = returnDate;
+      }
       
       if (!snapshot.empty) {
         const todayRecord = snapshot.docs[0];
@@ -941,6 +1210,15 @@ void loop() {
           }
         });
       }
+
+      setLastEvent({
+        student: studentData,
+        action,
+        time: timeStr,
+        reason: action === 'leaveOut' ? leaveReason : undefined,
+        returnDate: action === 'leaveOut' ? returnDate : undefined
+      });
+
       return studentData.name;
     };
 
@@ -1051,6 +1329,7 @@ void loop() {
                 };
                 if (currentAction === 'leaveOut') {
                   logEntry.reason = leaveReason;
+                  logEntry.returnDate = returnDate;
                 }
 
                 if (!snapshot.empty) {
@@ -1526,7 +1805,7 @@ void loop() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => window.print()}
+                          onClick={() => handlePrintLeaveOutPermit(lastEvent)}
                           className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-200"
                         >
                           Print Permit
@@ -1723,17 +2002,17 @@ void loop() {
                   {(isAdmin || isTeacher) && (
                     <div className="flex flex-col items-center gap-2">
                       <button
-                        onClick={isGloballyClosed ? reopenSchoolGlobally : toggleSchoolStatus}
+                        onClick={isGloballyClosed ? reopenSchoolGlobally : (isSchoolClosed ? toggleSchoolStatus : () => { setHolidayReason('Public Holiday'); setShowHolidayModal(true); })}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
                           isSchoolClosed 
-                            ? 'bg-green-50 text-green-600 border border-green-100 hover:bg-green-100' 
-                            : 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100'
+                            ? 'bg-green-50 text-green-600 border border-green-100 hover:bg-green-100/80 active:scale-95' 
+                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100/80 active:scale-95'
                         }`}
                       >
-                        {isSchoolClosed ? <Unlock size={14} /> : <Lock size={14} />}
+                        {isSchoolClosed ? <Unlock size={14} /> : <Calendar size={14} />}
                         {isGloballyClosed 
                           ? 'Re-open School Globally' 
-                          : (isSchoolClosed ? 'Re-open School for this date' : 'Mark School as Closed')
+                          : (isSchoolClosed ? 'Re-open School for this date' : 'Mark Holiday / Closure')
                         }
                       </button>
                       {isGloballyClosed && isAdmin && (
@@ -1744,14 +2023,27 @@ void loop() {
                 </div>
 
                 {isSchoolClosed ? (
-                  <div className="bg-red-50 border border-red-100 rounded-3xl p-12 text-center max-w-2xl mx-auto flex flex-col items-center gap-4">
-                    <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-600 shadow-xl shadow-red-100/50">
-                      <Lock size={40} />
+                  <div className={`border rounded-[32px] p-12 text-center max-w-2xl mx-auto flex flex-col items-center gap-4 ${
+                    closedReason.toLowerCase().includes('holiday')
+                      ? 'bg-blue-50/50 border-blue-100/80 shadow-sm shadow-blue-50'
+                      : 'bg-red-50 border-red-100'
+                  }`}>
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl ${
+                      closedReason.toLowerCase().includes('holiday')
+                        ? 'bg-blue-100 text-blue-600 shadow-blue-100/50'
+                        : 'bg-red-100 text-red-600 shadow-red-100/50'
+                    }`}>
+                      {closedReason.toLowerCase().includes('holiday') ? <Calendar size={40} /> : <Lock size={40} />}
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-xl font-bold text-gray-900 uppercase">School is Closed</h3>
-                      <p className="text-gray-500 font-medium max-w-sm">
+                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                        {closedReason.toLowerCase().includes('holiday') ? '🏖️ Official Holiday' : 'School is Closed'}
+                      </h3>
+                      <p className="text-gray-600 font-bold max-w-sm text-sm">
                         {closedReason}
+                      </p>
+                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mt-1">
+                        Attendance recording is suspended for this date
                       </p>
                     </div>
                   </div>
@@ -1864,9 +2156,28 @@ void loop() {
                                               </div>
                                             )}
                                             {attendanceRecord.biometricLogs[student.uid].leaveOut && (
-                                              <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase" title="Leave-out">
-                                                <AlertCircle size={10} />
-                                                {attendanceRecord.biometricLogs[student.uid].leaveOut?.time}
+                                              <div className="flex items-center gap-1.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 text-amber-600">
+                                                <div className="flex items-center gap-1 text-xs font-bold uppercase" title="Leave-out">
+                                                  <AlertCircle size={10} />
+                                                  {attendanceRecord.biometricLogs[student.uid].leaveOut?.time}
+                                                </div>
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const log = attendanceRecord.biometricLogs[student.uid].leaveOut;
+                                                    handlePrintLeaveOutPermit({
+                                                      student: student,
+                                                      action: 'leaveOut',
+                                                      time: log?.time || '',
+                                                      reason: log?.reason || 'General Leave',
+                                                      returnDate: log?.returnDate || 'Not Specified'
+                                                    });
+                                                  }}
+                                                  className="text-amber-700 hover:text-amber-900 focus:outline-none transition-colors border-l border-amber-200 pl-1.5 ml-1 flex items-center cursor-pointer"
+                                                  title="Print Exit Permit"
+                                                >
+                                                  <Printer size={10} />
+                                                </button>
                                               </div>
                                             )}
                                           </div>
@@ -2634,6 +2945,110 @@ void loop() {
                       ? "The student can scan this if they forgot their phone" 
                       : "Present this for scanning at the classroom"}
                   </p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mark Holiday / School Closure Modal */}
+      <AnimatePresence>
+        {showHolidayModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print"
+            onClick={() => {
+              setShowHolidayModal(false);
+            }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[40px] p-8 max-w-md w-full shadow-2xl relative overflow-hidden text-gray-800"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600" />
+              
+              <button 
+                onClick={() => {
+                  setShowHolidayModal(false);
+                }}
+                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-md">
+                    <Calendar size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tight text-left">Mark Holiday / Closure</h3>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider text-left">
+                      Date: {format(selectedDate, 'EEEE, MMMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-left">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Holiday Reason / Description</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-100 outline-none transition-all font-semibold text-gray-800 bg-white"
+                      placeholder="e.g. Mashujaa Day, Christmas Break, staff development, etc."
+                      value={holidayReason}
+                      onChange={(e) => setHolidayReason(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Quick Presets</label>
+                    <div className="flex flex-wrap gap-2 font-sans">
+                      {['National Holiday', 'Public Holiday', 'Sabbath / Sunday', 'End of Term Break', 'Mashujaa Day', 'Madaraka Day', 'Jamhuri Day', 'Boxing Day', 'Good Friday', 'Easter Monday', 'Labour Day'].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setHolidayReason(preset)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                            holidayReason === preset 
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 flex gap-3 text-yellow-800">
+                    <Info size={20} className="shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium leading-normal">
+                      Closing the school on this date will notify all students that attendance is not required for this date.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    onClick={() => setShowHolidayModal(false)}
+                    className="px-5 py-3 border border-gray-200 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => saveHolidayStatus(holidayReason)}
+                    disabled={saving}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-600/25 hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    {saving ? 'Saving...' : 'Mark Closed/Holiday'}
+                  </button>
                 </div>
               </div>
             </motion.div>
