@@ -158,7 +158,7 @@ export interface AttendanceRecord {
     [studentId: string]: { 
       checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
       checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
-      leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string; reason?: string };
+      leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string; reason?: string; returnDate?: string };
     } 
   };
 }
