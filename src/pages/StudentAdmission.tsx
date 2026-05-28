@@ -356,6 +356,16 @@ export const StudentAdmission: React.FC = () => {
   const selectedClasses = classes.filter(c => formData.classIds.includes(c.id));
   const availableUnits = Array.from(new Set(selectedClasses.flatMap(c => c.unitIds || []))).sort();
 
+  const isAdmin = userData?.role === 'admin';
+
+  if (!isAdmin) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-red-600 max-w-lg mx-auto mt-12 font-medium">
+        Access Denied. Only system administrators can admit or register new students.
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
       {/* Header section as per screenshot */}
