@@ -39,13 +39,23 @@ export function collection(db: any, path: string) {
 }
 
 export function doc(dbOrCol: any, pathOrId: string, ...additionalPaths: string[]) {
-  if (dbOrCol.type === 'collection') {
-    return { type: 'document', collection: dbOrCol.path, id: pathOrId };
+  let fullPath = "";
+  if (dbOrCol && dbOrCol.type === 'collection') {
+    fullPath = [dbOrCol.path, pathOrId, ...additionalPaths].filter(Boolean).join('/');
+  } else {
+    fullPath = [pathOrId, ...additionalPaths].filter(Boolean).join('/');
   }
-  // If first arg is Firestore instance, path is the collection name, pathOrId is the document ID
-  const fullPath = [pathOrId, ...additionalPaths].join('/');
+  
   const segments = fullPath.split('/');
-  return { type: 'document', collection: dbOrCol, id: pathOrId };
+  const collectionName = segments[0] || "";
+  const id = segments.slice(1).join('/') || "";
+  
+  return { 
+    type: 'document', 
+    collection: collectionName, 
+    id: id,
+    path: fullPath
+  };
 }
 
 // Support doc(db, 'collection', 'id') style
