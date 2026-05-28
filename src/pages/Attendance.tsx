@@ -47,6 +47,8 @@ export const Attendance: React.FC = () => {
   const [selectedStudentForBio, setSelectedStudentForBio] = useState<string | null>(null);
   const [showNodeMcuPortal, setShowNodeMcuPortal] = useState(false);
   const [nodeMcuTab, setNodeMcuTab] = useState<'overview' | 'arduino' | 'wiring' | 'api'>('overview');
+  const [refusedCheckoutStudent, setRefusedCheckoutStudent] = useState<User | null>(null);
+  const [refusalReason, setRefusalReason] = useState<string>('');
 
   const arduinoCodeString = useMemo(() => {
     const origin = window.location.origin;
@@ -503,11 +505,57 @@ void loop() {
 
           const snapshot = await getDocs(q);
           const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AttendanceRecord));
-          setAllAttendance(records);
+          
+          // Automatically mark student as absent if they didn't checkout
+          const todayStr = format(new Date(), 'yyyy-MM-dd');
+          const currentHour = new Date().getHours();
+          
+          const normalizedRecords = await Promise.all(records.map(async (record) => {
+            const isPastDate = record.date < todayStr;
+            const isTodayAndPastCheckout = record.date === todayStr && currentHour >= 18; // After 6 PM today
+            
+            if (!isPastDate && !isTodayAndPastCheckout) {
+              return record;
+            }
+            
+            let updatedRecords = { ...record.records };
+            let hasChanges = false;
+            
+            if (record.biometricLogs) {
+              for (const studentId of Object.keys(record.biometricLogs)) {
+                const logs = record.biometricLogs[studentId];
+                if (logs?.checkIn && !logs?.checkOut) {
+                  // Checked in but didn't checkout
+                  if (updatedRecords[studentId] === 'present' || updatedRecords[studentId] === 'late') {
+                    updatedRecords[studentId] = 'absent';
+                    hasChanges = true;
+                  }
+                }
+              }
+            }
+            
+            if (hasChanges) {
+              try {
+                await updateDoc(doc(db, 'attendance', record.id), {
+                  records: updatedRecords
+                });
+              } catch (err) {
+                console.error("Error auto-updating missed checkout status:", record.id, err);
+              }
+              return {
+                ...record,
+                records: updatedRecords
+              };
+            }
+            
+            return record;
+          }));
+
+          setAllAttendance(normalizedRecords);
           
           // Also update current daily attendance if it matches selectedDate
           const dateStr = format(selectedDate, 'yyyy-MM-dd');
-          const todayRecord = records.find(r => r.date === dateStr);
+          const todayRecord = normalizedRecords.find(r => r.date === dateStr);
           if (todayRecord) {
             setAttendance(todayRecord.records);
           } else {
@@ -772,6 +820,114 @@ void loop() {
       ...prev,
       [studentId]: status
     }));
+  };
+
+  const handleConfirmRefuseCheckout = async () => {
+    if (!refusedCheckoutStudent || !refusalReason.trim() || !selectedClassId || !user) return;
+    setSaving(true);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const timeStr = format(new Date(), 'HH:mm:ss');
+    const studentUid = refusedCheckoutStudent.uid;
+
+    try {
+      const q = query(
+        collection(db, 'attendance'),
+        where('classId', '==', selectedClassId),
+        where('date', '==', dateStr)
+      );
+      const snapshot = await getDocs(q);
+
+      const logEntry = {
+        time: timeStr,
+        method: 'manual' as const,
+        supervisorId: user.uid,
+        refused: true,
+        reason: refusalReason
+      };
+
+      if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id;
+        const currentData = snapshot.docs[0].data() as AttendanceRecord;
+        
+        const updatedRecords = {
+          ...currentData.records,
+          [studentUid]: 'absent' as const
+        };
+
+        const existingLogs = currentData.biometricLogs?.[studentUid] || {};
+        const updatedLogs = {
+          ...currentData.biometricLogs,
+          [studentUid]: {
+            ...existingLogs,
+            checkOut: logEntry
+          }
+        } as { 
+          [studentId: string]: { 
+            checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string };
+            checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; refused?: boolean; reason?: string };
+            leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; reason?: string; returnDate?: string };
+          }; 
+        };
+
+        await updateDoc(doc(db, 'attendance', docId), {
+          records: updatedRecords,
+          biometricLogs: updatedLogs
+        });
+        
+        setAttendance(updatedRecords);
+        setAllAttendance(prev => prev.map(rec => {
+          if (rec.id === docId) {
+            return {
+              ...rec,
+              records: updatedRecords,
+              biometricLogs: updatedLogs
+            };
+          }
+          return rec;
+        }));
+      } else {
+        const newDocRef = await addDoc(collection(db, 'attendance'), {
+          classId: selectedClassId,
+          date: dateStr,
+          records: { [studentUid]: 'absent' },
+          biometricLogs: {
+            [studentUid]: {
+              checkOut: logEntry
+            }
+          }
+        });
+
+        const newRecord: AttendanceRecord = {
+          id: newDocRef.id,
+          classId: selectedClassId,
+          date: dateStr,
+          records: { [studentUid]: 'absent' as const },
+          biometricLogs: {
+            [studentUid]: {
+              checkOut: logEntry
+            }
+          } as { 
+            [studentId: string]: { 
+              checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string };
+              checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; refused?: boolean; reason?: string };
+              leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; reason?: string; returnDate?: string };
+            }; 
+          }
+        };
+
+        setAttendance({ [studentUid]: 'absent' as const });
+        setAllAttendance(prev => [newRecord, ...prev]);
+      }
+
+      addToast(`Recorded refused check-out for ${refusedCheckoutStudent.name}. Status set to Absent.`);
+      setRefusedCheckoutStudent(null);
+      setRefusalReason('');
+    } catch (error) {
+      console.error("Error saving refused checkout", error);
+      addToast("Failed to save refused checkout information", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const triggerConsecutiveAbsenceNotifications = async (currentAttendance: { [studentId: string]: AttendanceStatus }) => {
@@ -2139,28 +2295,40 @@ void loop() {
                                           </button>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <p className="text-xs text-gray-500">{student.email}</p>
-                                        {attendanceRecord?.biometricLogs?.[student.uid] && (
-                                          <div className="flex flex-wrap gap-1">
-                                            {attendanceRecord.biometricLogs[student.uid].checkIn && (
-                                              <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase" title={`Check-in via ${attendanceRecord.biometricLogs[student.uid].checkIn?.method}`}>
-                                                {attendanceRecord.biometricLogs[student.uid].checkIn?.method === 'biometric' ? <Fingerprint size={10} /> : <CheckCircle size={10} />}
-                                                {attendanceRecord.biometricLogs[student.uid].checkIn?.time}
-                                              </div>
-                                            )}
-                                            {attendanceRecord.biometricLogs[student.uid].checkOut && (
-                                              <div className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase" title="Check-out">
-                                                <XCircle size={10} />
-                                                {attendanceRecord.biometricLogs[student.uid].checkOut?.time}
-                                              </div>
-                                            )}
-                                            {attendanceRecord.biometricLogs[student.uid].leaveOut && (
-                                              <div className="flex items-center gap-1.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 text-amber-600">
-                                                <div className="flex items-center gap-1 text-xs font-bold uppercase" title="Leave-out">
-                                                  <AlertCircle size={10} />
-                                                  {attendanceRecord.biometricLogs[student.uid].leaveOut?.time}
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                          <p className="text-xs text-gray-500">{student.email}</p>
+                                          {attendanceRecord?.biometricLogs?.[student.uid] && (
+                                            <div className="flex flex-wrap gap-1">
+                                              {attendanceRecord.biometricLogs[student.uid].checkIn && (
+                                                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase" title={`Check-in via ${attendanceRecord.biometricLogs[student.uid].checkIn?.method}`}>
+                                                  {attendanceRecord.biometricLogs[student.uid].checkIn?.method === 'biometric' ? <Fingerprint size={10} /> : <CheckCircle size={10} />}
+                                                  {attendanceRecord.biometricLogs[student.uid].checkIn?.time}
                                                 </div>
+                                              )}
+                                              {attendanceRecord.biometricLogs[student.uid].checkOut && (
+                                                <div 
+                                                  className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border uppercase cursor-help ${
+                                                    attendanceRecord.biometricLogs[student.uid].checkOut?.refused 
+                                                      ? 'text-rose-700 bg-rose-100 border-rose-200' 
+                                                      : 'text-red-600 bg-red-50 border-red-100'
+                                                  }`}
+                                                  title={
+                                                    attendanceRecord.biometricLogs[student.uid].checkOut?.refused 
+                                                      ? `Refused Checkout: ${attendanceRecord.biometricLogs[student.uid].checkOut?.reason}` 
+                                                      : "Check-out"
+                                                  }
+                                                >
+                                                  <XCircle size={10} />
+                                                  {attendanceRecord.biometricLogs[student.uid].checkOut?.refused ? 'Refused' : attendanceRecord.biometricLogs[student.uid].checkOut?.time}
+                                                </div>
+                                              )}
+                                              {attendanceRecord.biometricLogs[student.uid].leaveOut && (
+                                                <div className="flex items-center gap-1.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 text-amber-600">
+                                                  <div className="flex items-center gap-1 text-xs font-bold uppercase" title="Leave-out">
+                                                    <AlertCircle size={10} />
+                                                    {attendanceRecord.biometricLogs[student.uid].leaveOut?.time}
+                                                  </div>
                                                 <button
                                                   onClick={(e) => {
                                                     e.stopPropagation();
@@ -2182,7 +2350,8 @@ void loop() {
                                             )}
                                           </div>
                                         )}
-                                        {(isAdmin || isTeacher) && (
+                                      </div>
+                                      {(isAdmin || isTeacher) && (
                                           <button 
                                             onClick={() => setSelectedStudentForBio(student.uid)}
                                             className={`mt-2 flex items-center gap-2 px-2 py-1 rounded text-xs font-bold uppercase tracking-widest transition-all ${
@@ -2194,6 +2363,28 @@ void loop() {
                                             <Fingerprint size={10} />
                                             {student.biometricId ? 'Bio Linked' : 'Enroll Bio'}
                                           </button>
+                                        )}
+                                        {attendanceRecord?.biometricLogs?.[student.uid]?.checkOut?.refused && (
+                                          <div className="mt-2 bg-red-50/70 border border-red-100 rounded-xl p-2.5 max-w-xs shadow-xs text-left">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-red-700 uppercase tracking-widest mb-1 font-sans">
+                                              <AlertCircle size={12} className="text-red-600 animate-pulse" />
+                                              <span>Refused Checkout</span>
+                                            </div>
+                                            <p className="text-xs text-red-650 leading-relaxed font-semibold italic">
+                                              "{attendanceRecord.biometricLogs[student.uid].checkOut.reason}"
+                                            </p>
+                                          </div>
+                                        )}
+                                        {attendanceRecord?.biometricLogs?.[student.uid]?.checkIn && !attendanceRecord?.biometricLogs?.[student.uid]?.checkOut && status === 'absent' && (
+                                          <div className="mt-2 bg-amber-50 border border-amber-100 rounded-xl p-2.5 max-w-xs shadow-xs text-left">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-widest mb-1 font-sans">
+                                              <AlertCircle size={12} className="text-amber-500" />
+                                              <span>Missed Checkout</span>
+                                            </div>
+                                            <p className="text-xs text-amber-600 leading-relaxed">
+                                              Student checked in but missed checking out. Automatically marked as Absent.
+                                            </p>
+                                          </div>
                                         )}
                                       </div>
                                     </div>
@@ -2229,6 +2420,21 @@ void loop() {
                                           {getStatusIcon(s) || <Check size={14} />}
                                         </button>
                                       ))}
+                                      <button
+                                        onClick={() => {
+                                          setRefusedCheckoutStudent(student);
+                                          setRefusalReason('');
+                                        }}
+                                        className={`p-2 rounded-lg border transition-all flex items-center gap-1.5 font-bold uppercase shrink-0 ${
+                                          attendanceRecord?.biometricLogs?.[student.uid]?.checkOut?.refused
+                                            ? 'bg-rose-100 text-rose-700 border-rose-350 shadow-xs'
+                                            : 'bg-white hover:bg-rose-50 text-rose-500 border-rose-200 hover:border-rose-300 shadow-xs'
+                                        }`}
+                                        title="Refuse Checkout (Mark as Absent with Reason)"
+                                      >
+                                        <XCircle size={14} />
+                                        <span className="text-[10px] tracking-wider hidden md:inline">Refuse CO</span>
+                                      </button>
                                     </div>
                                   </td>
                                 )}
@@ -3154,6 +3360,88 @@ void loop() {
                     className="flex-1 bg-blue-800 text-white font-bold uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-blue-900 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
                   >
                     {saving ? 'Saving...' : 'Link Resource'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Refused Checkout Explanation Modal */}
+      <AnimatePresence>
+        {refusedCheckoutStudent && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setRefusedCheckoutStudent(null);
+                setRefusalReason('');
+              }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs no-print"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 z-10 no-print"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-red-700 p-8 text-white">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <XCircle size={28} />
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setRefusedCheckoutStudent(null);
+                      setRefusalReason('');
+                    }} 
+                    className="text-white/60 hover:text-white transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <h3 className="text-2xl font-bold uppercase tracking-tight leading-none mb-2">Refused Checkout</h3>
+                <p className="text-red-100 font-medium text-sm">
+                  Student: <span className="font-bold underline">{refusedCheckoutStudent.name}</span>
+                </p>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                    Reason for Refusing Checkout
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={refusalReason}
+                    onChange={(e) => setRefusalReason(e.target.value)}
+                    placeholder="Enter the reason why the student refused or was unable to properly checkout..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all resize-none text-slate-800 font-medium"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setRefusedCheckoutStudent(null);
+                      setRefusalReason('');
+                    }}
+                    className="flex-1 bg-gray-100 text-gray-600 font-bold uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-gray-200 transition-all border border-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={handleConfirmRefuseCheckout}
+                    disabled={!refusalReason.trim() || saving}
+                    className="flex-1 bg-red-650 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs py-4 rounded-2xl transition-all shadow-lg shadow-red-200 disabled:opacity-50"
+                  >
+                    {saving ? 'Recording...' : 'Mark Absent'}
                   </button>
                 </div>
               </div>

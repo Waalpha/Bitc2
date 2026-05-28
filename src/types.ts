@@ -156,9 +156,9 @@ export interface AttendanceRecord {
   records: { [studentId: string]: 'present' | 'absent' | 'late' | 'excused' };
   biometricLogs?: { 
     [studentId: string]: { 
-      checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
-      checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string };
-      leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps'; supervisorId?: string; reason?: string; returnDate?: string };
+      checkIn?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string };
+      checkOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; refused?: boolean; reason?: string };
+      leaveOut?: { time: string; method: 'qr' | 'biometric' | 'gps' | 'manual'; supervisorId?: string; reason?: string; returnDate?: string };
     } 
   };
 }

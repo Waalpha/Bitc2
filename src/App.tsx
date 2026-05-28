@@ -1,4 +1,4 @@
-declare module 'react-router-dom';
+import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { NotificationManager } from './components/NotificationManager';
@@ -31,7 +31,7 @@ const ProtectedRoute = ({
   requiredRole, 
   excludeRole 
 }: { 
-  children: JSX.Element | JSX.Element[], 
+  children: React.ReactNode, 
   requiredRole?: string,
   excludeRole?: string 
 }) => {

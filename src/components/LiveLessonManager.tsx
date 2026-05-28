@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthProvider';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { TimetableEntry, DayOfWeek } from '../types';
 import { Clock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';

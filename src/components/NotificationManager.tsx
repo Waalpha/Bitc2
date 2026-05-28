@@ -52,6 +52,7 @@ export const NotificationManager: React.FC = () => {
     // 3. Listen for new notifications and show browser popup
     // We only want to show notifications that arrive AFTER the component mounts
     const startTime = new Date().toISOString();
+    const notificationSound = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
     
     const q = query(
       collection(db, 'notifications'),
@@ -64,11 +65,18 @@ export const NotificationManager: React.FC = () => {
           const data = change.doc.data();
           // Only show if it's a new notification created after we started listening
           if (data.createdAt > startTime) {
+            playNotificationSound();
             showBrowserNotification(data.title, data.message, data.link);
           }
         }
       });
     });
+
+    const playNotificationSound = () => {
+      notificationSound.play().catch(err => {
+        console.warn('Notification sound playback blocked:', err);
+      });
+    };
 
     return () => unsubscribe();
   }, [user]);

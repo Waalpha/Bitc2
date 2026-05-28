@@ -1,6 +1,6 @@
 {
   "name": "BITC",
   "description": "A comprehensive student and teacher portal for managing classes, attendance, exams, and real-time collaboration.",
-  "requestFramePermissions": ["publickey-credentials-create", "publickey-credentials-get", "camera", "usb"],
+  "requestFramePermissions": ["publickey-credentials-create", "publickey-credentials-get", "camera", "usb", "geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -95,9 +95,8 @@ service cloud.firestore {
 
     function isValidSettings(data, settingId) {
       return (settingId == 'hero_legacy' ? data.images is list :
-             (settingId == 'hero_slides' ? data.slides is list :
              (settingId == 'gallery' ? data.images is list :
-             (data.appTitle is string && data.appTitle.size() <= 100))));
+             (data.appTitle is string && data.appTitle.size() <= 100)));
     }
 
     function isValidFeeBalance(data) {

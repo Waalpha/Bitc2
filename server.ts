@@ -45,8 +45,144 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+import { 
+  queryCollection, 
+  readCollection, 
+  writeCollection, 
+  updateDocumentInCol, 
+  setDocumentInCol, 
+  addDocumentToCol, 
+  deleteDocumentInCol 
+} from "./server/localDb";
+
+// Local Firestore Adapter to route Express backend operations (IoT, reports, fee automations) offline
+class LocalCollectionReference {
+  collectionName: string;
+  constraints: any[] = [];
+  
+  constructor(collectionName: string, constraints: any[] = []) {
+    this.collectionName = collectionName;
+    this.constraints = constraints;
+  }
+  
+  where(field: string, operator: string, value: any) {
+    return new LocalCollectionReference(this.collectionName, [
+      ...this.constraints,
+      { type: 'where', field, operator, value }
+    ]);
+  }
+  
+  orderBy(field: string, direction: 'asc' | 'desc' = 'asc') {
+    return new LocalCollectionReference(this.collectionName, [
+      ...this.constraints,
+      { type: 'orderBy', field, direction }
+    ]);
+  }
+  
+  limit(n: number) {
+    return new LocalCollectionReference(this.collectionName, [
+      ...this.constraints,
+      { type: 'limit', value: n }
+    ]);
+  }
+  
+  async get() {
+    const docs = queryCollection(this.collectionName, this.constraints);
+    const mockDocs = docs.map(d => ({
+      id: d.id,
+      data: () => d,
+      ref: {
+        update: async (updates: any) => {
+          updateDocumentInCol(this.collectionName, d.id, updates);
+        },
+        set: async (data: any, options?: any) => {
+          setDocumentInCol(this.collectionName, d.id, data, options);
+        },
+        delete: async () => {
+          deleteDocumentInCol(this.collectionName, d.id);
+        }
+      }
+    }));
+    return {
+      empty: mockDocs.length === 0,
+      size: mockDocs.length,
+      docs: mockDocs
+    };
+  }
+  
+  async add(data: any) {
+    const id = addDocumentToCol(this.collectionName, data);
+    return { id };
+  }
+  
+  doc(id: string) {
+    const collectionName = this.collectionName;
+    return {
+      id,
+      async get() {
+        const raw = readCollection(collectionName);
+        const docData = raw[id] || null;
+        return {
+          exists: !!docData,
+          data: () => docData
+        };
+      },
+      async update(updates: any) {
+        updateDocumentInCol(collectionName, id, updates);
+      },
+      async set(data: any, options?: any) {
+        setDocumentInCol(collectionName, id, data, options);
+      },
+      async delete() {
+        deleteDocumentInCol(collectionName, id);
+      }
+    };
+  }
+}
+
+const localDbFirestore = {
+  collection(name: string) {
+    return new LocalCollectionReference(name);
+  }
+};
+
+// Automatic one-shot migration on startup to download documents from Firestore to prevent reading it again
+async function migrateFromFirestore(firestoreAdmin: admin.firestore.Firestore) {
+  const collections = [
+    'users', 'classes', 'attendance', 'fees', 'feeConfigs', 
+    'timetable', 'exams', 'exam_results', 'marks', 'chats', 
+    'notifications', 'fee_balances'
+  ];
+  
+  console.log("[MIGRATION] Checking Firestore data migration...");
+  for (const colName of collections) {
+    const localPath = path.join(process.cwd(), 'data', `${colName}.json`);
+    if (!fs.existsSync(localPath)) {
+      console.log(`[MIGRATION] Fetching data for "${colName}" from remote Firestore...`);
+      try {
+        const snap = await firestoreAdmin.collection(colName).get();
+        const data: any = {};
+        if (!snap.empty) {
+          snap.docs.forEach(doc => {
+            data[doc.id] = doc.data();
+          });
+          writeCollection(colName, data);
+          console.log(`[MIGRATION] Imported ${snap.size} documents for "${colName}" successfully.`);
+        } else {
+          writeCollection(colName, {});
+          console.log(`[MIGRATION] Collection "${colName}" is empty in Cloud Firestore.`);
+        }
+      } catch (err) {
+        console.error(`[MIGRATION] Failed to migrate keys for "${colName}":`, err);
+        writeCollection(colName, {});
+      }
+    }
+  }
+  console.log("[MIGRATION] Automatic offline data initialization check complete.");
+}
+
 // Initialize Firebase Admin
-let db: admin.firestore.Firestore | null = null;
+let db: any = localDbFirestore;
 try {
   if (admin.apps.length === 0) {
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
@@ -61,8 +197,13 @@ try {
     
     admin.initializeApp(options);
   }
-  db = admin.firestore();
-  console.log("Firebase Admin initialized successfully");
+  
+  // Trigger automatic migration once in the background
+  const remoteDb = admin.firestore();
+  console.log("Firebase Admin initialized, launching one-time background migration check.");
+  migrateFromFirestore(remoteDb).catch(err => {
+    console.error("Migration task failed:", err);
+  });
 } catch (error) {
   console.log("Firebase Admin initialization warning:", error);
 }
@@ -106,6 +247,79 @@ async function startServer() {
       env: process.env.NODE_ENV || 'development',
       cloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
     });
+  });
+
+  // Local Offline DB Proxy Endpoints
+  apiRouter.get("/db/get", (req, res) => {
+    const { collection, id } = req.query;
+    if (!collection || !id) {
+      return res.status(400).json({ error: "Missing collection or id" });
+    }
+    const data = readCollection(String(collection))[String(id)] || null;
+    res.json({ data });
+  });
+
+  apiRouter.post("/db/query", (req, res) => {
+    const { collection, constraints } = req.body;
+    if (!collection) {
+      return res.status(400).json({ error: "Missing collection" });
+    }
+    const docs = queryCollection(collection, constraints || []);
+    res.json({ docs: docs.map(d => ({ id: d.id, data: d })) });
+  });
+
+  apiRouter.post("/db/add", (req, res) => {
+    const { collection, data } = req.body;
+    if (!collection || !data) {
+      return res.status(400).json({ error: "Missing collection or data" });
+    }
+    const newId = addDocumentToCol(collection, data);
+    res.json({ id: newId });
+  });
+
+  apiRouter.post("/db/update", (req, res) => {
+    const { collection, id, data } = req.body;
+    if (!collection || !id || !data) {
+      return res.status(400).json({ error: "Missing collection, id or data" });
+    }
+    updateDocumentInCol(collection, String(id), data);
+    res.json({ success: true });
+  });
+
+  apiRouter.post("/db/set", (req, res) => {
+    const { collection, id, data, options } = req.body;
+    if (!collection || !id || !data) {
+      return res.status(400).json({ error: "Missing collection, id or data" });
+    }
+    setDocumentInCol(collection, String(id), data, options);
+    res.json({ success: true });
+  });
+
+  apiRouter.post("/db/delete", (req, res) => {
+    const { collection, id } = req.body;
+    if (!collection || !id) {
+      return res.status(400).json({ error: "Missing collection or id" });
+    }
+    deleteDocumentInCol(collection, String(id));
+    res.json({ success: true });
+  });
+
+  apiRouter.post("/db/batch", (req, res) => {
+    const { operations } = req.body;
+    if (!Array.isArray(operations)) {
+      return res.status(400).json({ error: "Invalid operations parameter" });
+    }
+    for (const op of operations) {
+      const { type, collection, id, data, options } = op;
+      if (type === 'set') {
+        setDocumentInCol(collection, id, data, options);
+      } else if (type === 'update') {
+        updateDocumentInCol(collection, id, data);
+      } else if (type === 'delete') {
+        deleteDocumentInCol(collection, id);
+      }
+    }
+    res.json({ success: true });
   });
 
   // API Route to resolve admission number to email address for unified login

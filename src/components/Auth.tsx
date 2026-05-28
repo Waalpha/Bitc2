@@ -37,8 +37,29 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    let resolvedEmail = identifier.trim();
+
     try {
-      await signInWithEmailAndPassword(auth, identifier, password);
+      // Clean and check if is an email format or admission number
+      if (!resolvedEmail.includes('@')) {
+        const response = await fetch('/api/auth/lookup-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ admissionNumber: resolvedEmail }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `No account found for Admission Number "${resolvedEmail}"`);
+        }
+
+        const data = await response.json();
+        resolvedEmail = data.email;
+      }
+
+      await signInWithEmailAndPassword(auth, resolvedEmail, password);
     } catch (err: any) {
       console.error("Login error:", err);
       let message = "Invalid credentials. Please try again.";
@@ -136,16 +157,16 @@ export const Auth: React.FC = () => {
         {loginMethod === 'form' ? (
           <form onSubmit={handleFormLogin} className="space-y-6">
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Email Address</label>
+              <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Admission No. or Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                  <Mail size={18} />
+                  {identifier.includes('@') ? <Mail size={18} /> : <Hash size={18} />}
                 </div>
                 <input 
-                   type="email" 
+                  type="text" 
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="name@email.com"
+                  placeholder="e.g. BITC/2026/001 or name@email.com"
                   required
                   className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-slate-900 placeholder:text-slate-300 ring-1 ring-slate-100 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                 />

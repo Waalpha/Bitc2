@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, where, doc, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, addDoc, deleteDoc, updateDoc, getDocs } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { TimetableEntry, Class, Unit, User, DayOfWeek } from '../types';
 import { Plus, Trash2, Clock, MapPin, User as UserIcon, BookOpen, Calendar, Filter, Edit2, X } from 'lucide-react';
