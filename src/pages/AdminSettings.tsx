@@ -191,6 +191,7 @@ export const AdminSettings: React.FC = () => {
       });
       setEditingUser(null);
       addToast("User profile updated successfully!");
+      fetchAdminData();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${editingUser.uid}`);
       addToast("Failed to update user", "error");
