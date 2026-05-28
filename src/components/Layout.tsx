@@ -86,7 +86,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       title: 'STUDENT INFO',
       items: [
         { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'view_students' },
-        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'view_students' },
+        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'view_students', role: 'admin' },
         { name: 'Student List', path: '/students', icon: Users, permission: 'view_students' },
         { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: null },
         { name: 'Exams', path: '/exams', icon: FileText, permission: 'manage_exams' },
