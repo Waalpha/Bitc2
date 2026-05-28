@@ -48,11 +48,11 @@ export const Classes: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const canManageClasses = hasPermission('manage_classes');
-  const canManageUnits = hasPermission('manage_units');
   const role = userData?.role?.toLowerCase();
   const isTeacher = role === 'teacher';
   const isAdmin = role === 'admin';
+  const canManageClasses = isAdmin;
+  const canManageUnits = hasPermission('manage_units');
 
   useEffect(() => {
     if (!user) return;
@@ -81,30 +81,33 @@ export const Classes: React.FC = () => {
     fetchClassesAndTeachers();
   }, [user, isTeacher]);
 
-  useEffect(() => {
-    if (selectedClass) {
-      const fetchStudentsAndUnits = async () => {
-        try {
-          // Fetch students
-          const studentsQ = query(collection(db, 'users'), where('classIds', 'array-contains', selectedClass.id));
-          const studentsSnap = await getDocs(studentsQ);
-          setStudents(studentsSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User)));
+  const fetchStudentsAndUnits = async () => {
+    if (!selectedClass) return;
+    try {
+      // Fetch students
+      const studentsQ = query(collection(db, 'users'), where('classIds', 'array-contains', selectedClass.id));
+      const studentsSnap = await getDocs(studentsQ);
+      setStudents(studentsSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User)));
 
-          // Fetch units
-          const unitsQ = query(collection(db, 'units'), where('classId', '==', selectedClass.id));
-          const unitsSnap = await getDocs(unitsQ);
-          setUnits(unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
-        } catch (error) {
-          handleFirestoreError(error, OperationType.LIST, 'class-details');
-        }
-      };
-
-      fetchStudentsAndUnits();
+      // Fetch units
+      const unitsQ = query(collection(db, 'units'), where('classId', '==', selectedClass.id));
+      const unitsSnap = await getDocs(unitsQ);
+      setUnits(unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'class-details');
     }
+  };
+
+  useEffect(() => {
+    fetchStudentsAndUnits();
   }, [selectedClass]);
 
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can add classes", "error");
+      return;
+    }
     if (!newClassName.trim() || !user) return;
     
     const teacherId = selectedTeacherId || user.uid;
@@ -150,6 +153,10 @@ export const Classes: React.FC = () => {
 
   const handleUpdateClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can update classes", "error");
+      return;
+    }
     if (!editingClass || !editClassName.trim()) return;
 
     try {
@@ -186,6 +193,10 @@ export const Classes: React.FC = () => {
   };
 
   const handleDeleteClass = async (id: string) => {
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can delete classes", "error");
+      return;
+    }
     try {
       await deleteDoc(doc(db, 'classes', id));
       if (selectedClass?.id === id) setSelectedClass(null);
@@ -198,6 +209,10 @@ export const Classes: React.FC = () => {
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can assign students", "error");
+      return;
+    }
     if (!studentEmail.trim() || !selectedClass) return;
 
     try {
@@ -229,6 +244,7 @@ export const Classes: React.FC = () => {
       addToast(`Added ${studentData.name || studentEmail} to ${selectedClass.name}`);
       setIsAddingStudent(false);
       setStudentEmail('');
+      fetchStudentsAndUnits();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'users');
       addToast("Failed to add student", "error");
@@ -237,11 +253,16 @@ export const Classes: React.FC = () => {
 
   const handleRemoveStudent = async (studentUid: string) => {
     if (!selectedClass) return;
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can unassign students", "error");
+      return;
+    }
     try {
       await updateDoc(doc(db, 'users', studentUid), {
         classIds: arrayRemove(selectedClass.id)
       });
       addToast("Student removed from class");
+      fetchStudentsAndUnits();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${studentUid}`);
       addToast("Failed to remove student", "error");
@@ -361,7 +382,7 @@ export const Classes: React.FC = () => {
                     )}
                   </div>
                 </div>
-                {(isTeacher || isAdmin) && (
+                {isAdmin && (
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setIsAddingStudent(true)}
@@ -404,7 +425,7 @@ export const Classes: React.FC = () => {
                                 Paid: Ksh {balance.paidAmount}
                               </div>
                             )}
-                            {(isTeacher || isAdmin) && (
+                            {isAdmin && (
                               <button
                                 onClick={() => handleRemoveStudent(student.uid)}
                                 className="text-gray-400 hover:text-red-600 transition-colors"
