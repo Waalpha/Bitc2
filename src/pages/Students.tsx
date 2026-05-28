@@ -554,6 +554,10 @@ export const Students: React.FC = () => {
 
   const handleUpdateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can edit student information", "error");
+      return;
+    }
     if (!editingStudent) return;
 
     try {
@@ -585,6 +589,7 @@ export const Students: React.FC = () => {
       });
       setEditingStudent(null);
       addToast("Student profile updated successfully!");
+      fetchData();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${editingStudent.uid}`);
       addToast("Failed to update student", "error");
@@ -592,6 +597,10 @@ export const Students: React.FC = () => {
   };
 
   const handleUpdateClasses = async (studentUid: string, classIds: string[]) => {
+    if (!isAdmin) {
+      addToast("Permission denied: Only admin can assign student classes", "error");
+      return;
+    }
     try {
       await updateDoc(doc(db, 'users', studentUid), {
         classIds: classIds || []
@@ -866,13 +875,15 @@ export const Students: React.FC = () => {
                   >
                     <Eye size={20} />
                   </button>
-                  <button
-                    onClick={() => setEditingStudent(student)}
-                    className="text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Manage Student"
-                  >
-                    <Settings2 size={20} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setEditingStudent(student)}
+                      className="text-gray-400 hover:text-blue-600 transition-colors"
+                      title="Manage Student"
+                    >
+                      <Settings2 size={20} />
+                    </button>
+                  )}
                   <button
                     onClick={() => setMessagingStudents([student])}
                     className="text-gray-400 hover:text-emerald-600 transition-colors"
@@ -1058,16 +1069,18 @@ export const Students: React.FC = () => {
                 >
                   Close
                 </button>
-                <button 
-                  onClick={() => {
-                    setEditingStudent(viewingStudent);
-                    setViewingStudent(null);
-                  }}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center gap-2"
-                >
-                  <Settings2 size={18} />
-                  Manage Student
-                </button>
+                {isAdmin && (
+                  <button 
+                    onClick={() => {
+                      setEditingStudent(viewingStudent);
+                      setViewingStudent(null);
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center gap-2"
+                  >
+                    <Settings2 size={18} />
+                    Manage Student
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
