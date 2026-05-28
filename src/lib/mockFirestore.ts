@@ -32,10 +32,25 @@ export class MockQuerySnapshot {
     this.empty = docs.length === 0;
     this.size = docs.length;
   }
+  docChanges() {
+    return this.docs.map(doc => ({
+      type: 'added',
+      doc
+    }));
+  }
 }
 
-export function collection(db: any, path: string) {
-  return { type: 'collection', path };
+export function collection(dbOrDoc: any, ...pathSegments: string[]) {
+  let fullPath = "";
+  if (dbOrDoc && dbOrDoc.type === 'document') {
+    fullPath = [dbOrDoc.path, ...pathSegments].filter(Boolean).join('/');
+  } else if (dbOrDoc && typeof dbOrDoc === 'string') {
+    fullPath = [dbOrDoc, ...pathSegments].filter(Boolean).join('/');
+  } else {
+    // Treat the first argument as Db config and skip if pathSegments is populated
+    fullPath = pathSegments.filter(Boolean).join('/');
+  }
+  return { type: 'collection', path: fullPath };
 }
 
 export function doc(dbOrCol: any, pathOrId: string, ...additionalPaths: string[]) {
