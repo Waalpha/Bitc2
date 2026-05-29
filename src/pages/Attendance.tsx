@@ -304,8 +304,10 @@ void loop() {
       return;
     }
 
-    if (targetClass.latitude === undefined || targetClass.latitude === null ||
-        targetClass.longitude === undefined || targetClass.longitude === null) {
+    const tLat = targetClass.latitude !== undefined && targetClass.latitude !== null ? Number(targetClass.latitude) : NaN;
+    const tLon = targetClass.longitude !== undefined && targetClass.longitude !== null ? Number(targetClass.longitude) : NaN;
+
+    if (isNaN(tLat) || isNaN(tLon)) {
       addToast("GPS Geofencing is not configured/enabled for this class.", "error");
       return;
     }
@@ -315,11 +317,11 @@ void loop() {
 
     const onGpsSuccess = async (position: GeolocationPosition) => {
       try {
-        const studentLat = position.coords.latitude;
-        const studentLon = position.coords.longitude;
-        const targetLat = targetClass.latitude!;
-        const targetLon = targetClass.longitude!;
-        const allowedRadius = targetClass.radius || 100;
+        const studentLat = Number(position.coords.latitude);
+        const studentLon = Number(position.coords.longitude);
+        const targetLat = tLat;
+        const targetLon = tLon;
+        const allowedRadius = Number(targetClass.radius || 100);
 
         const distance = getDistanceInMeters(studentLat, studentLon, targetLat, targetLon);
 
@@ -362,9 +364,7 @@ void loop() {
         if (!snapshot.empty) {
           const todayRecord = snapshot.docs[0];
           const data = todayRecord.data() as AttendanceRecord;
-          const updatedRecords = actionType === 'checkIn' 
-            ? { ...data.records, [user.uid]: 'present' as const } 
-            : data.records;
+          const updatedRecords = { ...data.records, [user.uid]: 'present' as const };
 
           const existingLogs = data.biometricLogs?.[user.uid] || {};
           const updatedLogs = {
@@ -383,7 +383,7 @@ void loop() {
           await addDoc(collection(db, 'attendance'), {
             classId: targetClassId,
             date: dateStr,
-            records: { [user.uid]: actionType === 'checkIn' ? 'present' : 'absent' },
+            records: { [user.uid]: 'present' },
             biometricLogs: {
               [user.uid]: {
                 [actionType]: logEntry
@@ -392,7 +392,7 @@ void loop() {
           });
         }
 
-        addToast(`GPS check-in verified successfully for ${targetClass.name}!`, "success");
+        addToast(`GPS ${actionType === 'checkIn' ? 'check-in' : 'check-out'} verified successfully for ${targetClass.name}!`, "success");
       } catch (error: any) {
         console.error("GPS check-in error:", error);
         addToast(error.message || "Failed to mark GPS attendance.", "error");
@@ -449,13 +449,21 @@ void loop() {
         if (fetchedClasses.length > 0 && !selectedClassId) {
           setSelectedClassId(fetchedClasses[0].id);
         }
+        if (fetchedClasses.length > 0) {
+          const firstWithGps = fetchedClasses.find(c => c.latitude !== undefined && c.latitude !== null && !isNaN(Number(c.latitude)));
+          if (firstWithGps) {
+            setGpsSelectedClassId(firstWithGps.id);
+          } else {
+            setGpsSelectedClassId(fetchedClasses[0].id);
+          }
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'classes');
       }
     };
 
     fetchClasses();
-  }, [user, userData, isAdmin, isTeacher, isStudent]);
+  }, [user, userData, isAdmin, isTeacher, isStudent, gpsSelectedClassId, selectedClassId]);
 
   // Fetch students for the selected class
   useEffect(() => {
@@ -2879,7 +2887,7 @@ void loop() {
               {gpsSelectedClassId && (() => {
                 const currentCls = classes.find(c => c.id === gpsSelectedClassId);
                 if (!currentCls) return null;
-                const hasGps = currentCls.latitude !== undefined && currentCls.latitude !== null;
+                const hasGps = currentCls.latitude !== undefined && currentCls.latitude !== null && !isNaN(Number(currentCls.latitude));
                 return (
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-3xl space-y-2">
                     <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1.5">
@@ -2888,7 +2896,7 @@ void loop() {
                     </p>
                     <p className="text-xs font-semibold text-slate-800">
                       {hasGps 
-                        ? `Configured to: ${currentCls.latitude?.toFixed(4)}, ${currentCls.longitude?.toFixed(4)}` 
+                        ? `Configured to: ${Number(currentCls.latitude).toFixed(6)}, ${Number(currentCls.longitude).toFixed(6)}` 
                         : 'No geofence coordinates specified for this class.'}
                     </p>
                     {hasGps && (
@@ -2903,7 +2911,10 @@ void loop() {
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
-                  disabled={isGpsVerifying || !gpsSelectedClassId || !classes.find(c => c.id === gpsSelectedClassId)?.latitude}
+                  disabled={isGpsVerifying || !gpsSelectedClassId || (() => {
+                    const c = classes.find(cls => cls.id === gpsSelectedClassId);
+                    return !c || c.latitude === undefined || c.latitude === null || isNaN(Number(c.latitude));
+                  })()}
                   onClick={() => handleGpsCheckInOnClient('checkIn')}
                   className="flex-1 py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent transition-all rounded-2xl text-xs font-extrabold text-white uppercase tracking-wider text-center shadow-lg shadow-purple-100 disabled:shadow-none min-h-[50px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                 >
@@ -2916,7 +2927,10 @@ void loop() {
 
                 <button
                   type="button"
-                  disabled={isGpsVerifying || !gpsSelectedClassId || !classes.find(c => c.id === gpsSelectedClassId)?.latitude}
+                  disabled={isGpsVerifying || !gpsSelectedClassId || (() => {
+                    const c = classes.find(cls => cls.id === gpsSelectedClassId);
+                    return !c || c.latitude === undefined || c.latitude === null || isNaN(Number(c.latitude));
+                  })()}
                   onClick={() => handleGpsCheckInOnClient('checkOut')}
                   className="flex-1 py-4 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 disabled:bg-slate-50 disabled:text-slate-300 disabled:border-slate-100 transition-all rounded-2xl text-xs font-extrabold uppercase tracking-wider text-center min-h-[50px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                 >
