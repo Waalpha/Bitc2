@@ -3,9 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
+import { getDbMode, setDbMode, syncDbFromCloud } from '../lib/mockFirestore';
 import { Toast, ToastMessage } from './Toast';
 import { LogoutButton } from './Auth';
 import { NotificationBell } from './NotificationBell';
+import { Database, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { 
   LayoutDashboard, 
   Home,
@@ -36,6 +38,44 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const location = useLocation();
+
+  const [dbMode, setDbModeState] = useState<'real' | 'local_cached'>('real');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState('');
+  const [isSyncMenuOpen, setIsSyncMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Read initial database mode
+    setDbModeState(getDbMode());
+
+    const handleModeChange = () => {
+      setDbModeState(getDbMode());
+    };
+
+    window.addEventListener('db-mode-changed', handleModeChange);
+    return () => {
+      window.removeEventListener('db-mode-changed', handleModeChange);
+    };
+  }, []);
+
+  const handleFullSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncProgress('Initializing...');
+    try {
+      const res = await syncDbFromCloud((msg) => setSyncProgress(msg));
+      if (res.success) {
+        addToast(`Successfully backed up ${res.count} records locally!`, 'success');
+      } else {
+        addToast('Sync aborted. Firestore is currently exhausted or unreachable.', 'error');
+      }
+    } catch (err: any) {
+      addToast(`Sync error: ${err.message || err}`, 'error');
+    } finally {
+      setIsSyncing(false);
+      setSyncProgress('');
+    }
+  };
 
   const addToast = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -376,6 +416,97 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6">
+              {/* Intelligent Database Cache Sync and Network Status */}
+              <div className="relative">
+                <div 
+                  onClick={() => setIsSyncMenuOpen(!isSyncMenuOpen)}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border cursor-pointer transition-all hover:shadow-md select-none ${
+                    dbMode === 'real' 
+                      ? 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400' 
+                      : 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20 text-amber-400'
+                  }`}
+                  title={dbMode === 'real' ? "Live Connected to Cloud Firestore" : "Database Caching Active"}
+                >
+                  <div className={`w-2 h-2 rounded-full ${dbMode === 'real' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-bounce'}`} />
+                  <Database size={14} className={isSyncing ? 'animate-spin' : ''} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">
+                    {dbMode === 'real' ? "Cloud Live" : "Backup Active"}
+                  </span>
+                  <ChevronDown size={12} className="opacity-60" />
+                </div>
+                
+                <AnimatePresence>
+                  {isSyncMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsSyncMenuOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className={`absolute right-0 mt-3 w-80 rounded-[28px] shadow-2xl py-4 z-50 p-5 border text-left ${
+                          isStudent ? 'bg-[#1A1F2E] border-white/10 text-white' : 'bg-bg-card border-white/5 text-text-primary'
+                        }`}
+                      >
+                        <h4 className="text-xs font-bold uppercase tracking-wider mb-2 text-text-primary flex items-center gap-2">
+                          <Database size={14} className="text-blue-400" /> Database Cache Status
+                        </h4>
+                        <p className="text-[11px] text-text-muted leading-relaxed mb-4">
+                          {dbMode === 'real' 
+                            ? "Active reads are sourced from Cloud Firestore. In background, your records are copied here daily for backup." 
+                            : "Your cloud limit is reached. The school is running off local cached data perfectly so there's zero downtime!"}
+                        </p>
+                        
+                        <div className="space-y-3 pt-2 border-t border-white/5">
+                          {/* Force switch mode */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-medium text-text-secondary">Low-Data Backup Mode</span>
+                            <button 
+                              onClick={() => {
+                                const next = dbMode === 'real' ? 'local_cached' : 'real';
+                                setDbMode(next);
+                                addToast(`Database mode forced to: ${next === 'real' ? 'Cloud Live' : 'Cached Backup'}`, 'warning');
+                                setIsSyncMenuOpen(false);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                dbMode === 'real'
+                                  ? 'bg-transparent border-white/10 text-text-muted hover:border-white/20'
+                                  : 'bg-amber-500 text-black border-transparent hover:scale-105'
+                              }`}
+                            >
+                              {dbMode === 'real' ? "Enable" : "Disable"}
+                            </button>
+                          </div>
+
+                          {/* Quick Admin Sync Call */}
+                          {userData?.role === 'admin' && (
+                            <div className="space-y-2 pt-2 border-t border-white/5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-semibold text-text-secondary">Restore Cache from Cloud</span>
+                                <button
+                                  onClick={() => {
+                                    handleFullSync();
+                                  }}
+                                  disabled={isSyncing}
+                                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/30 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all outline-none"
+                                >
+                                  <RefreshCw size={11} className={isSyncing ? 'animate-spin' : ''} />
+                                  {isSyncing ? "Syncing..." : "Sync Now"}
+                                </button>
+                              </div>
+                              {syncProgress && (
+                                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest leading-normal animate-pulse">
+                                  {syncProgress}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Year/Period */}
               <div className={`hidden lg:flex items-center gap-3 ${isStudent ? 'bg-white/5' : 'bg-bg-card'} px-5 py-2.5 rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all hover:shadow-sm`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-blue-400' : 'bg-primary'} animate-pulse`} />

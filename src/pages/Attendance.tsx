@@ -505,11 +505,57 @@ void loop() {
 
           const snapshot = await getDocs(q);
           const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AttendanceRecord));
-          setAllAttendance(records);
+          
+          // Automatically mark student as absent if they didn't checkout
+          const todayStr = format(new Date(), 'yyyy-MM-dd');
+          const currentHour = new Date().getHours();
+          
+          const normalizedRecords = await Promise.all(records.map(async (record) => {
+            const isPastDate = record.date < todayStr;
+            const isTodayAndPastCheckout = record.date === todayStr && currentHour >= 18; // After 6 PM today
+            
+            if (!isPastDate && !isTodayAndPastCheckout) {
+              return record;
+            }
+            
+            let updatedRecords = { ...record.records };
+            let hasChanges = false;
+            
+            if (record.biometricLogs) {
+              for (const studentId of Object.keys(record.biometricLogs)) {
+                const logs = record.biometricLogs[studentId];
+                if (logs?.checkIn && !logs?.checkOut) {
+                  // Checked in but didn't checkout
+                  if (updatedRecords[studentId] === 'present' || updatedRecords[studentId] === 'late') {
+                    updatedRecords[studentId] = 'absent';
+                    hasChanges = true;
+                  }
+                }
+              }
+            }
+            
+            if (hasChanges) {
+              try {
+                await updateDoc(doc(db, 'attendance', record.id), {
+                  records: updatedRecords
+                });
+              } catch (err) {
+                console.error("Error auto-updating missed checkout status:", record.id, err);
+              }
+              return {
+                ...record,
+                records: updatedRecords
+              };
+            }
+            
+            return record;
+          }));
+
+          setAllAttendance(normalizedRecords);
           
           // Also update current daily attendance if it matches selectedDate
           const dateStr = format(selectedDate, 'yyyy-MM-dd');
-          const todayRecord = records.find(r => r.date === dateStr);
+          const todayRecord = normalizedRecords.find(r => r.date === dateStr);
           if (todayRecord) {
             setAttendance(todayRecord.records);
           } else {
@@ -2326,6 +2372,17 @@ void loop() {
                                             </div>
                                             <p className="text-xs text-red-650 leading-relaxed font-semibold italic">
                                               "{attendanceRecord.biometricLogs[student.uid].checkOut.reason}"
+                                            </p>
+                                          </div>
+                                        )}
+                                        {attendanceRecord?.biometricLogs?.[student.uid]?.checkIn && !attendanceRecord?.biometricLogs?.[student.uid]?.checkOut && status === 'absent' && (
+                                          <div className="mt-2 bg-amber-50 border border-amber-100 rounded-xl p-2.5 max-w-xs shadow-xs text-left">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-widest mb-1 font-sans">
+                                              <AlertCircle size={12} className="text-amber-500" />
+                                              <span>Missed Checkout</span>
+                                            </div>
+                                            <p className="text-xs text-amber-600 leading-relaxed">
+                                              Student checked in but missed checking out. Automatically marked as Absent.
                                             </p>
                                           </div>
                                         )}

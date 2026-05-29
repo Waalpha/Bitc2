@@ -92,7 +92,8 @@ export const Auth: React.FC = () => {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
+      const existingData = userDoc.exists() ? userDoc.data() : null;
+      if (!existingData || !existingData.role) {
         const userEmail = user.email?.toLowerCase() || '';
         let finalRole: 'student' | 'teacher' | 'admin' = role;
         
@@ -111,7 +112,7 @@ export const Auth: React.FC = () => {
           email: user.email,
           role: finalRole,
           createdAt: new Date().toISOString(),
-        });
+        }, { merge: true });
       }
     } catch (err: any) {
       console.error("Google Login error:", err);

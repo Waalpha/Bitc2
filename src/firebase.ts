@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
-import { doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, enableIndexedDbPersistence } from '@firebase/firestore';
+import { doc, getDocFromServer } from '@firebase/firestore';
 import { getMessaging } from 'firebase/messaging';
 import firebaseConfig from '../firebase-applet-config.json';
 
