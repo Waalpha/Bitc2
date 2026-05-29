@@ -364,7 +364,9 @@ void loop() {
         if (!snapshot.empty) {
           const todayRecord = snapshot.docs[0];
           const data = todayRecord.data() as AttendanceRecord;
-          const updatedRecords = { ...data.records, [user.uid]: 'present' as const };
+          const updatedRecords = actionType === 'checkIn' 
+            ? { ...data.records, [user.uid]: 'present' as const } 
+            : data.records;
 
           const existingLogs = data.biometricLogs?.[user.uid] || {};
           const updatedLogs = {
@@ -383,7 +385,7 @@ void loop() {
           await addDoc(collection(db, 'attendance'), {
             classId: targetClassId,
             date: dateStr,
-            records: { [user.uid]: 'present' },
+            records: { [user.uid]: actionType === 'checkIn' ? 'present' : 'absent' },
             biometricLogs: {
               [user.uid]: {
                 [actionType]: logEntry
@@ -446,16 +448,13 @@ void loop() {
         const snapshot = await getDocs(q);
         const fetchedClasses = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Class));
         setClasses(fetchedClasses);
-        if (fetchedClasses.length > 0 && !selectedClassId) {
-          setSelectedClassId(fetchedClasses[0].id);
-        }
         if (fetchedClasses.length > 0) {
-          const firstWithGps = fetchedClasses.find(c => c.latitude !== undefined && c.latitude !== null && !isNaN(Number(c.latitude)));
-          if (firstWithGps) {
-            setGpsSelectedClassId(firstWithGps.id);
-          } else {
-            setGpsSelectedClassId(fetchedClasses[0].id);
-          }
+          setSelectedClassId(prev => prev || fetchedClasses[0].id);
+          setGpsSelectedClassId(prev => {
+            if (prev) return prev;
+            const firstWithGps = fetchedClasses.find(c => c.latitude !== undefined && c.latitude !== null && !isNaN(Number(c.latitude)));
+            return firstWithGps ? firstWithGps.id : fetchedClasses[0].id;
+          });
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'classes');
@@ -463,7 +462,7 @@ void loop() {
     };
 
     fetchClasses();
-  }, [user, userData, isAdmin, isTeacher, isStudent, gpsSelectedClassId, selectedClassId]);
+  }, [user, userData, isAdmin, isTeacher, isStudent]);
 
   // Fetch students for the selected class
   useEffect(() => {
