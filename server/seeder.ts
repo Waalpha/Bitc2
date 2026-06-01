@@ -313,12 +313,19 @@ export function seedDatabase() {
       "amount": 250,
       "period": "semester",
       "createdAt": "2026-05-28T12:00:00.000Z"
+    },
+    "fee_monthly_lab_cs101": {
+      "classId": "class_cs101",
+      "title": "Computer Lab Maintenance Fee",
+      "amount": 100,
+      "period": "monthly",
+      "createdAt": "2026-05-28T12:00:00.000Z"
     }
   });
 
   // 7. Fee Balances
-  writeIfEmpty('fee_balances', {
-    "bal_std_john_doe": {
+  const defaultFeeBalances = {
+    "std_john_doe": {
       "studentId": "std_john_doe",
       "totalAmount": 1750,
       "paidAmount": 1200,
@@ -345,7 +352,7 @@ export function seedDatabase() {
         }
       ]
     },
-    "bal_std_jane_smith": {
+    "std_jane_smith": {
       "studentId": "std_jane_smith",
       "totalAmount": 1750,
       "paidAmount": 1750,
@@ -366,7 +373,7 @@ export function seedDatabase() {
         }
       ]
     },
-    "bal_std_alice_williams": {
+    "std_alice_williams": {
       "studentId": "std_alice_williams",
       "totalAmount": 1800,
       "paidAmount": 800,
@@ -387,7 +394,10 @@ export function seedDatabase() {
         }
       ]
     }
-  });
+  };
+
+  writeIfEmpty('fee_balances', defaultFeeBalances);
+  writeIfEmpty('fees', defaultFeeBalances);
 
   // 8. Exams
   writeIfEmpty('exams', {

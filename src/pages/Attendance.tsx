@@ -333,8 +333,10 @@ void loop() {
 
         // Fee check first
         if (actionType === 'checkIn') {
-          const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', user.uid));
-          const feeSnap = await getDocs(feeQuery);
+          let feeSnap = await getDocs(query(collection(db, 'fees'), where('studentId', '==', user.uid)));
+          if (feeSnap.empty) {
+            feeSnap = await getDocs(query(collection(db, 'fee_balances'), where('studentId', '==', user.uid)));
+          }
           if (!feeSnap.empty) {
             const feeData = feeSnap.docs[0].data();
             if (feeData.balance > 0) {
@@ -482,11 +484,22 @@ void loop() {
             // Chunk student IDs for Firestore 'in' query (max 10)
             for (let i = 0; i < studentIds.length; i += 10) {
               const chunk = studentIds.slice(i, i + 10);
-              const feeQ = query(collection(db, 'fee_balances'), where('studentId', 'in', chunk));
+              // Query fees first (the live/UI tracking collection)
+              const feeQ = query(collection(db, 'fees'), where('studentId', 'in', chunk));
               const feeSnap = await getDocs(feeQ);
               feeSnap.docs.forEach(d => {
                 balances[d.data().studentId] = d.data().balance;
               });
+              
+              // Fallback to fee_balances for any missing students
+              const missingChunk = chunk.filter(id => balances[id] === undefined);
+              if (missingChunk.length > 0) {
+                const fallbackQ = query(collection(db, 'fee_balances'), where('studentId', 'in', missingChunk));
+                const fallbackSnap = await getDocs(fallbackQ);
+                fallbackSnap.docs.forEach(d => {
+                  balances[d.data().studentId] = d.data().balance;
+                });
+              }
             }
             setFeeBalances(balances);
           }
@@ -1307,8 +1320,10 @@ void loop() {
       // Fee Check for Check-In
       if (action === 'checkIn') {
         try {
-          const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', uid));
-          const feeSnap = await getDocs(feeQuery);
+          let feeSnap = await getDocs(query(collection(db, 'fees'), where('studentId', '==', uid)));
+          if (feeSnap.empty) {
+            feeSnap = await getDocs(query(collection(db, 'fee_balances'), where('studentId', '==', uid)));
+          }
           if (!feeSnap.empty) {
             const feeData = feeSnap.docs[0].data();
             if (feeData.balance > 0) {
@@ -1463,8 +1478,10 @@ void loop() {
               if (student) {
                 // Fee Check for Check-In
                 if (currentAction === 'checkIn') {
-                  const feeQuery = query(collection(db, 'fee_balances'), where('studentId', '==', student.uid));
-                  const feeSnap = await getDocs(feeQuery);
+                  let feeSnap = await getDocs(query(collection(db, 'fees'), where('studentId', '==', student.uid)));
+                  if (feeSnap.empty) {
+                    feeSnap = await getDocs(query(collection(db, 'fee_balances'), where('studentId', '==', student.uid)));
+                  }
                   if (!feeSnap.empty) {
                     const feeData = feeSnap.docs[0].data();
                     if (feeData.balance > 0) {

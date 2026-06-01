@@ -92,6 +92,19 @@ export const Fees: React.FC = () => {
         lastUpdated: new Date().toISOString(),
         history: newHistory
       });
+
+      // Sync with fee_balances collection
+      try {
+        await setDoc(doc(db, 'fee_balances', studentBalance.studentId || studentBalance.id), {
+          studentId: studentBalance.studentId || studentBalance.id,
+          totalAmount: newTotal,
+          paidAmount: newPaid,
+          balance: newTotal - newPaid,
+          lastUpdated: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.error("error updating fee_balances:", e);
+      }
       
       await loadFeesData();
       addToast("Transaction deleted and balance adjusted");
@@ -107,6 +120,14 @@ export const Fees: React.FC = () => {
     
     try {
       await deleteDoc(doc(db, 'fees', balanceId));
+      
+      // Sync deletion with fee_balances collection
+      try {
+        await deleteDoc(doc(db, 'fee_balances', balanceId));
+      } catch (e) {
+        console.error("error deleting from fee_balances:", e);
+      }
+
       await loadFeesData();
       addToast("Student fee record deleted successfully");
     } catch (error) {
@@ -1045,6 +1066,40 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
+  const [isRunningMonthlyBilling, setIsRunningMonthlyBilling] = useState(false);
+
+  const handleRunMonthlyBilling = async () => {
+    setIsRunningMonthlyBilling(true);
+    try {
+      const absoluteUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/api/fees/auto-apply`
+        : '/api/fees/auto-apply';
+      const response = await fetch(absoluteUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      const data = await response.json();
+      if (data.success && data.result) {
+        const { configsCount, appliedCount, skippedCount } = data.result;
+        await loadFeesData(true);
+        addToast(
+          `Monthly Billing complete! Processed ${configsCount} configs. Applied to ${appliedCount} students. Skipped ${skippedCount} duplicates.`,
+          "success"
+        );
+      } else {
+        addToast(data.error || "Failed to execute monthly billing automation.", "error");
+      }
+    } catch (err: any) {
+      console.error("Failed to trigger monthly billing automation:", err);
+      addToast(err.message || "An error occurred while running monthly billing.", "error");
+    } finally {
+      setIsRunningMonthlyBilling(false);
+    }
+  };
+
   const [isLoading, setIsLoading] = useState(false);
 
   const loadFeesData = async (fullLoad = false) => {
@@ -1239,6 +1294,19 @@ export const Fees: React.FC = () => {
           lastUpdated: now,
           history: newHistory
         });
+
+        // Sync with fee_balances collection
+        try {
+          await setDoc(doc(db, 'fee_balances', existingBalance.studentId || existingBalance.id), {
+            studentId: existingBalance.studentId || existingBalance.id,
+            totalAmount: newTotal,
+            paidAmount: newPaid,
+            balance: newTotal - newPaid,
+            lastUpdated: now
+          }, { merge: true });
+        } catch (e) {
+          console.error("error updating fee_balances:", e);
+        }
       } else if (editingHistoryIndex === null) {
         // Only allow creating if not editing (though shouldn't happen if student selected)
         const amountNum = parseFloat(String(updateForm.amount));
@@ -1253,6 +1321,19 @@ export const Fees: React.FC = () => {
           lastUpdated: now,
           history: [historyItem]
         });
+
+        // Sync with fee_balances collection
+        try {
+          await setDoc(doc(db, 'fee_balances', selectedStudent.uid), {
+            studentId: selectedStudent.uid,
+            totalAmount: total,
+            paidAmount: paid,
+            balance: total - paid,
+            lastUpdated: now
+          }, { merge: true });
+        } catch (e) {
+          console.error("error setting fee_balances:", e);
+        }
       }
 
       await loadFeesData();
@@ -1514,11 +1595,14 @@ export const Fees: React.FC = () => {
             description
           };
 
+          const currentPaid = existingBalance ? Number(existingBalance.paidAmount || 0) : 0;
+          let currentTotal = Number(fee.amount);
+
           if (existingBalance) {
-            const newTotal = Number(existingBalance.totalAmount || 0) + Number(fee.amount);
+            currentTotal = Number(existingBalance.totalAmount || 0) + Number(fee.amount);
             batch.update(doc(db, 'fees', existingBalance.id), {
-              totalAmount: newTotal,
-              balance: newTotal - Number(existingBalance.paidAmount || 0),
+              totalAmount: currentTotal,
+              balance: currentTotal - currentPaid,
               lastUpdated: now,
               history: [...(existingBalance.history || []), historyItem]
             });
@@ -1526,13 +1610,23 @@ export const Fees: React.FC = () => {
             const feeRef = doc(db, 'fees', sUid);
             batch.set(feeRef, {
               studentId: sUid,
-              totalAmount: Number(fee.amount),
+              totalAmount: currentTotal,
               paidAmount: 0,
-              balance: Number(fee.amount),
+              balance: currentTotal,
               lastUpdated: now,
               history: [historyItem]
             });
           }
+
+          // Concurrently update fee_balances to keep them 100% in sync
+          const feeBalRef = doc(db, 'fee_balances', sUid);
+          batch.set(feeBalRef, {
+            studentId: sUid,
+            totalAmount: currentTotal,
+            paidAmount: currentPaid,
+            balance: currentTotal - currentPaid,
+            lastUpdated: now
+          }, { merge: true });
 
           // Add notification
           const notifRef = doc(collection(db, 'notifications'));
@@ -2266,6 +2360,16 @@ export const Fees: React.FC = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-text-primary">Class Fee Packages</h2>
                 <div className="flex gap-2">
+                   {userData?.role === 'admin' && (
+                    <button
+                      onClick={handleRunMonthlyBilling}
+                      disabled={isRunningMonthlyBilling}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-lg shadow-emerald-600/20"
+                    >
+                      <Calculator size={18} className={isRunningMonthlyBilling ? "animate-spin" : ""} />
+                      {isRunningMonthlyBilling ? "Billing..." : "Run Monthly Billing"}
+                    </button>
+                   )}
                    <button
                     onClick={() => setIsAddingFeeType(true)}
                     className="flex items-center gap-2 bg-white/5 text-secondary px-4 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/10 text-sm font-medium"

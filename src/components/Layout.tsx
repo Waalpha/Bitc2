@@ -460,21 +460,27 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                           {/* Force switch mode */}
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-medium text-text-secondary">Low-Data Backup Mode</span>
-                            <button 
-                              onClick={() => {
-                                const next = dbMode === 'real' ? 'local_cached' : 'real';
-                                setDbMode(next);
-                                addToast(`Database mode forced to: ${next === 'real' ? 'Cloud Live' : 'Cached Backup'}`, 'warning');
-                                setIsSyncMenuOpen(false);
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
-                                dbMode === 'real'
-                                  ? 'bg-transparent border-white/10 text-text-muted hover:border-white/20'
-                                  : 'bg-amber-500 text-black border-transparent hover:scale-105'
-                              }`}
-                            >
-                              {dbMode === 'real' ? "Enable" : "Disable"}
-                            </button>
+                            {userData?.role === 'admin' ? (
+                              <button 
+                                onClick={() => {
+                                  const next = dbMode === 'real' ? 'local_cached' : 'real';
+                                  setDbMode(next);
+                                  addToast(`Database mode forced to: ${next === 'real' ? 'Cloud Live' : 'Cached Backup'}`, 'warning');
+                                  setIsSyncMenuOpen(false);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                  dbMode === 'real'
+                                    ? 'bg-transparent border-white/10 text-text-muted hover:border-white/20'
+                                    : 'bg-amber-500 text-black border-transparent hover:scale-105'
+                                }`}
+                              >
+                                {dbMode === 'real' ? "Enable" : "Disable"}
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-text-muted font-bold uppercase flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                                <Lock size={10} className="opacity-60" /> Admins Only
+                              </span>
+                            )}
                           </div>
 
                           {/* Quick Admin Sync Call */}

@@ -32,6 +32,45 @@ export function isQuotaOrPermissionError(error: any): boolean {
   );
 }
 
+// Robust Fetch wrapper with automatic retries for transient service/restart states
+const originalFetch = (typeof window !== 'undefined' ? window.fetch : (typeof globalThis !== 'undefined' ? (globalThis as any).fetch : null));
+
+async function robustFetch(url: string, options?: RequestInit, retries = 3, delay = 250): Promise<Response> {
+  const absoluteUrl = typeof window !== 'undefined' && url.startsWith('/') 
+    ? `${window.location.origin}${url}` 
+    : url;
+    
+  if (!originalFetch) {
+    throw new Error("No global fetch implementation found");
+  }
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await originalFetch(absoluteUrl, options);
+      if (res.ok) {
+        return res;
+      }
+      // If we encounter a transient gateway/restarting state (502, 503, 504), wait and retry
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+          continue;
+        }
+      }
+      return res; 
+    } catch (err) {
+      if (i === retries - 1) {
+        throw err;
+      }
+      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+    }
+  }
+  throw new Error("Failed to fetch after retries");
+}
+
+// Shadow global fetch inside this module to gain automatic resilience on all API requests
+const fetch = robustFetch;
+
 // Background dynamic sync handlers with non-blocking fetching
 async function cacheDocsFromServer(collectionName: string, querySnapshot: any) {
   try {

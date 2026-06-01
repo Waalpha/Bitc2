@@ -54,6 +54,7 @@ import {
   addDocumentToCol, 
   deleteDocumentInCol 
 } from "./server/localDb";
+import { seedDatabase } from "./server/seeder";
 
 // Local Firestore Adapter to route Express backend operations (IoT, reports, fee automations) offline
 class LocalCollectionReference {
@@ -199,6 +200,9 @@ async function migrateFromFirestore(firestoreAdmin: admin.firestore.Firestore) {
   }
   console.log("[MIGRATION] Automatic offline data initialization check complete.");
 }
+
+// Seed local database on startup
+seedDatabase();
 
 // Initialize Firebase Admin
 let db: any = localDbFirestore;
@@ -450,6 +454,18 @@ async function startServer() {
     }
   });
 
+  // Manual trigger / run on-demand for monthly fee automation
+  apiRouter.post("/fees/auto-apply", async (req, res) => {
+    try {
+      console.log("[FEES_AUTO_APPLY] Manual trigger requested.");
+      const result = await automateMonthlyFees();
+      res.json({ success: true, message: "Monthly fee automation executed successfully", result });
+    } catch (err: any) {
+      console.error("[FEES_AUTO_APPLY] Fee automation failed:", err);
+      res.status(500).json({ success: false, error: err.message || "Manual fee automation run failed." });
+    }
+  });
+
   // 2. Proxy Download Endpoint
   apiRouter.get("/download", async (req, res) => {
     const { url, filename } = req.query;
@@ -606,8 +622,11 @@ async function startServer() {
       const studentId = studentDoc.id;
       const studentData = studentDoc.data();
 
-      // Fee Balance Check (Ksh protection)
-      const feeSnap = await db.collection('fee_balances').where('studentId', '==', studentId).limit(1).get();
+      // Fee Balance Check (Ksh protection) - check both 'fees' (live/UI) and 'fee_balances'
+      let feeSnap = await db.collection('fees').where('studentId', '==', studentId).limit(1).get();
+      if (feeSnap.empty) {
+        feeSnap = await db.collection('fee_balances').where('studentId', '==', studentId).limit(1).get();
+      }
       if (!feeSnap.empty) {
         const feeData = feeSnap.docs[0].data();
         if (feeData.balance > 0) {
@@ -925,9 +944,17 @@ async function startServer() {
     }
   });
 
-  // Also run once on startup to ensure no missed fees (optional, but good for reliability)
-  // Or at least log that it's active.
+  // Also run once on startup to ensure no missed fees (highly useful for on-demand restarts)
   console.log("Monthly fee scheduler initialized.");
+  setTimeout(async () => {
+    console.log("[STARTUP] Starting automatic background monthly fee check...");
+    try {
+      const stats = await automateMonthlyFees();
+      console.log("[STARTUP] Background monthly fee check complete:", stats);
+    } catch (err) {
+      console.error("[STARTUP] Background monthly fee check failed:", err);
+    }
+  }, 1500);
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
@@ -970,7 +997,7 @@ async function sendPushNotification(userId: string, title: string, body: string,
 async function automateMonthlyFees() {
   if (!db) {
     console.error("Monthly fee automation skipped: Firebase Admin not initialized (missing credentials).");
-    return;
+    return { success: false, error: "Database not initialized" };
   }
   const now = new Date();
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -984,7 +1011,7 @@ async function automateMonthlyFees() {
 
   if (configs.length === 0) {
     console.log("No monthly fee configurations found.");
-    return;
+    return { success: true, configsCount: 0, appliedCount: 0, skippedCount: 0 };
   }
 
   // 2. Fetch all students
@@ -992,19 +1019,30 @@ async function automateMonthlyFees() {
   const students = studentsSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
   console.log(`Processing ${configs.length} monthly fee configs for ${students.length} students...`);
+  
+  let appliedCount = 0;
+  let skippedCount = 0;
 
   for (const config of configs) {
     const isAll = (config as any).classId === 'all';
-    const classIdToMatch = String((config as any).classId);
+    const classIdToMatch = String((config as any).classId || '').trim();
     
     const targetStudents = isAll 
       ? students 
-      : students.filter(s => ((s as any).classIds || []).map(String).includes(classIdToMatch));
+      : students.filter(s => {
+          const classIds = (s as any).classIds;
+          const cids = Array.isArray(classIds) ? classIds : (classIds ? [String(classIds)] : []);
+          return cids.map(String).map(c => c.trim()).includes(classIdToMatch);
+        });
 
     for (const student of targetStudents) {
-      const sUid = student.uid.trim();
+      const sUid = student.uid ? String(student.uid).trim() : '';
+      if (!sUid) {
+        skippedCount++;
+        continue;
+      }
       const feeTitle = (config as any).title;
-      const feeAmount = Number((config as any).amount);
+      const feeAmount = Number((config as any).amount || 0);
       const historyDescription = `Monthly Fee: ${feeTitle} (${currentMonthYear})`;
 
       // Check if already applied
@@ -1012,12 +1050,12 @@ async function automateMonthlyFees() {
       const feeDoc = await feesRef.get();
       const feeData = feeDoc.data() || { balance: 0, totalAmount: 0, paidAmount: 0, history: [] };
 
-      const alreadyApplied = (feeData.history || []).some((h: any) => 
-        h.description === historyDescription && h.type === 'charge'
+      const alreadyApplied = (feeData.history || []).filter(Boolean).some((h: any) => 
+        String(h.description || '') === historyDescription && h.type === 'charge'
       );
 
       if (alreadyApplied) {
-        // console.log(`Fee "${feeTitle}" already applied for ${student.uid} this month.`);
+        skippedCount++;
         continue;
       }
 
@@ -1040,6 +1078,19 @@ async function automateMonthlyFees() {
         history: [...(feeData.history || []), historyItem]
       }, { merge: true });
 
+      // Keep fee_balances collection in sync
+      try {
+        await db.collection('fee_balances').doc(sUid).set({
+          studentId: sUid,
+          totalAmount: newTotal,
+          paidAmount: newPaid,
+          balance: newTotal - newPaid,
+          lastUpdated: timestamp
+        }, { merge: true });
+      } catch (err) {
+        console.warn(`[Automated Billing] Failed to sync fee_balances for student ${sUid}:`, err);
+      }
+
       // Add notification
       const notificationMessage = `${feeTitle}: A monthly charge of Ksh ${feeAmount} has been added for ${currentMonthYear}.`;
       await db.collection('notifications').add({
@@ -1054,8 +1105,16 @@ async function automateMonthlyFees() {
 
       // Send Push Notification
       await sendPushNotification(sUid, 'Monthly Fee Applied', notificationMessage, '/#/fees');
+      appliedCount++;
     }
   }
+
+  return {
+    success: true,
+    configsCount: configs.length,
+    appliedCount,
+    skippedCount
+  };
 }
 
 startServer();
