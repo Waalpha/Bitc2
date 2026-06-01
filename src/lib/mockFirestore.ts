@@ -171,10 +171,20 @@ export function collection(dbOrDoc: any, ...pathSegments: string[]) {
   return { type: 'collection', path: fullPath };
 }
 
-export function doc(dbOrCol: any, pathOrId: string, ...additionalPaths: string[]) {
+export function generateAutoId(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let autoId = '';
+  for (let i = 0; i < 20; i++) {
+    autoId += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return autoId;
+}
+
+export function doc(dbOrCol: any, pathOrId?: string, ...additionalPaths: string[]) {
   let fullPath = "";
   if (dbOrCol && dbOrCol.type === 'collection') {
-    fullPath = [dbOrCol.path, pathOrId, ...additionalPaths].filter(Boolean).join('/');
+    const actualId = pathOrId || generateAutoId();
+    fullPath = [dbOrCol.path, actualId, ...additionalPaths].filter(Boolean).join('/');
   } else {
     fullPath = [pathOrId, ...additionalPaths].filter(Boolean).join('/');
   }
