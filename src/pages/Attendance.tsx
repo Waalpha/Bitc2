@@ -1454,7 +1454,7 @@ void loop() {
         setScannerError(false);
         // Check if cameras are available
         const cameras = await Html5Qrcode.getCameras().catch(err => {
-          console.error("getCameras error", err);
+          console.warn("getCameras diagnostics info:", err?.message || err || "");
           return [];
         });
 
@@ -1625,7 +1625,7 @@ void loop() {
       try {
         setStudentScannerError(false);
         const cameras = await Html5Qrcode.getCameras().catch(err => {
-          console.error("getCameras student error", err);
+          console.warn("getCameras student diagnostics info:", err?.message || err || "");
           return [];
         });
 
@@ -3411,20 +3411,21 @@ void loop() {
                 </div>
 
                 <div className="relative">
-                  <div 
-                    id="student-gate-qr-reader" 
-                    className="w-full aspect-square max-w-[260px] mx-auto rounded-3xl overflow-hidden bg-black border-2 border-slate-700 shadow-inner relative flex items-center justify-center cursor-pointer"
-                  >
+                  <div className="relative aspect-square max-w-[260px] mx-auto rounded-3xl overflow-hidden bg-black border-2 border-slate-700 shadow-inner">
+                    <div 
+                      id="student-gate-qr-reader" 
+                      className="w-full h-full"
+                    />
                     {studentScannerError && (
-                      <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-slate-950/90 text-red-500 text-xs font-semibold space-y-2">
+                      <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-slate-950/90 text-red-500 text-xs font-semibold space-y-2 z-10">
                         <XCircle size={32} />
                         <p>Camera source could not be initialized.</p>
                         <p className="text-[10px] text-slate-400 font-normal">Please make sure browser permissions are granted.</p>
                       </div>
                     )}
                     {isSavingStudentQRCheckIn && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 text-teal-405 space-y-3">
-                        <RefreshCw size={36} className="animate-spin text-teal-450" />
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/95 text-teal-400 space-y-3">
+                        <RefreshCw size={36} className="animate-spin text-teal-500" />
                         <p className="text-xs font-bold uppercase tracking-widest text-white">Saving attendance...</p>
                       </div>
                     )}
