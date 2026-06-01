@@ -174,6 +174,12 @@ void loop() {
   }, []);
   const [showQR, setShowQR] = useState(false);
   const [qrStudent, setQrStudent] = useState<User | null>(null);
+  const [showAdminPrintQRModal, setShowAdminPrintQRModal] = useState(false);
+  const [selectedPrintQRId, setSelectedPrintQRId] = useState('main_gate');
+  const [isStudentScanningGateQR, setIsStudentScanningGateQR] = useState(false);
+  const [isSavingStudentQRCheckIn, setIsSavingStudentQRCheckIn] = useState(false);
+  const [studentScanAction, setStudentScanAction] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [studentScannerError, setStudentScannerError] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [feeBalances, setFeeBalances] = useState<{ [studentId: string]: number }>({});
 
@@ -1605,6 +1611,205 @@ void loop() {
     };
   }, [isQRScannerMode, students, selectedClassId, user?.uid, saving]);
 
+  useEffect(() => {
+    let studentHtml5QrCode: Html5Qrcode | null = null;
+    let timer: NodeJS.Timeout;
+
+    const startStudentScanner = async () => {
+      const element = document.getElementById("student-gate-qr-reader");
+      if (!element) {
+        console.warn("Student gate QR reader element not found");
+        return;
+      }
+
+      try {
+        setStudentScannerError(false);
+        const cameras = await Html5Qrcode.getCameras().catch(err => {
+          console.error("getCameras student error", err);
+          return [];
+        });
+
+        if (cameras.length === 0) {
+          addToast("No cameras found on this device.", "error");
+          setStudentScannerError(true);
+          return;
+        }
+
+        studentHtml5QrCode = new Html5Qrcode("student-gate-qr-reader");
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
+        await studentHtml5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          async (decodedText) => {
+            if (isSavingStudentQRCheckIn) return;
+            setIsSavingStudentQRCheckIn(true);
+
+            try {
+              // Parse scanned QR code
+              let scannedClassIds: string[] = [];
+              let isMainGate = false;
+
+              if (decodedText.startsWith("gate-checkin:")) {
+                const parts = decodedText.split("gate-checkin:");
+                const targetValue = parts[1] || "";
+                if (targetValue === "main_gate") {
+                  isMainGate = true;
+                } else {
+                  scannedClassIds = [targetValue];
+                }
+              } else if (decodedText === "main_gate" || decodedText === "school_gate_main") {
+                isMainGate = true;
+              } else {
+                // Check if decodedText matches any class id
+                const matchedClass = classes.find(c => c.id === decodedText);
+                if (matchedClass) {
+                  scannedClassIds = [matchedClass.id];
+                } else {
+                  addToast("Invalid Gate/Class QR Code scanned.", "error");
+                  setIsSavingStudentQRCheckIn(false);
+                  return;
+                }
+              }
+
+              if (isMainGate) {
+                // Check-in / check-out for all student's enrolled classes
+                if (userData?.classIds && userData.classIds.length > 0) {
+                  scannedClassIds = userData.classIds;
+                } else {
+                  addToast("You are not enrolled in any classes to check in.", "error");
+                  setIsSavingStudentQRCheckIn(false);
+                  return;
+                }
+              }
+
+              // Apply validation check: fee check
+              if (studentScanAction === 'checkIn') {
+                let feeSnap = await getDocs(query(collection(db, 'fees'), where('studentId', '==', user.uid)));
+                if (feeSnap.empty) {
+                  feeSnap = await getDocs(query(collection(db, 'fee_balances'), where('studentId', '==', user.uid)));
+                }
+                if (!feeSnap.empty) {
+                  const feeData = feeSnap.docs[0].data();
+                  if (feeData.balance > 0) {
+                    addToast(`Access Denied: You have unpaid fees (Balance: Kes ${feeData.balance}).`, "error");
+                    setIsSavingStudentQRCheckIn(false);
+                    return;
+                  }
+                }
+              }
+
+              // Check pre-4:00 PM for check-out
+              if (studentScanAction === 'checkOut') {
+                const now = new Date();
+                if (now.getHours() < 16) {
+                  if (!userData?.earlyCheckoutAllowed) {
+                    addToast("Access Denied: Checked out prior to 4:00 PM is restricted unless with admin permission.", "error");
+                    setIsSavingStudentQRCheckIn(false);
+                    return;
+                  }
+                }
+              }
+
+              // Process checkIn / checkOut for each matched class
+              const dateStr = format(new Date(), 'yyyy-MM-dd');
+              const timeStr = format(new Date(), 'HH:mm:ss');
+              const logEntry: any = {
+                time: timeStr,
+                method: 'gate_qr' as const
+              };
+
+              for (const classId of scannedClassIds) {
+                const q = query(
+                  collection(db, 'attendance'),
+                  where('date', '==', dateStr),
+                  where('classId', '==', classId)
+                );
+
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                  const todayRecord = snapshot.docs[0];
+                  const data = todayRecord.data() as AttendanceRecord;
+                  const updatedRecords = studentScanAction === 'checkIn'
+                    ? { ...data.records, [user.uid]: 'present' as const }
+                    : data.records;
+
+                  const existingLogs = data.biometricLogs?.[user.uid] || {};
+                  const updatedLogs = {
+                    ...data.biometricLogs,
+                    [user.uid]: {
+                      ...existingLogs,
+                      [studentScanAction]: logEntry
+                    }
+                  };
+
+                  await updateDoc(doc(db, 'attendance', todayRecord.id), {
+                    records: updatedRecords,
+                    biometricLogs: updatedLogs
+                  });
+                } else {
+                  await addDoc(collection(db, 'attendance'), {
+                    classId: classId,
+                    date: dateStr,
+                    records: { [user.uid]: studentScanAction === 'checkIn' ? 'present' : 'absent' },
+                    biometricLogs: {
+                      [user.uid]: {
+                        [studentScanAction]: logEntry
+                      }
+                    }
+                  });
+                }
+              }
+
+              addToast(`Verified ${studentScanAction === 'checkIn' ? 'Gate Check-In' : 'Gate Check-Out'} successfully!`, "success");
+              setIsStudentScanningGateQR(false); // Close scanner on success!
+            } catch (err: any) {
+              console.error("Student QR Code scan update error", err);
+              addToast("Failed to record entry/exit via QR. Try again.", "error");
+            } finally {
+              setTimeout(() => setIsSavingStudentQRCheckIn(false), 2000);
+            }
+          },
+          () => {} // Quiet on noise
+        );
+      } catch (err: any) {
+        console.error("Unable to start student QR scanner:", err);
+        setStudentScannerError(true);
+        if (isStudentScanningGateQR) {
+          const msg = err?.message || err || "";
+          if (msg.includes("Permission denied")) {
+            addToast("Camera access denied. Please allow camera permissions in your browser.", "error");
+          } else {
+            addToast("Camera error: Could not start. Check permissions and device.", "error");
+          }
+        }
+      }
+    };
+
+    if (isStudentScanningGateQR) {
+      timer = setTimeout(startStudentScanner, 500);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (studentHtml5QrCode) {
+        if (studentHtml5QrCode.isScanning) {
+          studentHtml5QrCode.stop().then(() => {
+            studentHtml5QrCode?.clear();
+          }).catch(e => console.log("student cleanup error", e));
+        } else {
+          try {
+            studentHtml5QrCode.clear();
+          } catch (e) {}
+        }
+      }
+    };
+  }, [isStudentScanningGateQR, classes, userData, user?.uid, studentScanAction, isSavingStudentQRCheckIn]);
+
   const getStatusColor = (status: AttendanceStatus) => {
     switch (status) {
       case 'present': return 'bg-green-100 text-green-700 border-green-200';
@@ -1717,6 +1922,13 @@ void loop() {
                     >
                       <Cpu size={18} />
                       NodeMCU IoT
+                    </button>
+                    <button
+                      onClick={() => setShowAdminPrintQRModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap text-teal-600 hover:bg-teal-50 border border-teal-100"
+                    >
+                      <Printer size={18} />
+                      Print QR Codes
                     </button>
                   </>
                 )}
@@ -2872,6 +3084,29 @@ void loop() {
             </div>
           </div>
 
+          {/* Student self scan of Gate / Class QR Code */}
+          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+            <h3 className="font-bold text-gray-900 uppercase tracking-tight text-xs flex items-center gap-2">
+               <QrCode size={15} className="text-teal-600 animate-pulse" /> School Gate QR Scanner
+            </h3>
+            
+            <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+              Scan the physical QR code printed at the main gate or inside your classroom to verify your check-in or check-out instantly.
+            </p>
+
+            <button
+              onClick={() => {
+                setStudentScanAction('checkIn');
+                setIsStudentScanningGateQR(true);
+              }}
+              className="w-full py-4 bg-teal-600 hover:bg-teal-700 transition-all rounded-2xl text-xs font-extrabold text-white uppercase tracking-wider text-center shadow-lg shadow-teal-100 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <QrCode size={18} />
+              Scan Gate/Class QR Code
+            </button>
+          </div>
+
           {/* GPS Location Self Attendance Check-In */}
           <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -3127,6 +3362,243 @@ void loop() {
   )}
 
       <AnimatePresence>
+        {isStudentScanningGateQR && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm no-print"
+            onClick={() => setIsStudentScanningGateQR(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-slate-900 rounded-[40px] p-8 max-w-sm w-full border border-slate-800 shadow-2xl relative overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setIsStudentScanningGateQR(false)}
+                className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+
+              <div className="text-center space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white uppercase tracking-tight">Gate QR Scanner</h3>
+                  <p className="text-xs text-slate-400 mt-1 font-medium">Verify your check-in or check-out at the gate</p>
+                </div>
+
+                {/* Switcher */}
+                <div className="flex bg-slate-800 border border-slate-700/50 rounded-2xl p-1 shadow-inner">
+                  <button
+                    onClick={() => setStudentScanAction('checkIn')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+                      studentScanAction === 'checkIn' ? 'bg-teal-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Check In
+                  </button>
+                  <button
+                    onClick={() => setStudentScanAction('checkOut')}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+                      studentScanAction === 'checkOut' ? 'bg-teal-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Check Out
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <div 
+                    id="student-gate-qr-reader" 
+                    className="w-full aspect-square max-w-[260px] mx-auto rounded-3xl overflow-hidden bg-black border-2 border-slate-700 shadow-inner relative flex items-center justify-center cursor-pointer"
+                  >
+                    {studentScannerError && (
+                      <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-slate-950/90 text-red-500 text-xs font-semibold space-y-2">
+                        <XCircle size={32} />
+                        <p>Camera source could not be initialized.</p>
+                        <p className="text-[10px] text-slate-400 font-normal">Please make sure browser permissions are granted.</p>
+                      </div>
+                    )}
+                    {isSavingStudentQRCheckIn && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 text-teal-405 space-y-3">
+                        <RefreshCw size={36} className="animate-spin text-teal-450" />
+                        <p className="text-xs font-bold uppercase tracking-widest text-white">Saving attendance...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-slate-400 text-xs font-semibold leading-relaxed">
+                  <p className="text-teal-400 text-[10px] font-bold uppercase tracking-[0.2em]">Ready to scan</p>
+                  <p>Position the gate or classroom QR flyer inside the camera view area above.</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showAdminPrintQRModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print"
+            onClick={() => setShowAdminPrintQRModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[40px] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden flex flex-col max-h-[95vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-teal-600" />
+              
+              <button 
+                onClick={() => setShowAdminPrintQRModal(false)}
+                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-950 transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+
+              <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tight mb-2">Print Check-In QR Flyer</h3>
+              <p className="text-xs text-gray-500 mb-6 font-medium">Select a destination below to visualize and print high-quality attendance check-in flyers.</p>
+
+              <div className="space-y-4 flex-1 overflow-y-auto pr-2">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1.5">Select Attendance Station / Class</label>
+                  <select
+                    value={selectedPrintQRId}
+                    onChange={(e) => setSelectedPrintQRId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-100 text-slate-800 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 transition-all font-sans"
+                  >
+                    <option value="main_gate">🚪 Main School Gate (All Classes)</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>🧑‍🏫 {c.name} Classroom</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Printable Flyer Body */}
+                <div id="printable-flyer-card" className="border border-dashed border-gray-200 bg-slate-50 rounded-3xl p-8 flex flex-col items-center text-center space-y-4 shadow-inner relative">
+                  <span className="absolute top-3 left-3 bg-teal-500 text-white text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full no-print">Flyer Preview</span>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      {globalSettings?.logoUrl ? (
+                        <img src={globalSettings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                      ) : (
+                        globalSettings?.schoolName?.charAt(0) || 'S'
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-blue-900 uppercase max-w-[150px] truncate leading-tight">
+                      {globalSettings?.schoolName || 'Breakthrough International'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-md font-extrabold text-blue-950 uppercase tracking-tight">
+                    {selectedPrintQRId === 'main_gate' ? '🚪 SCHOOL GATE ACCESS' : `🧑‍🏫 ${classes.find(c => c.id === selectedPrintQRId)?.name?.toUpperCase() || 'CLASSROOM'}`}
+                  </h4>
+                  <p className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">SCAN TO CHECK-IN / CHECK-OUT</p>
+
+                  <div className="bg-white p-6 rounded-3xl inline-block shadow-md border-2 border-slate-100">
+                    <QRCodeCanvas 
+                      value={selectedPrintQRId === 'main_gate' ? 'gate-checkin:main_gate' : `gate-checkin:${selectedPrintQRId}`} 
+                      size={180} 
+                      level="H" 
+                      includeMargin 
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 font-semibold leading-relaxed max-w-sm mt-2">
+                    Open your Student Portal -&gt; Go to Attendance -&gt; Click on <strong>Scan Gate QR Code</strong>. Hold your phone camera in front of this flyer to check in.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAdminPrintQRModal(false)}
+                  className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-2xl text-xs uppercase tracking-wider text-center cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      const computedTitle = selectedPrintQRId === 'main_gate' 
+                        ? 'SCHOOL GATE ACCESS' 
+                        : (classes.find(c => c.id === selectedPrintQRId)?.name?.toUpperCase() || 'CLASSROOM');
+                      
+                      const computedQrText = selectedPrintQRId === 'main_gate' 
+                        ? 'gate-checkin:main_gate' 
+                        : `gate-checkin:${selectedPrintQRId}`;
+                      
+                      // Obtain Canvas QR as base64 so printer works reliably next windows
+                      const canvas = document.querySelector('#printable-flyer-card canvas') as HTMLCanvasElement;
+                      const canvasDataUrl = canvas ? canvas.toDataURL() : '';
+
+                      const html = `
+                        <html>
+                          <head>
+                            <title>Print Attendance QR Flyer</title>
+                            <style>
+                              body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: white; }
+                              #printable-flyer { border: 6px double #1e3a8a; padding: 50px; text-align: center; border-radius: 40px; background: white; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+                              .header-logo { display: inline-flex; align-items: center; justify-content: center; background: #1e3a8a; color: white; border-radius: 12px; padding: 10px; width: 44px; height: 44px; font-weight: bold; font-size: 20px; }
+                              .header-subtitle { font-size: 14px; font-weight: 700; color: #1e3a8a; display: block; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+                              h1 { font-size: 30px; color: #1e3a8a; font-weight: 900; margin: 25px 0 5px 0; text-transform: uppercase; letter-spacing: -0.05em; }
+                              p { color: #475569; font-size: 14px; font-weight: 500; line-height: 1.6; margin: 15px 0; }
+                              .tag { font-size: 9px; font-weight: 850; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.15em; display: inline-block; margin-top: 8px; }
+                              .qr-container { background: white; border: 2px solid #f1f5f9; padding: 25px; border-radius: 36px; display: inline-block; margin: 25px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+                              .footer-instructions { font-size: 11px; color: #94a3b8; font-weight: 600; line-height: 1.5; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+                            </style>
+                          </head>
+                          <body>
+                            <div id="printable-flyer">
+                              <div class="header-logo">${globalSettings?.schoolName?.charAt(0) || 'S'}</div>
+                              <span class="header-subtitle">${globalSettings?.schoolName || 'Breakthrough International'}</span>
+                              <h1>${computedTitle}</h1>
+                              <span class="tag">Scan to register attendance</span>
+                              <br/>
+                              <div class="qr-container">
+                                <img src="${canvasDataUrl}" width="220" height="220" />
+                              </div>
+                              <div class="footer-instructions">
+                                Open Student App &gt; Go to Attendance &gt; Click "Scan Gate QR Code"
+                              </div>
+                            </div>
+                            <script>
+                              window.addEventListener('load', () => {
+                                window.print();
+                                setTimeout(() => window.close(), 500);
+                              });
+                            </script>
+                          </body>
+                        </html>
+                      `;
+                      printWindow.document.write(html);
+                      printWindow.document.close();
+                    } else {
+                      window.print();
+                    }
+                  }}
+                  className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-2xl text-xs uppercase tracking-wider text-center shadow-lg shadow-teal-100 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Printer size={16} />
+                  Print Flyer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {(showQR || qrStudent) && (
           <motion.div 
             initial={{ opacity: 0 }}
