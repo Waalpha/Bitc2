@@ -162,7 +162,7 @@ service cloud.firestore {
 
     match /attendance/{attendanceId} {
       allow read: if isAuthenticated();
-      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(attendanceId);
+      allow write: if isAuthenticated() && isValidId(attendanceId);
     }
 
     match /notifications/{notifId} {

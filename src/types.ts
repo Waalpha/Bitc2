@@ -288,6 +288,7 @@ export interface AppSettings {
   isSchoolClosed?: boolean;
   schoolClosedReason?: string;
   schoolReopenDate?: string;
+  allowGateAccessWithFees?: boolean;
   // Public Portal Settings
   publicAddress?: string;
   publicPhone?: string;
