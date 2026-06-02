@@ -4,13 +4,72 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, addDoc, doc, updateDoc, getDocs, orderBy, limit, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, AttendanceRecord, User, SchoolCalendar } from '../types';
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin, Printer } from 'lucide-react';
+import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin, Printer, Volume2 } from 'lucide-react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { isBiometricSupported, registerBiometric, verifyBiometric } from '../services/biometricService';
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeCanvas } from 'qrcode.react';
+
+const playBeep = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(2900, ctx.currentTime); // High-pitched supermarket scanner frequency
+    
+    // Create an envelope replicating a commercial physical scanner
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.003); // Instant sharp attack
+    gain.gain.setValueAtTime(0.7, ctx.currentTime + 0.063); // Hold peak duration (60ms)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.075); // Immediate drop-off
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
+  } catch (err) {
+    console.error("Failed to play beep sound", err);
+  }
+};
+
+const speakAttendanceCompletion = (fullName: string, action: string) => {
+  try {
+    if (!window.speechSynthesis) return;
+    
+    window.speechSynthesis.cancel();
+    
+    const firstName = fullName.split(/[\s,._]+/)[0] || fullName;
+    const cleanName = firstName.trim();
+    
+    let text = `Welcome to Breakthrough International, ${cleanName}`;
+    if (action === 'checkOut') {
+      text = `Goodbye ${cleanName}, check out recorded. Have a safe journey.`;
+    } else if (action === 'leaveOut') {
+      text = `Leave out approved. Goodbye ${cleanName}.`;
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(v => v.lang.startsWith('en'));
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+    
+    window.speechSynthesis.speak(utterance);
+  } catch (err) {
+    console.error("Speech synthesis failed", err);
+  }
+};
 
 type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 
@@ -1505,6 +1564,7 @@ void loop() {
             // Success callback
             if (adminScanProcessingRef.current) return;
             adminScanProcessingRef.current = true;
+            playBeep();
             
             setSaving(true);
             try {
@@ -1566,6 +1626,7 @@ void loop() {
                     
                     await updateDoc(docRef, updates);
                     addToast(`Recorded ${currentAct} for ${student.name}`);
+                    speakAttendanceCompletion(student.name, currentAct);
                     setLastEvent({
                       student,
                       action: currentAct,
@@ -1586,6 +1647,7 @@ void loop() {
                     }
                   });
                   addToast(`Recorded ${currentAct} for ${student.name}`);
+                  speakAttendanceCompletion(student.name, currentAct);
                   setLastEvent({
                     student,
                     action: currentAct,
@@ -2009,6 +2071,21 @@ void loop() {
                     >
                       {globalSettings?.allowGateAccessWithFees ? <Unlock size={18} /> : <Lock size={18} />}
                       {globalSettings?.allowGateAccessWithFees ? 'Lock Gate (Fee Limits ON)' : 'Unlock Gate (Bypass Fees)'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        playBeep();
+                        setTimeout(() => {
+                          const testNames = ["Grace", "John", "Mercy", "David"];
+                          const randomName = testNames[Math.floor(Math.random() * testNames.length)];
+                          speakAttendanceCompletion(randomName, "checkIn");
+                        }, 400);
+                        addToast("Testing beep & voice synthesis!", "success");
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 shadow-sm"
+                    >
+                      <Volume2 size={18} />
+                      Test Scanner Sound
                     </button>
                   </>
                 )}
