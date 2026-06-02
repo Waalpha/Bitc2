@@ -1126,7 +1126,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                    {recentExams.filter(e => e.teacherId === user.uid).map((exam, idx) => (
-                    <div key={exam.id} className="bg-bg-card/40 p-6 rounded-[32px] border border-white/5 flex flex-col justify-between hover:bg-bg-card transition-colors shadow-lg">
+                    <div key={`${exam.id}_pending_gradings_${idx}`} className="bg-bg-card/40 p-6 rounded-[32px] border border-white/5 flex flex-col justify-between hover:bg-bg-card transition-colors shadow-lg">
                        <div>
                          <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500">
@@ -1191,9 +1191,9 @@ export const Dashboard: React.FC = () => {
                </div>
                <div className="space-y-3">
                  {chatRooms.filter(r => r.type === 'group').length > 0 ? (
-                   chatRooms.filter(r => r.type === 'group').slice(0, 5).map((room) => (
+                   chatRooms.filter(r => r.type === 'group').slice(0, 5).map((room, idx) => (
                      <Link 
-                       key={room.id} 
+                       key={`${room.id || 'room'}_${idx}`} 
                        to="/whatsapp" 
                        state={{ openClassId: room.classId }}
                        className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors group"
@@ -2042,12 +2042,12 @@ export const Dashboard: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-bg-card border border-white/10 rounded-[40px] p-8 sm:p-10 w-full max-w-2xl shadow-2xl overflow-hidden"
+              className="relative bg-bg-card border border-white/10 rounded-[32px] p-6 sm:p-10 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
             >
                <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
-               <div className="flex justify-between items-start mb-8">
+               <div className="flex justify-between items-start mb-6 shrink-0">
                   <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                     <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
                         <Bell size={24} />
                      </div>
                      <div>
@@ -2062,40 +2062,52 @@ export const Dashboard: React.FC = () => {
                   </button>
                </div>
 
-               <div className="bg-white/5 rounded-3xl p-6 sm:p-8 mb-8">
-                  <p className="text-text-secondary leading-relaxed whitespace-pre-wrap font-medium">
-                    {viewingNotif.message}
-                  </p>
+               <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar space-y-6">
+                  <div className="bg-white/5 rounded-3xl p-6 sm:p-8">
+                     <p className="text-text-secondary leading-relaxed whitespace-pre-wrap font-medium">
+                       {viewingNotif.message}
+                     </p>
+                  </div>
+
+                  {viewingNotif.attachmentUrl && (
+                    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          {viewingNotif.attachmentType === 'image' ? <ImageIcon size={20} className="text-primary" /> : <FileText size={20} className="text-primary" />}
+                          <span className="text-xs font-bold text-text-primary uppercase tracking-widest truncate max-w-[200px]">
+                            {viewingNotif.attachmentName || 'View Attachment'}
+                          </span>
+                       </div>
+                       <a 
+                         href={viewingNotif.attachmentUrl} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all active:scale-95"
+                       >
+                         Download
+                       </a>
+                    </div>
+                  )}
+
+                  {viewingNotif.link && (
+                    <Link 
+                      to={viewingNotif.link} 
+                      onClick={() => setViewingNotif(null)}
+                      className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
+                    >
+                      Open Related Page <ArrowRight size={16} />
+                    </Link>
+                  )}
                </div>
 
-               {viewingNotif.attachmentUrl && (
-                 <div className="mb-8 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                       {viewingNotif.attachmentType === 'image' ? <ImageIcon size={20} className="text-primary" /> : <FileText size={20} className="text-primary" />}
-                       <span className="text-xs font-bold text-text-primary uppercase tracking-widest truncate max-w-[200px]">
-                         {viewingNotif.attachmentName || 'View Attachment'}
-                       </span>
-                    </div>
-                    <a 
-                      href={viewingNotif.attachmentUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all active:scale-95"
-                    >
-                      Download
-                    </a>
-                 </div>
-               )}
-
-               {viewingNotif.link && (
-                 <Link 
-                   to={viewingNotif.link} 
-                   onClick={() => setViewingNotif(null)}
-                   className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
-                 >
-                   Open Related Page <ArrowRight size={16} />
-                 </Link>
-               )}
+               {/* Dedicated Close button at bottom for easy mobile tap */}
+               <div className="mt-6 pt-3 border-t border-white/5 shrink-0">
+                  <button
+                    onClick={() => setViewingNotif(null)}
+                    className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-2xl uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
+                  >
+                    Close
+                  </button>
+               </div>
             </motion.div>
           </div>
         )}

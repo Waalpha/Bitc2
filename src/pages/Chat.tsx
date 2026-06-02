@@ -653,7 +653,7 @@ export const Chat: React.FC = () => {
                   const isMine = msg.senderId === user?.uid;
                   return (
                     <div 
-                      key={msg.id}
+                      key={`${msg.id || 'msg'}_${index}`}
                       className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-1`}
                     >
                       <div 

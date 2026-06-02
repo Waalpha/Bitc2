@@ -2258,10 +2258,10 @@ export const Fees: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredStudents.map((student) => {
+                  {filteredStudents.map((student, idx) => {
                     const balance = feeBalances.find(b => b.studentId === student.uid);
                     return (
-                      <tr key={student.uid} className="hover:bg-gray-50 transition-colors">
+                      <tr key={`${student.uid || 'stub'}_${idx}`} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">

@@ -427,14 +427,14 @@ export const ExamAttendance: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {filteredStudents.length > 0 ? (
-                        filteredStudents.map((student) => {
+                        filteredStudents.map((student, idx) => {
                           const record = attendanceRecords.find(r => r.studentId === student.uid);
                           const status = record?.status;
 
                           return (
                             <motion.tr 
                               layout
-                              key={student.uid} 
+                              key={`${student.uid || 'student'}_${idx}`} 
                               className="group hover:bg-gray-50/80 transition-colors"
                             >
                               <td className="px-8 py-4">

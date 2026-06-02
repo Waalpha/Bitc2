@@ -148,9 +148,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ addToast }) 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+              className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             >
-              <div className={`p-6 ${getTypeColor(selectedNotification.type)} flex items-center justify-between`}>
+              <div className={`p-6 ${getTypeColor(selectedNotification.type)} flex items-center justify-between shrink-0`}>
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 p-2 rounded-xl">
                     {getTypeIcon(selectedNotification.type)}
@@ -165,66 +165,66 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ addToast }) 
                 </button>
               </div>
               
-              <div className="p-8">
+              <div className="p-6 sm:p-8 flex-1 overflow-y-auto custom-scrollbar">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 leading-tight">
                     {selectedNotification.title}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-bold text-gray-450 uppercase tracking-widest">
                     {formatDistanceToNow(new Date(selectedNotification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
 
-                <div className="prose prose-sm max-w-none text-gray-600 mb-8 whitespace-pre-wrap leading-relaxed">
+                <div className="prose prose-sm max-w-none text-gray-600 mb-8 whitespace-pre-wrap leading-relaxed font-medium">
                   {selectedNotification.message}
                 </div>
 
-                  {selectedNotification.attachmentUrl && (
-                    <div className="mb-8">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Attachment</p>
-                      <a 
-                        href={selectedNotification.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(selectedNotification.attachmentUrl)}&filename=${encodeURIComponent(selectedNotification.attachmentName || 'attachment')}` : selectedNotification.attachmentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
-                      >
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          selectedNotification.attachmentType === 'pdf' ? 'bg-red-100 text-red-600' : 
-                          selectedNotification.attachmentType === 'word' ? 'bg-blue-600 text-white' : 
-                          'bg-blue-100 text-blue-600'
-                        }`}>
-                          {selectedNotification.attachmentType === 'pdf' ? <FileIcon size={24} /> : 
-                           selectedNotification.attachmentType === 'word' ? <FileText size={24} /> : 
-                           <ImageIcon size={24} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900 truncate">
-                            {selectedNotification.attachmentName || 'View Attachment'}
-                          </p>
-                          <p className="text-xs text-gray-500 uppercase">{selectedNotification.attachmentType}</p>
-                        </div>
-                        <Download size={20} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
-                      </a>
-                    </div>
-                  )}
-
-                <div className="flex gap-3">
-                  {selectedNotification.link && (
-                    <Link 
-                      to={selectedNotification.link} 
-                      onClick={() => setSelectedNotification(null)}
-                      className="flex-1 bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+                {selectedNotification.attachmentUrl && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Attachment</p>
+                    <a 
+                      href={selectedNotification.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(selectedNotification.attachmentUrl)}&filename=${encodeURIComponent(selectedNotification.attachmentName || 'attachment')}` : selectedNotification.attachmentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
                     >
-                      View Page <ExternalLink size={18} />
-                    </Link>
-                  )}
-                  <button 
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                        selectedNotification.attachmentType === 'pdf' ? 'bg-red-100 text-red-600' : 
+                        selectedNotification.attachmentType === 'word' ? 'bg-blue-600 text-white' : 
+                        'bg-blue-100 text-blue-600'
+                      }`}>
+                        {selectedNotification.attachmentType === 'pdf' ? <FileIcon size={24} /> : 
+                         selectedNotification.attachmentType === 'word' ? <FileText size={24} /> : 
+                         <ImageIcon size={24} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">
+                          {selectedNotification.attachmentName || 'View Attachment'}
+                        </p>
+                        <p className="text-xs text-gray-500 uppercase">{selectedNotification.attachmentType}</p>
+                      </div>
+                      <Download size={20} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex gap-3 shrink-0">
+                {selectedNotification.link && (
+                  <Link 
+                    to={selectedNotification.link} 
                     onClick={() => setSelectedNotification(null)}
-                    className={`flex-1 font-bold py-4 rounded-2xl transition-all ${selectedNotification.link ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'}`}
+                    className="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 text-xs uppercase tracking-widest"
                   >
-                    Close
-                  </button>
-                </div>
+                    View Page <ExternalLink size={14} />
+                  </Link>
+                )}
+                <button 
+                  onClick={() => setSelectedNotification(null)}
+                  className={`flex-1 font-bold py-3.5 px-4 rounded-xl transition-all text-xs uppercase tracking-widest ${selectedNotification.link ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'}`}
+                >
+                  Close
+                </button>
               </div>
             </motion.div>
           </div>
@@ -257,9 +257,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ addToast }) 
               <div className="max-h-[400px] overflow-y-auto">
                 {notifications.length > 0 ? (
                   <div className="divide-y divide-gray-50">
-                    {notifications.map((n) => (
+                    {notifications.map((n, idx) => (
                       <div 
-                        key={n.id} 
+                        key={`${n.id || 'notif'}_${idx}`} 
                         onClick={() => {
                           setSelectedNotification(n);
                           if (!n.read) markAsRead(n.id);

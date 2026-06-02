@@ -2615,8 +2615,8 @@ void loop() {
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
-                          {criticalAbsentStudents.map(({ student, count }) => (
-                            <div key={`crit_${student.uid}`} className="flex items-center justify-between bg-white/70 backdrop-blur-sm border border-rose-100/50 rounded-xl p-3 shadow-xs">
+                          {criticalAbsentStudents.map(({ student, count }, idx) => (
+                            <div key={`crit_${student.uid || 'stub'}_${idx}`} className="flex items-center justify-between bg-white/70 backdrop-blur-sm border border-rose-100/50 rounded-xl p-3 shadow-xs">
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-xs font-extrabold text-slate-800">{student.name}</span>
                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{student.admissionNumber || 'No ADM'}</span>
@@ -3058,7 +3058,7 @@ void loop() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {students.map(student => {
+                        {students.map((student, idx) => {
                           const monthDays = eachDayOfInterval({
                             start: startOfMonth(reportMonth),
                             end: endOfMonth(reportMonth)
@@ -3068,7 +3068,7 @@ void loop() {
                           let totalMarked = 0;
 
                           return (
-                            <tr key={student.uid} className="hover:bg-gray-50 transition-colors print:hover:bg-transparent">
+                            <tr key={`${student.uid || 'student'}_${idx}`} className="hover:bg-gray-50 transition-colors print:hover:bg-transparent">
                               <td className="px-4 py-3 text-sm font-bold text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] print:static print:shadow-none print:text-xs">
                                 {student.name}
                               </td>
@@ -3456,7 +3456,7 @@ void loop() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  key={record.id} 
+                  key={`${record.id || 'record'}_${idx}`} 
                   className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors group"
                 >
                   <div className="flex items-center gap-5">

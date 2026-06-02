@@ -624,10 +624,10 @@ export const WhatsApp: React.FC = () => {
               <div className="absolute inset-0 bg-white/60 pointer-events-none z-0" />
               
               <div className="flex flex-col space-y-1 relative z-10">
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                   const isMine = msg.senderId === user?.uid;
                   return (
-                    <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-1`}>
+                    <div key={`${msg.id || 'msg'}_${idx}`} className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-1`}>
                       <div className={`max-w-[85%] md:max-w-[75%] px-3 py-2 rounded-xl shadow-md relative ${isMine ? 'bg-[#D9FDD3] text-[#111B21]' : 'bg-white text-[#111B21]'} border border-black/5`}>
                         {msg.attachmentUrl && (
                           <div className="mb-2 mt-1">
