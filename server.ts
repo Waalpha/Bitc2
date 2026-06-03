@@ -391,6 +391,187 @@ async function startServer() {
     res.json({ success: true, syncedCount: count });
   });
 
+  // --- BACKUP & RESTORE API ROUTES ---
+  const BACKUP_DIR = path.join(process.cwd(), 'data_backups');
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+
+  // Create a backup point
+  apiRouter.post("/backup/create", (req, res) => {
+    try {
+      const { name, notes } = req.body;
+      const backupId = `bkp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const backupName = name || `Manual_Backup_${new Date().toISOString().substring(0, 19).replace('T', '_')}`;
+      
+      const DB_DIR = path.join(process.cwd(), 'data');
+      if (!fs.existsSync(DB_DIR)) {
+        return res.status(400).json({ error: "No local database directory found" });
+      }
+
+      const files = fs.readdirSync(DB_DIR);
+      const collectionsData: Record<string, any> = {};
+      let docCount = 0;
+
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          const colName = file.slice(0, -5);
+          try {
+            const raw = fs.readFileSync(path.join(DB_DIR, file), 'utf8');
+            const data = JSON.parse(raw);
+            collectionsData[colName] = data;
+            docCount += Object.keys(data).length;
+          } catch (fileErr) {
+            console.error(`Error reading ${file} during backup:`, fileErr);
+          }
+        }
+      }
+
+      const backupPlayload = {
+        id: backupId,
+        name: backupName,
+        notes: notes || '',
+        timestamp: new Date().toISOString(),
+        docCount,
+        collections: collectionsData
+      };
+
+      fs.writeFileSync(
+        path.join(BACKUP_DIR, `${backupId}.json`),
+        JSON.stringify(backupPlayload, null, 2),
+        'utf8'
+      );
+
+      res.json({ success: true, backup: { id: backupId, name: backupName, timestamp: backupPlayload.timestamp, docCount } });
+    } catch (err: any) {
+      console.error("Backup creation failed:", err);
+      res.status(500).json({ error: err.message || "Failed to create backup point" });
+    }
+  });
+
+  // List all available backup points
+  apiRouter.get("/backup/list", (req, res) => {
+    try {
+      if (!fs.existsSync(BACKUP_DIR)) {
+        return res.json({ success: true, backups: [] });
+      }
+
+      const files = fs.readdirSync(BACKUP_DIR);
+      const backupsList = [];
+
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          try {
+            const raw = fs.readFileSync(path.join(BACKUP_DIR, file), 'utf8');
+            const data = JSON.parse(raw);
+            backupsList.push({
+              id: data.id,
+              name: data.name,
+              notes: data.notes || '',
+              timestamp: data.timestamp,
+              docCount: data.docCount || 0,
+              size: Buffer.byteLength(raw, 'utf8')
+            });
+          } catch (fileErr) {
+            console.error(`Error reading backup ${file}:`, fileErr);
+          }
+        }
+      }
+
+      // Sort by latest timestamp
+      backupsList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      res.json({ success: true, backups: backupsList });
+    } catch (err: any) {
+      console.error("Backup listing failed:", err);
+      res.status(500).json({ error: err.message || "Failed to list backups" });
+    }
+  });
+
+  // Restore from a backup point
+  apiRouter.post("/backup/restore", async (req, res) => {
+    try {
+      const { backupId, customBackupData } = req.body;
+      let backupPayload: any = null;
+
+      if (customBackupData) {
+        backupPayload = typeof customBackupData === 'string' ? JSON.parse(customBackupData) : customBackupData;
+      } else if (backupId) {
+        const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ error: `Backup with ID ${backupId} not found` });
+        }
+        const raw = fs.readFileSync(filePath, 'utf8');
+        backupPayload = JSON.parse(raw);
+      }
+
+      if (!backupPayload || !backupPayload.collections || typeof backupPayload.collections !== 'object') {
+        return res.status(400).json({ error: "Invalid backup payload format" });
+      }
+
+      const DB_DIR = path.join(process.cwd(), 'data');
+      if (!fs.existsSync(DB_DIR)) {
+        fs.mkdirSync(DB_DIR, { recursive: true });
+      }
+
+      // Restore each collection in backup
+      const collections = backupPayload.collections;
+      let docCount = 0;
+
+      for (const [colName, colData] of Object.entries(collections)) {
+        if (colData && typeof colData === 'object') {
+          fs.writeFileSync(
+            path.join(DB_DIR, `${colName}.json`),
+            JSON.stringify(colData, null, 2),
+            'utf8'
+          );
+          docCount += Object.keys(colData).length;
+        }
+      }
+
+      res.json({ success: true, restoredCount: docCount, name: backupPayload.name });
+    } catch (err: any) {
+      console.error("Backup restoration failed:", err);
+      res.status(500).json({ error: err.message || "Failed to restore backup" });
+    }
+  });
+
+  // Delete a backup checkpoint
+  apiRouter.delete("/backup/delete/:id", (req, res) => {
+    try {
+      const backupId = req.params.id;
+      const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        return res.json({ success: true });
+      } else {
+        return res.status(404).json({ error: "Backup file not found" });
+      }
+    } catch (err: any) {
+      console.error("Failed to delete backup:", err);
+      res.status(500).json({ error: err.message || "Could not delete backup file" });
+    }
+  });
+
+  // Download a backup raw payload (using a direct GET request)
+  apiRouter.get("/backup/download/:id", (req, res) => {
+    try {
+      const backupId = req.params.id;
+      const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+      if (fs.existsSync(filePath)) {
+        res.setHeader('Content-disposition', `attachment; filename=${backupId}.json`);
+        res.setHeader('Content-type', 'application/json');
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+      } else {
+        res.status(404).json({ error: "Backup file not found" });
+      }
+    } catch (err: any) {
+      console.error("Failed to download backup:", err);
+      res.status(500).json({ error: err.message || "Could not download backup file" });
+    }
+  });
+
   // API Route to resolve admission number to email address for unified login
   apiRouter.post("/auth/lookup-email", async (req, res) => {
     const { admissionNumber } = req.body;

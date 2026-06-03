@@ -37,7 +37,7 @@ const TABS = [
 import { uploadFile } from '../services/uploadService';
 
 export const StudentAdmission: React.FC = () => {
-  const { user, userData } = useAuth();
+  const { user, userData, hasPermission } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [classes, setClasses] = useState<Class[]>([]);
@@ -356,7 +356,7 @@ export const StudentAdmission: React.FC = () => {
   const selectedClasses = classes.filter(c => formData.classIds.includes(c.id));
   const availableUnits = Array.from(new Set(selectedClasses.flatMap(c => c.unitIds || []))).sort();
 
-  const isAdmin = userData?.role === 'admin';
+  const isAdmin = userData?.role === 'admin' || hasPermission('student_admission');
 
   if (!isAdmin) {
     return (

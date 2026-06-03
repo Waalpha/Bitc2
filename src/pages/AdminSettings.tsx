@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -34,6 +34,14 @@ export const AdminSettings: React.FC = () => {
   const [isLinkingDevice, setIsLinkingDevice] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [cloudinaryStatus, setCloudinaryStatus] = useState<{ enabled: boolean, cloudName?: string, folder?: string }>({ enabled: false });
+
+  // Backup & Restore state
+  const [backups, setBackups] = useState<any[]>([]);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isRestoring, setIsRestoring] = useState<string | null>(null);
+  const [backupName, setBackupName] = useState('');
+  const [backupNotes, setBackupNotes] = useState('');
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -133,8 +141,12 @@ export const AdminSettings: React.FC = () => {
   const bootstrapRoles = async () => {
     const defaultRoles = [
       { id: 'admin', name: 'Admin', description: 'Full system access', permissions: PERMISSIONS.map(p => p.id) },
-      { id: 'teacher', name: 'Teacher', description: 'Manage classes and exams', permissions: ['manage_units', 'manage_exams', 'mark_attendance'] },
-      { id: 'student', name: 'Student', description: 'View units and take exams', permissions: [] },
+      { id: 'teacher', name: 'Teacher', description: 'Manage academic classes, unit materials, exams, and grades', permissions: ['manage_units', 'manage_exams', 'mark_attendance', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results'] },
+      { id: 'registrar', name: 'Registrar', description: 'Student admission, class lists, enrollment, and timetable manager', permissions: ['view_students', 'student_admission', 'manage_classes', 'manage_units', 'manage_timetable'] },
+      { id: 'finance', name: 'Finance Officer', description: 'Fee management, collections, invoice, and financial reports viewer', permissions: ['manage_fees', 'view_finance', 'view_reports'] },
+      { id: 'staff', name: 'Support Staff', description: 'Mark attendee registers, view student records, school timetable', permissions: ['view_students', 'mark_attendance', 'manage_timetable'] },
+      { id: 'parent', name: 'Parent', description: 'Access child attendance status, grading reports, and finance sheets', permissions: ['view_results', 'view_reports'] },
+      { id: 'student', name: 'Student', description: 'Access personal timetable, submit assignments, take exams, and view performance results', permissions: ['view_results'] },
     ];
 
     for (const role of defaultRoles) {
@@ -155,6 +167,147 @@ export const AdminSettings: React.FC = () => {
       }));
     }
   }, [globalSettings]);
+
+  const fetchBackups = async () => {
+    try {
+      const res = await fetch('/api/backup/list');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setBackups(data.backups || []);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch backups:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'maintenance') {
+      fetchBackups();
+    }
+  }, [activeTab]);
+
+  const handleCreateBackup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingBackup(true);
+    try {
+      const res = await fetch('/api/backup/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: backupName, notes: backupNotes })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        addToast(`Backup segment checkpoint "${data.backup.name}" created successfully!`, 'success');
+        setBackupName('');
+        setBackupNotes('');
+        setIsBackupModalOpen(false);
+        fetchBackups();
+      } else {
+        addToast(data.error || "Failed to create backup point", "error");
+      }
+    } catch (err: any) {
+      addToast(err.message || "An error occurred", "error");
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
+  const handleRestoreBackup = async (id: string, name: string) => {
+    if (!window.confirm(`CRITICAL SYSTEM WARNING: Are you absolutely sure you want to restore the application state to checkpoint "${name}"? This action replaces 100% of outstanding student records, exam scores, class matrices, and user configurations back to that exact point. Current changes since that time will lead to automatic loss. This cannot be undone.`)) {
+      return;
+    }
+    
+    setIsRestoring(id);
+    try {
+      const res = await fetch('/api/backup/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupId: id })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        addToast(`Successfully restored database and application state to checkpoint "${data.name}"!`, 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        addToast(data.error || "Failed to restore backup point", "error");
+      }
+    } catch (err: any) {
+      addToast(err.message || "An error occurred", "error");
+    } finally {
+      setIsRestoring(null);
+    }
+  };
+
+  const handleDeleteBackup = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this backup snapshot from local storage?")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/backup/delete/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        addToast("Backup point erased successfully.", "success");
+        fetchBackups();
+      } else {
+        const data = await res.json();
+        addToast(data.error || "Failed to delete backup point", "error");
+      }
+    } catch (err: any) {
+      addToast(err.message || "An error occurred", "error");
+    }
+  };
+
+  const handleImportBackupFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        
+        if (!parsed.collections || typeof parsed.collections !== 'object') {
+          addToast("Invalid backup snapshot file: Structure doesn't contain matching database collections.", "error");
+          return;
+        }
+
+        const docCount = parsed.docCount || 0;
+        const backupNameFromFile = parsed.name || file.name;
+
+        if (!window.confirm(`Are you absolutely sure you want to restore the entire database from downloaded file "${backupNameFromFile}" containing ${docCount} records? Existing records will be entirely replaced.`)) {
+          return;
+        }
+
+        setIsRestoring('custom');
+        const res = await fetch('/api/backup/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customBackupData: parsed })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast(`Application database completely seeded and restored from local file!`, "success");
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          addToast(data.error || "Failed to restore uploaded backup payload", "error");
+        }
+      } catch (err: any) {
+        addToast("Failed to parse and read database JSON file structure. Ensure it is a valid backup file.", "error");
+      } finally {
+        setIsRestoring(null);
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,8 +537,8 @@ export const AdminSettings: React.FC = () => {
   };
 
   const handleDeleteRole = async (id: string) => {
-    if (['admin', 'teacher', 'student'].includes(id)) {
-      addToast("Cannot delete system roles", "error");
+    if (['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes(id.toLowerCase())) {
+      addToast("Cannot delete core system roles", "error");
       return;
     }
     try {
@@ -1099,113 +1252,265 @@ export const AdminSettings: React.FC = () => {
       )}
 
       {activeTab === 'maintenance' && (
-        <div className="max-w-2xl space-y-6">
-          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <RefreshCw size={24} className="text-amber-500" />
-              App Maintenance
-            </h2>
-            <div className="space-y-6">
-              <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100">
-                <h3 className="font-bold text-amber-900 mb-2">Clear App Cache & Local Storage</h3>
-                <p className="text-sm text-amber-700 mb-6">
-                  If you are experiencing issues with data not updating or UI glitches, clearing the app's local storage and cache can often resolve them. 
-                  Note: This will log you out of your current session and reset all local preferences.
-                </p>
-                <button
-                  onClick={handleClearCache}
-                  className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-200 flex items-center gap-2"
-                >
-                  <Trash2 size={18} />
-                  Clear & Reload App
-                </button>
-              </div>
-
-              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Upload size={20} className="text-blue-600" />
-                  </div>
-                  <h3 className="font-bold text-slate-900">Cloudinary Integration</h3>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column (Maintenance controls & Integrations) - 5 Cols */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <RefreshCw size={24} className="text-amber-500" />
+                App Maintenance
+              </h2>
+              <div className="space-y-6">
+                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                  <h3 className="font-bold text-amber-900 mb-2">Clear App Cache & Local Storage</h3>
+                  <p className="text-sm text-amber-700 mb-6 font-medium">
+                    If you are experiencing issues with data not updating or UI glitches, clearing the app's local storage and cache can often resolve them. 
+                    Note: This will log you out of your current session and reset all local preferences.
+                  </p>
+                  <button
+                    onClick={handleClearCache}
+                    className="w-full bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-200 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} />
+                    Clear & Reload App
+                  </button>
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-medium">Cloud Storage Status</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${cloudinaryStatus.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                      {cloudinaryStatus.enabled ? 'CONNECTED' : 'NOT CONFIGURED'}
-                    </span>
+
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <Upload size={20} className="text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-slate-900">Cloudinary Integration</h3>
                   </div>
                   
-                  {cloudinaryStatus.enabled ? (
-                    <>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Cloud Name</span>
-                        <span className="font-mono text-xs bg-white px-2 py-1 rounded border border-slate-200">{cloudinaryStatus.cloudName}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Storage Folder</span>
-                        <span className="font-mono text-xs bg-white px-2 py-1 rounded border border-slate-200">{cloudinaryStatus.folder}</span>
-                      </div>
-                      <div className="pt-3">
-                        <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex items-start gap-3">
-                          <Check size={16} className="text-emerald-600 mt-0.5" />
-                          <p className="text-xs text-emerald-800 leading-relaxed font-medium">
-                            Cloudinary is active. All system images, logos, and student documents are being saved to your secure cloud storage.
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="bg-red-50 p-3 rounded-xl border border-red-100 flex flex-col gap-3">
-                      <div className="flex items-start gap-3">
-                        <Lock size={16} className="text-red-600 mt-0.5 shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-xs text-red-800 font-bold uppercase tracking-tight">Cloud Storage Disabled</p>
-                          <p className="text-xs text-red-700 leading-relaxed">
-                            Your app is currently using local temporary storage for uploads. Files in local storage may be lost during system updates.
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white/50 p-3 rounded-lg border border-red-100 space-y-2">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">How to enable:</p>
-                        <div className="space-y-1.5">
-                          {['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'].map(key => (
-                            <div key={key} className="flex items-center justify-between group">
-                              <code className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono select-all">
-                                {key}
-                              </code>
-                              <button 
-                                onClick={() => {
-                                  navigator.clipboard.writeText(key);
-                                  addToast(`${key} copied to clipboard`);
-                                }}
-                                className="text-[10px] text-blue-500 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-2 leading-tight">
-                          Add these as <b>Secrets/Environment Variables</b> in the AI Studio Settings menu and restart the server.
-                        </p>
-                      </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500 font-medium">Cloud Storage Status</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${cloudinaryStatus.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                        {cloudinaryStatus.enabled ? 'CONNECTED' : 'NOT CONFIGURED'}
+                      </span>
                     </div>
-                  )}
+                    
+                    {cloudinaryStatus.enabled ? (
+                      <>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-500 font-medium">Cloud Name</span>
+                          <span className="font-mono text-xs bg-white px-2 py-1 rounded border border-slate-200">{cloudinaryStatus.cloudName}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-500 font-medium">Storage Folder</span>
+                          <span className="font-mono text-xs bg-white px-2 py-1 rounded border border-slate-200">{cloudinaryStatus.folder}</span>
+                        </div>
+                        <div className="pt-3">
+                          <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex items-start gap-3">
+                            <Check size={16} className="text-emerald-600 mt-0.5" />
+                            <p className="text-xs text-emerald-800 leading-relaxed font-semibold">
+                              Cloudinary is active. All system images, logos, and student documents are being saved to your secure cloud storage.
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-red-50 p-3 rounded-xl border border-red-100 flex flex-col gap-3">
+                        <div className="flex items-start gap-3">
+                          <Lock size={16} className="text-red-600 mt-0.5 shrink-0" />
+                          <div className="space-y-1">
+                            <p className="text-xs text-red-800 font-bold uppercase tracking-tight">Cloud Storage Disabled</p>
+                            <p className="text-xs text-red-700 leading-relaxed">
+                              Your app is currently using local temporary storage for uploads. Files in local storage may be lost during system updates.
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white/50 p-3 rounded-lg border border-red-100 space-y-2">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">How to enable:</p>
+                          <div className="space-y-1.5">
+                            {['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'].map(key => (
+                              <div key={key} className="flex items-center justify-between group">
+                                <code className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono select-all">
+                                  {key}
+                                </code>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(key);
+                                    addToast(`${key} copied to clipboard`);
+                                  }}
+                                  className="text-[10px] text-blue-500 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-2 leading-tight">
+                            Add these as <b>Secrets/Environment Variables</b> in the AI Studio Settings menu and restart the server.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <h3 className="font-bold text-slate-900 mb-2">System Version</h3>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Current Environment</span>
+                    <span className="font-mono bg-slate-200 px-2 py-0.5 rounded text-xs">Production / Stable</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm mt-3">
+                    <span className="text-slate-500">Last Database Sync</span>
+                    <span className="font-medium text-slate-900">{format(new Date(), 'MMM dd, yyyy HH:mm')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column (Database checkpoint manager, backup points & upload restore) - 7 Cols */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Database size={24} className="text-purple-600" />
+                    Database Restoration & Checkpoints
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Capture system states, register restore points, or import custom databases.
+                  </p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setBackupName('');
+                      setBackupNotes('');
+                      setIsBackupModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-100 flex items-center gap-1.5 shrink-0"
+                  >
+                    <Archive size={14} />
+                    New Checkpoint
+                  </button>
+                  
+                  <label className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <FileUp size={14} className="text-gray-500" />
+                    Import File
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      className="hidden" 
+                      onChange={handleImportBackupFile} 
+                    />
+                  </label>
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-2">System Version</h3>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">Current Environment</span>
-                  <span className="font-mono bg-slate-200 px-2 py-0.5 rounded text-xs">Production / Stable</span>
+              {/* Status Indicator */}
+              {isRestoring && (
+                <div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl flex items-center gap-3 animate-pulse">
+                  <Loader2 size={18} className="text-teal-600 animate-spin" />
+                  <div>
+                    <p className="text-xs font-bold text-teal-800">Restoring Checkpoint...</p>
+                    <p className="text-[10px] text-teal-600 mt-0.5">Please wait, importing collection files and refreshing caches.</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center text-sm mt-3">
-                  <span className="text-slate-500">Last Database Sync</span>
-                  <span className="font-medium text-slate-900">{format(new Date(), 'MMM dd, yyyy HH:mm')}</span>
+              )}
+
+              {/* Backups List */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Available Restoring Points</h3>
+                
+                {backups.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
+                    <Archive size={36} className="text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm font-bold text-gray-500">No Checkpoints Saved</p>
+                    <p className="text-xs text-gray-400 max-w-xs mx-auto mt-1 leading-relaxed">
+                      You haven't registered any restore points yet. Create a checkpoint to protect against accidental modifications.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                    {backups.map((bk) => (
+                      <div 
+                        key={bk.id} 
+                        className={`p-5 rounded-2xl border transition-all hover:bg-slate-50/50 ${
+                          isRestoring === bk.id 
+                            ? 'bg-purple-50 border-purple-200' 
+                            : 'bg-white border-gray-100 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                              {bk.name}
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100 font-mono">
+                                {bk.docCount} records
+                              </span>
+                            </h4>
+                            {bk.notes && (
+                              <p className="text-xs text-gray-500 leading-relaxed max-w-md font-medium">
+                                {bk.notes}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 text-[10px] text-gray-400 pt-1 font-semibold">
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} />
+                                {format(new Date(bk.timestamp), 'MMM dd, yyyy HH:mm')}
+                              </span>
+                              <span>•</span>
+                              <span>{(bk.size / 1024).toFixed(1)} KB</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleRestoreBackup(bk.id, bk.name)}
+                              disabled={!!isRestoring}
+                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-50"
+                              title="Restore to this point"
+                            >
+                              <RefreshCw size={12} className={isRestoring === bk.id ? 'animate-spin' : ''} />
+                              Restore
+                            </button>
+                            
+                            <a
+                              href={`/api/backup/download/${bk.id}`}
+                              className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg transition-all border border-gray-200 select-none shadow-sm flex items-center justify-center text-center leading-none"
+                              title="Download backup file"
+                              download
+                            >
+                              <FileDown size={14} />
+                            </a>
+                            
+                            <button
+                              onClick={() => handleDeleteBackup(bk.id)}
+                              disabled={!!isRestoring}
+                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg transition-all disabled:opacity-50"
+                              title="Permanently Delete Checkpoint"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recovery Guidance */}
+              <div className="p-4 bg-purple-50/50 border border-purple-100/30 rounded-2xl flex gap-3">
+                <AlertTriangle size={18} className="text-purple-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-purple-900">How Restoration Works</h4>
+                  <p className="text-[11px] text-purple-700 leading-relaxed font-semibold">
+                    Restoring replaces your entire local sandbox database (classes, user credentials, fees logs, grades, attendance, exam materials) with the backup file data.
+                  </p>
+                  <p className="text-[10px] text-purple-500 leading-relaxed">
+                    You can also download individual backup files to preserve off-device copies, or upload them to import other database templates.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1213,22 +1518,120 @@ export const AdminSettings: React.FC = () => {
         </div>
       )}
 
+      {/* Backup Checkpoint Creation Modal */}
+      <AnimatePresence>
+        {isBackupModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full border border-gray-100 shadow-2xl space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-100 p-2 rounded-xl text-purple-600">
+                    <Archive size={18} />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-lg">Save Checkpoint</h3>
+                </div>
+                <button
+                  onClick={() => setIsBackupModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateBackup} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Checkpoint Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Prior to Class Import"
+                    value={backupName}
+                    onChange={(e) => setBackupName(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Notes / Description (Optional)</label>
+                  <textarea
+                    placeholder="e.g. Backing up stable system state before uploading 2026 registration datasets."
+                    value={backupNotes}
+                    onChange={(e) => setBackupNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBackupModalOpen(false)}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingBackup}
+                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {isCreatingBackup && <Loader2 size={12} className="animate-spin" />}
+                    Create
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <Toast messages={toasts} onRemove={removeToast} />
 
       {activeTab === 'roles' && (
         <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">Roles & Permissions</h2>
-            <button
-              onClick={() => {
-                setNewRole({ name: '', description: '', permissions: [] });
-                setIsAddingRole(true);
-              }}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Add New Role
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Roles & Permissions</h2>
+              <p className="text-xs text-gray-500 mt-1">Manage user positions, security scopes, and functional permission levels.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setIsRefreshing(true);
+                    await bootstrapRoles();
+                    await fetchAdminData();
+                    addToast("Successfully synchronized default system roles and permissions!", "success");
+                  } catch (e) {
+                    addToast("Failed to synchronize default system roles", "error");
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold font-sans border border-slate-200/60 cursor-pointer"
+              >
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                Sync System Defaults
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewRole({ name: '', description: '', permissions: [] });
+                  setEditingRole(null);
+                  setIsAddingRole(true);
+                }}
+                className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-md shadow-purple-100 flex items-center gap-2 text-xs font-bold font-sans cursor-pointer"
+              >
+                <Plus size={16} />
+                Add New Role
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1250,7 +1653,7 @@ export const AdminSettings: React.FC = () => {
                     >
                       <Edit size={18} />
                     </button>
-                    {!['admin', 'teacher', 'student'].includes(role.id) && (
+                    {!['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes(role.id.toLowerCase()) && (
                       <button
                         onClick={() => handleDeleteRole(role.id)}
                         className="p-2 text-gray-400 hover:text-red-600"

@@ -10,7 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Toast, ToastMessage } from '../components/Toast';
 
 export const Exams: React.FC = () => {
-  const { user, userData } = useAuth();
+  const { user, userData, hasPermission } = useAuth();
   const location = useLocation();
   const [exams, setExams] = useState<Exam[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -58,7 +58,7 @@ export const Exams: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = userData?.role === 'teacher' || userData?.role === 'admin' || hasPermission('manage_exams');
 
   useEffect(() => {
     if (!user) return;

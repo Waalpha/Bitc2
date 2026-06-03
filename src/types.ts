@@ -86,6 +86,12 @@ export const PERMISSIONS = [
   { id: 'manage_fees', name: 'Manage Fees', description: 'Can manage student fee balances' },
   { id: 'view_finance', name: 'View Finance', description: 'Can view income and expense charts' },
   { id: 'system_settings', name: 'System Settings', description: 'Can modify app title, logo, and styles' },
+  { id: 'manage_timetable', name: 'Manage Timetable', description: 'Can create, modify, and auto-generate the school timetable' },
+  { id: 'manage_whatsapp', name: 'Manage WhatsApp', description: 'Can send WhatsApp updates and manage broadcast settings' },
+  { id: 'manage_chat', name: 'Manage Chat', description: 'Can manage chat groups and community channels' },
+  { id: 'student_admission', name: 'Student Admission', description: 'Can admit, enroll, and assign programs to new students' },
+  { id: 'manage_marks', name: 'Manage Marks', description: 'Can grade submissions, upload results sheets, and publish marks' },
+  { id: 'view_results', name: 'View Results', description: 'Can view student academic performance sheets' },
 ] as const;
 
 export interface Class {

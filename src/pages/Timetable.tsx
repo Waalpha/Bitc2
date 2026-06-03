@@ -31,7 +31,7 @@ export const Timetable: React.FC = () => {
     color: '#3b82f6'
   });
 
-  const canManage = userData?.role === 'admin' || userData?.role === 'teacher' || user?.email === 'daudimuchiri4@gmail.com';
+  const canManage = hasPermission('manage_timetable') || userData?.role === 'admin' || userData?.role === 'teacher' || user?.email === 'daudimuchiri4@gmail.com';
   const isStudent = userData?.role === 'student' && user?.email !== 'daudimuchiri4@gmail.com';
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {

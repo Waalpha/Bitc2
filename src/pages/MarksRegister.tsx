@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 
 export const MarksRegister: React.FC = () => {
-  const { user, userData } = useAuth();
+  const { user, userData, hasPermission } = useAuth();
   const location = useLocation();
   const [exams, setExams] = useState<Exam[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -49,7 +49,7 @@ export const MarksRegister: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = userData?.role === 'teacher' || hasPermission('manage_marks') || hasPermission('manage_exams');
   const isAdmin = userData?.role === 'admin';
   
   useEffect(() => {

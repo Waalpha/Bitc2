@@ -126,7 +126,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       title: 'STUDENT INFO',
       items: [
         { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'view_students' },
-        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'view_students', role: 'admin' },
+        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'student_admission' },
         { name: 'Student List', path: '/students', icon: Users, permission: 'view_students' },
         { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: null },
         { name: 'Exams', path: '/exams', icon: FileText, permission: 'manage_exams' },
@@ -176,6 +176,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           const visibleItems = group.items.filter((item: any) => {
             if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
             if (isStudent && item.path === '/dashboard') return true; // Re-enable for student
+            if (isStudent && item.path === '/exams') return true; // Show Exams page for students too so they can take exams
             if (item.role && userData?.role !== item.role) return false;
             return !item.permission || hasPermission(item.permission);
           });

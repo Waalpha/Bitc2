@@ -137,7 +137,7 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
 type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 
 export const Attendance: React.FC = () => {
-  const { user, userData, settings: globalSettings } = useAuth();
+  const { user, userData, hasPermission, settings: globalSettings } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [students, setStudents] = useState<User[]>([]);
@@ -410,9 +410,9 @@ void loop() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = userData?.role === 'teacher' || hasPermission('mark_attendance');
   const isAdmin = userData?.role === 'admin';
-  const isStudent = userData?.role === 'student';
+  const isStudent = userData?.role === 'student' && !hasPermission('mark_attendance');
 
   const [isGpsVerifying, setIsGpsVerifying] = useState(false);
   const [gpsSelectedClassId, setGpsSelectedClassId] = useState('');
