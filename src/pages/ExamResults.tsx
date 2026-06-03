@@ -169,7 +169,7 @@ export const ExamResults: React.FC = () => {
       {userData?.role === 'student' ? (
         <div className="grid grid-cols-1 gap-6">
           {submissions.length > 0 ? (
-            submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).map((sub) => {
+            submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).map((sub, idx) => {
               const exam = exams.find(e => e.id === sub.examId);
               const unit = units.find(c => c.id === exam?.unitId);
               const isPassed = sub.grade !== undefined && exam && sub.grade >= exam.passingMarks;
@@ -178,7 +178,7 @@ export const ExamResults: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  key={sub.id}
+                  key={`${sub.id || 'sub'}_${idx}`}
                   className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition-all group"
                 >
                   <div className="p-8 flex flex-col md:flex-row gap-8">
@@ -279,7 +279,7 @@ export const ExamResults: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exams.map((exam) => {
+          {exams.map((exam, idx) => {
             const stats = getExamStats(exam.id);
             const unit = units.find(c => c.id === exam.unitId);
             const cls = classes.find(c => c.id === exam.classId);
@@ -288,7 +288,7 @@ export const ExamResults: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                key={exam.id}
+                key={`${exam.id || 'exam'}_${idx}`}
                 className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition-all"
               >
                 <div className="p-6">

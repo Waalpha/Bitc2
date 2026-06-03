@@ -1888,7 +1888,7 @@ export const Dashboard: React.FC = () => {
       {renderDashboard()}
       <AnimatePresence>
         {isAnnouncing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto pt-10 sm:pt-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1900,7 +1900,7 @@ export const Dashboard: React.FC = () => {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-bg-card rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-white/10 max-h-[90vh] flex flex-col"
+              className="relative bg-bg-card rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-white/10 max-h-[calc(100vh-4rem)] sm:max-h-[85vh] flex flex-col my-auto"
             >
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5 flex-shrink-0">
                 <div>
@@ -2030,7 +2030,7 @@ export const Dashboard: React.FC = () => {
       {/* Notice Viewer Modal */}
       <AnimatePresence>
         {viewingNotif && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto pt-10 sm:pt-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2042,7 +2042,7 @@ export const Dashboard: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-bg-card border border-white/10 rounded-[32px] p-6 sm:p-10 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+              className="relative bg-bg-card border border-white/10 rounded-[32px] p-5 sm:p-8 md:p-10 w-full max-w-2xl max-h-[calc(100vh-4rem)] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden my-auto"
             >
                <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
                <div className="flex justify-between items-start mb-6 shrink-0">

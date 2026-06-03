@@ -463,9 +463,9 @@ export const StudentAdmission: React.FC = () => {
                     <div className="space-y-4 sm:col-span-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Classes (Select multiple) <span className="text-red-500">*</span></label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {classes.map(c => (
+                        {classes.map((c, idx) => (
                           <label 
-                            key={c.id} 
+                            key={`${c.id || 'c'}_${idx}`} 
                             className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${
                               formData.classIds.includes(c.id)
                                 ? 'bg-blue-50 border-blue-200 text-blue-700'

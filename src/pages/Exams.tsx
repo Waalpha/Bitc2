@@ -252,8 +252,8 @@ export const Exams: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {exams.map((exam) => (
-          <div key={exam.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all group">
+        {exams.map((exam, idx) => (
+          <div key={`${exam.id || 'exam'}_${idx}`} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all group">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div className={`p-3 rounded-2xl ${exam.published ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-400'}`}>
@@ -383,12 +383,12 @@ export const Exams: React.FC = () => {
 
               <div className="space-y-4">
                 {examSubmissions.length > 0 ? (
-                  examSubmissions.map((sub) => {
+                  examSubmissions.map((sub, idx) => {
                     const student = students.find(s => s.uid === sub.studentId);
                     const isPassed = sub.grade !== undefined && sub.grade >= viewingSubmissions.passingMarks;
                     
                     return (
-                      <div key={sub.id} className="p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
+                      <div key={`${sub.id || 'sub'}_${idx}`} className="p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 font-bold text-lg">
@@ -696,7 +696,7 @@ export const Exams: React.FC = () => {
 
                       <div className="space-y-6">
                         {newExam.questions?.map((q, idx) => (
-                          <div key={q.id} className="p-8 bg-gray-50 rounded-3xl border border-gray-100 space-y-6 relative group">
+                          <div key={`${q.id || 'q'}_${idx}`} className="p-8 bg-gray-50 rounded-3xl border border-gray-100 space-y-6 relative group">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">

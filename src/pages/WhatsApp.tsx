@@ -526,12 +526,12 @@ export const WhatsApp: React.FC = () => {
               <div className="px-4 py-3 text-[#008069] text-[12px] font-bold uppercase tracking-[0.1em] flex items-center gap-4">
                 <Users size={18} /> WHATSAPP GROUPS
               </div>
-              {classes.map(cls => {
+              {classes.map((cls, idx) => {
                 const room = rooms.find(r => r.classId === cls.id);
                 const isActive = activeRoom?.classId === cls.id;
                 return (
                   <div 
-                    key={cls.id}
+                    key={`${cls.id || 'cls'}_${idx}`}
                     onClick={() => startClassChat(cls)}
                     className={`flex items-center px-4 py-3 cursor-pointer transition-colors relative ${isActive ? 'bg-[#F0F2F5]' : 'hover:bg-[#F5F6F6]'}`}
                   >
@@ -563,12 +563,12 @@ export const WhatsApp: React.FC = () => {
               <div className="px-4 py-3 text-[#008069] text-[12px] font-bold uppercase tracking-[0.1em] flex items-center gap-4 border-t border-gray-50 bg-gray-50/50">
                 <MessageSquare size={18} /> DIRECT MESSAGES
               </div>
-              {rooms.filter(r => !r.classId).map(room => {
+              {rooms.filter(r => !r.classId).map((room, idx) => {
                 const partner = getPartner(room);
                 const isActive = activeRoom?.id === room.id;
                 return (
                   <div 
-                    key={room.id}
+                    key={`${room.id || 'room'}_${idx}`}
                     onClick={() => setActiveRoom(room)}
                     className={`flex items-center px-4 py-3 cursor-pointer transition-colors ${isActive ? 'bg-[#F0F2F5]' : 'hover:bg-[#F5F6F6]'}`}
                   >
@@ -745,8 +745,8 @@ export const WhatsApp: React.FC = () => {
                             <span className="text-emerald-500 lowercase font-medium tracking-normal">{selectedBroadcastClasses.length} selected</span>
                           </p>
                           <div className="max-h-40 overflow-y-auto border border-gray-100 rounded-xl p-2 space-y-1 bg-gray-50/50">
-                            {classes.map(cls => (
-                              <label key={cls.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-100">
+                            {classes.map((cls, idx) => (
+                              <label key={`${cls.id || 'cls'}_${idx}`} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-100">
                                 <input 
                                   type="checkbox" 
                                   className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"

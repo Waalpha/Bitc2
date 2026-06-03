@@ -536,7 +536,7 @@ export const MarksRegister: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredStudents.map((student) => {
+                {filteredStudents.map((student, idx) => {
                   const submission = submissions.find(s => s.studentId === student.uid);
                   const attendance = examAttendance.find(a => a.studentId === student.uid);
                   const marks = submission?.grade || 0;
@@ -545,7 +545,7 @@ export const MarksRegister: React.FC = () => {
                   const isPass = selectedExam ? marks >= selectedExam.passingMarks : false;
 
                   return (
-                    <tr key={`${student.uid}_${selectedExamId}`} className="hover:bg-gray-50 transition-colors">
+                    <tr key={`${student.uid || 'stub'}_${selectedExamId || 'exam'}_${idx}`} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">

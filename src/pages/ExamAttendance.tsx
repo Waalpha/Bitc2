@@ -291,9 +291,9 @@ export const ExamAttendance: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Select Class</label>
               <div className="space-y-2">
-                {classes.map(cls => (
+                {classes.map((cls, idx) => (
                   <button
-                    key={cls.id}
+                    key={`${cls.id || 'cls'}_${idx}`}
                     onClick={() => setSelectedClassId(cls.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
                       selectedClassId === cls.id 
@@ -316,9 +316,9 @@ export const ExamAttendance: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Select Exam</label>
                 <div className="space-y-2">
                   {exams.length > 0 ? (
-                    exams.map(exam => (
+                    exams.map((exam, idx) => (
                       <button
-                        key={exam.id}
+                        key={`${exam.id || 'exam'}_${idx}`}
                         onClick={() => setSelectedExamId(exam.id)}
                         className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
                           selectedExamId === exam.id 

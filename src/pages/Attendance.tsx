@@ -12,28 +12,81 @@ import { isBiometricSupported, registerBiometric, verifyBiometric } from '../ser
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeCanvas } from 'qrcode.react';
 
+let sharedAudioContext: AudioContext | null = null;
+const getSharedAudioContext = () => {
+  if (typeof window === 'undefined') return null;
+  if (!sharedAudioContext) {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+      sharedAudioContext = new AudioContextClass();
+    }
+  }
+  return sharedAudioContext;
+};
+
+const unlockAudioContext = () => {
+  const ctx = getSharedAudioContext();
+  if (ctx) {
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(err => console.warn("Failed to resume audio context:", err));
+    }
+    // Play a tiny silent sound to prime the audio destination (critical on iOS/Safari)
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.01);
+    } catch (e) {}
+  }
+  
+  // Unlock Speech Synthesis
+  try {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch (e) {}
+};
+
+// Listen for first interaction anywhere to unlock audio pipelines
+if (typeof window !== 'undefined') {
+  const unlock = () => {
+    unlockAudioContext();
+    window.removeEventListener('click', unlock);
+    window.removeEventListener('touchstart', unlock);
+    window.removeEventListener('keydown', unlock);
+  };
+  window.addEventListener('click', unlock);
+  window.addEventListener('touchstart', unlock);
+  window.addEventListener('keydown', unlock);
+}
+
 const playBeep = () => {
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+    
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
     osc.type = 'sine';
     osc.frequency.setValueAtTime(2900, ctx.currentTime); // High-pitched supermarket scanner frequency
     
-    // Create an envelope replicating a commercial physical scanner
-    gain.gain.setValueAtTime(0.001, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.003); // Instant sharp attack
-    gain.gain.setValueAtTime(0.7, ctx.currentTime + 0.063); // Hold peak duration (60ms)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.075); // Immediate drop-off
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12); // Smooth decay preventing clicks
     
     osc.connect(gain);
     gain.connect(ctx.destination);
     
     osc.start();
-    osc.stop(ctx.currentTime + 0.08);
+    osc.stop(ctx.currentTime + 0.14);
   } catch (err) {
     console.error("Failed to play beep sound", err);
   }
@@ -53,9 +106,16 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
       text = `Goodbye ${cleanName}, check out recorded. Have a safe journey.`;
     } else if (action === 'leaveOut') {
       text = `Leave out approved. Goodbye ${cleanName}.`;
+    } else if (action === 'already_checkIn') {
+      text = `${cleanName} is already checked in.`;
+    } else if (action === 'already_checkOut') {
+      text = `${cleanName} is already checked out.`;
+    } else if (action === 'already_leaveOut') {
+      text = `${cleanName} already has leave recorded today.`;
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
     
@@ -1452,10 +1512,16 @@ void loop() {
         const todayRecord = snapshot.docs[0];
         const data = todayRecord.data() as AttendanceRecord;
         
+        const existingLogs = data.biometricLogs?.[uid] || {};
+        if (existingLogs[action]) {
+          addToast(`${studentData.name} already has a ${action === 'checkIn' ? 'Check-In' : action === 'checkOut' ? 'Check-Out' : 'Leave'} recorded on this date.`, "error");
+          speakAttendanceCompletion(studentData.name, `already_${action}`);
+          return null;
+        }
+        
         // If checking in, also mark as present
         const updatedRecords = action === 'checkIn' ? { ...data.records, [uid]: 'present' as const } : data.records;
         
-        const existingLogs = data.biometricLogs?.[uid] || {};
         const updatedLogs = { 
           ...data.biometricLogs, 
           [uid]: { 
@@ -1616,6 +1682,7 @@ void loop() {
                   
                   if (existingLogs[currentAct as keyof typeof existingLogs]) {
                     addToast(`${student.name} already has a ${currentAct} recorded.`, "error");
+                    speakAttendanceCompletion(student.name, `already_${currentAct}`);
                   } else {
                     const updates: any = {
                       [`biometricLogs.${student.uid}.${currentAct}`]: logEntry
@@ -1850,11 +1917,21 @@ void loop() {
                 if (!snapshot.empty) {
                   const todayRecord = snapshot.docs[0];
                   const data = todayRecord.data() as AttendanceRecord;
+                  
+                  const existingLogs = data.biometricLogs?.[currentUser.uid] || {};
+                  if (existingLogs[currentAct]) {
+                    const actName = currentAct === 'checkIn' ? 'Check-In' : 'Check-Out';
+                    const errMsg = `You already have a ${actName} recorded today.`;
+                    addToast(errMsg, "error");
+                    setStudentScanResult({ type: 'error', message: errMsg });
+                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_${currentAct}`);
+                    return;
+                  }
+
                   const updatedRecords = currentAct === 'checkIn'
                     ? { ...data.records, [currentUser.uid]: 'present' as const }
                     : data.records;
 
-                  const existingLogs = data.biometricLogs?.[currentUser.uid] || {};
                   const updatedLogs = {
                     ...data.biometricLogs,
                     [currentUser.uid]: {
@@ -2014,8 +2091,9 @@ void loop() {
                         </button>
                       )}
                     </div>
-                    <button
+                     <button
                       onClick={() => {
+                        unlockAudioContext();
                         setIsScannerMode(!isScannerMode);
                         setIsQRScannerMode(false);
                       }}
@@ -2028,6 +2106,7 @@ void loop() {
                     </button>
                     <button
                       onClick={() => {
+                        unlockAudioContext();
                         setIsQRScannerMode(!isQRScannerMode);
                         setIsScannerMode(false);
                       }}
@@ -2074,6 +2153,7 @@ void loop() {
                     </button>
                     <button
                       onClick={() => {
+                        unlockAudioContext();
                         playBeep();
                         setTimeout(() => {
                           const testNames = ["Grace", "John", "Mercy", "David"];
@@ -2406,11 +2486,11 @@ void loop() {
                 <div className="space-y-4">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Select Student to Verify</label>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                    {students.map(student => {
+                    {students.map((student, idx) => {
                       const isVerified = attendanceRecord?.biometricLogs?.[student.uid];
                       return (
                         <button
-                          key={student.uid}
+                          key={`${student.uid || 'student'}_bio_${idx}`}
                           onClick={() => setSelectedStudentForBio(student.uid)}
                           className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between ${
                             selectedStudentForBio === student.uid 
@@ -2645,10 +2725,10 @@ void loop() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {students.map((student) => {
+                          {students.map((student, idx) => {
                             const status = attendance[student.uid];
                             return (
-                              <tr key={`${student.uid}_${student.email}`} className="hover:bg-gray-50 transition-colors">
+                              <tr key={`${student.uid || 'stub'}_${student.email || 'email'}_${idx}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
@@ -2870,8 +2950,8 @@ void loop() {
                 exit={{ opacity: 0, y: -10 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {studentStats.map((stat) => (
-                  <div key={`${stat.uid}_summary_card`} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                {studentStats.map((stat, idx) => (
+                  <div key={`${stat.uid || 'stat'}_summary_card_${idx}`} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
                         {stat.name.charAt(0)}
@@ -2928,14 +3008,14 @@ void loop() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {allAttendance.map((record) => {
+                      {allAttendance.map((record, idx) => {
                         const stats = Object.values(record.records).reduce((acc, status) => {
                           acc[status] = (acc[status] || 0) + 1;
                           return acc;
                         }, {} as any);
 
                         return (
-                          <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={`${record.id || 'record'}_${idx}`} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 font-bold text-gray-900">
                               {format(new Date(record.date), 'MMM dd, yyyy')}
                             </td>
@@ -3254,6 +3334,7 @@ void loop() {
 
             <button
               onClick={() => {
+                unlockAudioContext();
                 setStudentScanAction('checkIn');
                 setIsStudentScanningGateQR(true);
               }}

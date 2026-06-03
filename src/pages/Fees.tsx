@@ -2395,8 +2395,8 @@ export const Fees: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {classFees.map(fee => (
-                  <div key={fee.id} className="bg-bg-card p-6 rounded-2xl border border-white/5 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden group">
+                {classFees.map((fee, idx) => (
+                  <div key={`${fee.id || 'fee'}_${idx}`} className="bg-bg-card p-6 rounded-2xl border border-white/5 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 rounded-bl-full flex items-center justify-center -mr-4 -mt-4 opacity-10 group-hover:opacity-20 transition-opacity">
                       <Layers size={48} className="text-primary" />
                     </div>
@@ -2635,8 +2635,8 @@ export const Fees: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {reportStats.classBreakdown.sort((a,b) => b.projected - a.projected).map(cls => (
-                          <tr key={cls.id} className="hover:bg-blue-50/30 transition-colors">
+                        {reportStats.classBreakdown.sort((a,b) => b.projected - a.projected).map((cls, idx) => (
+                          <tr key={`${cls.id || 'cls'}_${idx}`} className="hover:bg-blue-50/30 transition-colors">
                             <td className="px-6 py-4">
                               <p className="text-sm font-bold text-gray-900">{cls.name}</p>
                               <p className="text-xs text-gray-400 font-bold uppercase tracking-tight">{cls.count} Students</p>
@@ -2686,16 +2686,16 @@ export const Fees: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {reportStats.classBreakdown.map(cls => {
+                        {reportStats.classBreakdown.map((cls, idx) => {
                           const rate = cls.monthCharged > 0 ? (cls.monthCollected / cls.monthCharged) * 100 : 100;
                           const monthlyBal = cls.monthCharged - cls.monthCollected;
                           return (
-                            <tr key={cls.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={`${cls.id || 'cls'}_${idx}`} className="hover:bg-gray-50 transition-colors">
                               <td className="px-6 py-4">
                                 <p className="text-sm font-bold text-gray-900">{cls.name}</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                  {units.filter(s => s.classId === cls.id).map(s => (
-                                    <span key={s.id} className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-bold border border-blue-100 uppercase">
+                                  {units.filter(s => s.classId === cls.id).map((s, sIdx) => (
+                                    <span key={`${s.id || 'unit'}_${sIdx}`} className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-bold border border-blue-100 uppercase">
                                       {s.name}
                                     </span>
                                   ))}
@@ -3288,8 +3288,8 @@ export const Fees: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                     >
                       <option value="">Select Student</option>
-                      {students.map(s => (
-                        <option key={s.uid} value={s.uid}>{s.name} ({s.email})</option>
+                      {students.map((s, idx) => (
+                        <option key={`${s.uid || 's'}_${idx}`} value={s.uid}>{s.name} ({s.email})</option>
                       ))}
                     </select>
                   )}
@@ -3409,8 +3409,8 @@ export const Fees: React.FC = () => {
               </form>
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                {feeTypes.map(ft => (
-                  <div key={ft.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg group">
+                {feeTypes.map((ft, idx) => (
+                  <div key={`${ft.id || 'ft'}_${idx}`} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg group">
                     <span className="font-medium text-gray-900">{ft.name}</span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
@@ -3495,8 +3495,8 @@ export const Fees: React.FC = () => {
               </form>
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                {feeGroups.map(fg => (
-                  <div key={fg.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg group">
+                {feeGroups.map((fg, idx) => (
+                  <div key={`${fg.id || 'fg'}_${idx}`} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg group">
                     <span className="font-medium text-gray-900">{fg.name}</span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 

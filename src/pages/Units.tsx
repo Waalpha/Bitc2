@@ -182,12 +182,12 @@ export const Units: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {units.map((unit) => (
+        {units.map((unit, idx) => (
           <motion.div 
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            key={unit.id} 
+            key={`${unit.id || 'unit'}_${idx}`} 
             className="bg-bg-card p-8 rounded-[32px] border border-white/5 shadow-xl transition-all group relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 -tranzlate-y-1/2 translate-x-1/2 w-24 h-24 bg-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />

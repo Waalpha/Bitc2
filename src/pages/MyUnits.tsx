@@ -76,9 +76,9 @@ export const MyUnits: React.FC = () => {
 
           <div className="space-y-4">
             {activeUnits.length > 0 ? (
-              activeUnits.map((unit) => (
+              activeUnits.map((unit, idx) => (
                 <motion.div
-                  key={unit.id}
+                  key={`${unit.id || 'unit'}_${idx}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-bg-card p-6 rounded-[32px] border border-white/5 shadow-xl transition-all group"
@@ -132,9 +132,9 @@ export const MyUnits: React.FC = () => {
 
           <div className="space-y-4">
             {completedUnits.length > 0 ? (
-              completedUnits.map((unit) => (
+              completedUnits.map((unit, idx) => (
                 <motion.div
-                  key={unit.id}
+                  key={`${unit.id || 'unit'}_${idx}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-bg-card/60 backdrop-blur-md p-6 rounded-[32px] border border-white/5 shadow-xl transition-all grayscale hover:grayscale-0 opacity-80 hover:opacity-100"

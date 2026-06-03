@@ -287,7 +287,7 @@ export const Timetable: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: (dayIdx * 0.05) + (entryIdx * 0.03) }}
-                        key={entry.id}
+                        key={`${entry.id || 'entry'}_${entryIdx}`}
                         className={`bg-bg-card p-6 rounded-[32px] shadow-md border border-white/5 group relative transition-all duration-300 ${
                           canManage ? 'hover:border-primary/50 hover:shadow-2xl hover:-translate-y-1.5' : ''
                         }`}

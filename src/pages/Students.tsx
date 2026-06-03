@@ -1454,9 +1454,9 @@ export const Students: React.FC = () => {
                     </div>
 
                     <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto p-4 bg-gray-50 rounded-3xl border border-gray-100">
-                      {classes.map(cls => (
+                      {classes.map((cls, idx) => (
                         <label 
-                          key={cls.id}
+                          key={`${cls.id || 'cls'}_${idx}`}
                           className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
                             (editingStudent.classIds || []).includes(cls.id)
                               ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-100'
