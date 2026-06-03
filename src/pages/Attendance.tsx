@@ -12,6 +12,7 @@ import { isBiometricSupported, registerBiometric, verifyBiometric } from '../ser
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeCanvas } from 'qrcode.react';
 
+let globalIsAdminOrSupervisor = false;
 let sharedAudioContext: AudioContext | null = null;
 const getSharedAudioContext = () => {
   if (typeof window === 'undefined') return null;
@@ -65,6 +66,7 @@ if (typeof window !== 'undefined') {
 }
 
 const playBeep = () => {
+  if (!globalIsAdminOrSupervisor) return;
   try {
     const ctx = getSharedAudioContext();
     if (!ctx) return;
@@ -93,6 +95,7 @@ const playBeep = () => {
 };
 
 const speakAttendanceCompletion = (fullName: string, action: string) => {
+  if (!globalIsAdminOrSupervisor) return;
   try {
     if (!window.speechSynthesis) return;
     
@@ -327,6 +330,7 @@ void loop() {
     adminSelectedClassIdRef.current = selectedClassId;
     adminLeaveReasonRef.current = leaveReason;
     adminReturnDateRef.current = returnDate;
+    globalIsAdminOrSupervisor = userData?.role === 'admin' || userData?.role === 'teacher';
   });
 
   const studentStats = useMemo(() => {
@@ -1513,7 +1517,13 @@ void loop() {
         const data = todayRecord.data() as AttendanceRecord;
         
         const existingLogs = data.biometricLogs?.[uid] || {};
-        if (existingLogs[action]) {
+        const isCheckedIn = (data.records?.[uid] === 'present' || data.records?.[uid] === 'late');
+        
+        if (action === 'checkIn' && isCheckedIn) {
+          addToast(`${studentData.name} is already checked in.`, "error");
+          speakAttendanceCompletion(studentData.name, `already_checkIn`);
+          return null;
+        } else if (existingLogs[action]) {
           addToast(`${studentData.name} already has a ${action === 'checkIn' ? 'Check-In' : action === 'checkOut' ? 'Check-Out' : 'Leave'} recorded on this date.`, "error");
           speakAttendanceCompletion(studentData.name, `already_${action}`);
           return null;
@@ -1679,8 +1689,12 @@ void loop() {
                   const docRef = doc(db, 'attendance', snapshot.docs[0].id);
                   const data = snapshot.docs[0].data() as AttendanceRecord;
                   const existingLogs = data.biometricLogs?.[student.uid] || {};
+                  const isCheckedIn = (data.records?.[student.uid] === 'present' || data.records?.[student.uid] === 'late');
                   
-                  if (existingLogs[currentAct as keyof typeof existingLogs]) {
+                  if (currentAct === 'checkIn' && isCheckedIn) {
+                    addToast(`${student.name} is already checked in.`, "error");
+                    speakAttendanceCompletion(student.name, `already_checkIn`);
+                  } else if (existingLogs[currentAct as keyof typeof existingLogs]) {
                     addToast(`${student.name} already has a ${currentAct} recorded.`, "error");
                     speakAttendanceCompletion(student.name, `already_${currentAct}`);
                   } else {
@@ -1919,7 +1933,15 @@ void loop() {
                   const data = todayRecord.data() as AttendanceRecord;
                   
                   const existingLogs = data.biometricLogs?.[currentUser.uid] || {};
-                  if (existingLogs[currentAct]) {
+                  const isCheckedIn = (data.records?.[currentUser.uid] === 'present' || data.records?.[currentUser.uid] === 'late');
+                  
+                  if (currentAct === 'checkIn' && isCheckedIn) {
+                    const errMsg = `You are already checked in today.`;
+                    addToast(errMsg, "error");
+                    setStudentScanResult({ type: 'error', message: errMsg });
+                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_checkIn`);
+                    return;
+                  } else if (existingLogs[currentAct]) {
                     const actName = currentAct === 'checkIn' ? 'Check-In' : 'Check-Out';
                     const errMsg = `You already have a ${actName} recorded today.`;
                     addToast(errMsg, "error");

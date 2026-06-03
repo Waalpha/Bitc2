@@ -35,6 +35,12 @@ export const Fees: React.FC = () => {
     description: '',
     file: null as File | null
   });
+  const [updateMode, setUpdateMode] = useState<'transaction' | 'direct'>('transaction');
+  const [directForm, setDirectForm] = useState({
+    totalAmount: 0,
+    paidAmount: 0,
+    reason: ''
+  });
   const [feeGroups, setFeeGroups] = useState<FeeGroup[]>([]);
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [classFeeForm, setClassFeeForm] = useState({ classId: '', title: '', amount: 0, period: 'monthly' as 'semester' | 'yearly' | 'monthly', feeType: '', feeGroup: '' });
@@ -1217,11 +1223,117 @@ export const Fees: React.FC = () => {
 
   const handleUpdateBalance = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || !updateForm.amount) return;
+    if (!selectedStudent || (updateMode === 'transaction' && !updateForm.amount)) return;
 
     setIsUpdating(true);
 
     try {
+      if (updateMode === 'direct') {
+        const existingBalance = feeBalances.find(b => b.studentId === selectedStudent.uid);
+        const now = new Date().toISOString();
+        const newTotal = parseFloat(String(directForm.totalAmount)) || 0;
+        const newPaid = parseFloat(String(directForm.paidAmount)) || 0;
+        const reason = directForm.reason || 'Manual ledger modification';
+
+        const oldTotal = existingBalance ? parseFloat(String(existingBalance.totalAmount || 0)) : 0;
+        const oldPaid = existingBalance ? parseFloat(String(existingBalance.paidAmount || 0)) : 0;
+
+        const diffTotal = newTotal - oldTotal;
+        const diffPaid = newPaid - oldPaid;
+
+        const newHistory = existingBalance ? [...(existingBalance.history || [])] : [];
+
+        if (diffTotal !== 0) {
+          newHistory.push({
+            date: now,
+            amount: Math.abs(diffTotal),
+            type: diffTotal > 0 ? 'charge' : 'payment',
+            description: `Direct Invoice Adjustment: ${reason}`
+          });
+        }
+
+        if (diffPaid !== 0) {
+          newHistory.push({
+            date: now,
+            amount: Math.abs(diffPaid),
+            type: diffPaid > 0 ? 'payment' : 'charge',
+            description: `Direct Payment Adjustment: ${reason}`
+          });
+        }
+
+        if (existingBalance) {
+          await updateDoc(doc(db, 'fees', existingBalance.id), {
+            totalAmount: newTotal,
+            paidAmount: newPaid,
+            balance: newTotal - newPaid,
+            lastUpdated: now,
+            history: newHistory
+          });
+
+          try {
+            await setDoc(doc(db, 'fee_balances', existingBalance.studentId || existingBalance.id), {
+              studentId: existingBalance.studentId || existingBalance.id,
+              totalAmount: newTotal,
+              paidAmount: newPaid,
+              balance: newTotal - newPaid,
+              lastUpdated: now
+            }, { merge: true });
+          } catch (e) {
+            console.error("error updating fee_balances:", e);
+          }
+        } else {
+          await setDoc(doc(db, 'fees', selectedStudent.uid), {
+            studentId: selectedStudent.uid,
+            totalAmount: newTotal,
+            paidAmount: newPaid,
+            balance: newTotal - newPaid,
+            lastUpdated: now,
+            history: newHistory.length > 0 ? newHistory : [{
+              date: now,
+              amount: newTotal,
+              type: 'charge',
+              description: `Initial Tuition Invoiced (${reason})`
+            }, {
+              date: now,
+              amount: newPaid,
+              type: 'payment',
+              description: `Initial Payment Recorded (${reason})`
+            }].filter(item => item.amount > 0)
+          });
+
+          try {
+            await setDoc(doc(db, 'fee_balances', selectedStudent.uid), {
+              studentId: selectedStudent.uid,
+              totalAmount: newTotal,
+              paidAmount: newPaid,
+              balance: newTotal - newPaid,
+              lastUpdated: now
+            }, { merge: true });
+          } catch (e) {
+            console.error("error setting fee_balances:", e);
+          }
+        }
+
+        await loadFeesData();
+
+        // Notify student
+        await addDoc(collection(db, 'notifications'), {
+          userId: selectedStudent.uid,
+          title: 'Fee Ledger Adjusted',
+          message: `Your fee balance details have been manually adjusted. New Balance: Ksh ${(newTotal - newPaid).toLocaleString()}`,
+          type: 'fee',
+          read: false,
+          createdAt: now,
+          link: '/fees'
+        });
+
+        setIsUpdating(false);
+        setSelectedStudent(null);
+        setUpdateForm({ amount: 0, type: 'payment', description: '', file: null });
+        addToast("Fee balance directly adjusted successfully!");
+        return;
+      }
+
       let attachmentUrl = '';
       let attachmentName = '';
 
@@ -2328,6 +2440,14 @@ export const Fees: React.FC = () => {
                             <button
                               onClick={() => {
                                 setSelectedStudent(student);
+                                const bal = feeBalances.find(b => b.studentId === student.uid);
+                                setDirectForm({
+                                  totalAmount: bal?.totalAmount || 0,
+                                  paidAmount: bal?.paidAmount || 0,
+                                  reason: ''
+                                });
+                                setUpdateForm({ amount: 0, type: 'payment', description: '', file: null });
+                                setUpdateMode('transaction');
                                 setIsUpdating(true);
                               }}
                               className="text-blue-600 hover:text-blue-700 font-bold text-sm bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 transition-colors hover:bg-blue-100"
@@ -3254,10 +3374,16 @@ export const Fees: React.FC = () => {
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="relative bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl"
+              className="relative bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl animate-fade-in"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">{editingHistoryIndex !== null ? 'Edit Transaction' : 'Update Fee Balance'}</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingHistoryIndex !== null 
+                    ? 'Edit Transaction' 
+                    : updateMode === 'direct' 
+                      ? 'Edit Individual Student Fees' 
+                      : 'Update Fee Balance'}
+                </h2>
                 <button 
                   onClick={() => {
                     setIsUpdating(false);
@@ -3269,6 +3395,33 @@ export const Fees: React.FC = () => {
                   <XCircle size={24} />
                 </button>
               </div>
+
+              {editingHistoryIndex === null && (
+                <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setUpdateMode('transaction')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                      updateMode === 'transaction'
+                        ? 'bg-white text-gray-900 shadow-sm border border-black/5'
+                        : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    Log Transaction
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUpdateMode('direct')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                      updateMode === 'direct'
+                        ? 'bg-white text-gray-900 shadow-sm border border-black/5'
+                        : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    Direct Edit Totals
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleUpdateBalance} className="space-y-4">
                 <div>
@@ -3295,58 +3448,113 @@ export const Fees: React.FC = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <select
-                      value={updateForm.type || 'payment'}
-                      onChange={(e) => setUpdateForm(prev => ({ ...prev, type: e.target.value as 'payment' | 'charge' }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    >
-                      <option value="payment">Payment</option>
-                      <option value="charge">Charge</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (Ksh)</label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      step="0.01"
-                      value={updateForm.amount || 0}
-                      onChange={(e) => setUpdateForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-                </div>
+                {updateMode === 'transaction' ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <select
+                          value={updateForm.type || 'payment'}
+                          onChange={(e) => setUpdateForm(prev => ({ ...prev, type: e.target.value as 'payment' | 'charge' }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        >
+                          <option value="payment">Payment</option>
+                          <option value="charge">Charge</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount (Ksh)</label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          step="0.01"
+                          value={updateForm.amount || 0}
+                          onChange={(e) => setUpdateForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Term 2 Fees, Library Fine"
-                    value={updateForm.description || ''}
-                    onChange={(e) => setUpdateForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., Term 2 Fees, Library Fine"
+                        value={updateForm.description || ''}
+                        onChange={(e) => setUpdateForm(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Attach Receipt/Document (Optional)</label>
-                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all">
-                    <Plus size={20} className="text-gray-400" />
-                    <span className="text-sm text-gray-600 font-medium">{updateForm.file ? updateForm.file.name : 'Upload File'}</span>
-                    <input type="file" className="hidden" onChange={(e) => setUpdateForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))} />
-                  </label>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Attach Receipt/Document (Optional)</label>
+                      <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all">
+                        <Plus size={20} className="text-gray-400" />
+                        <span className="text-sm text-gray-600 font-medium">{updateForm.file ? updateForm.file.name : 'Upload File'}</span>
+                        <input type="file" className="hidden" onChange={(e) => setUpdateForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))} />
+                      </label>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Total Fees Invoiced</label>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={directForm.totalAmount}
+                          onChange={(e) => setDirectForm(prev => ({ ...prev, totalAmount: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Total Fees Paid</label>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={directForm.paidAmount}
+                          onChange={(e) => setDirectForm(prev => ({ ...prev, paidAmount: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-blue-50/50 border border-blue-100/50 rounded-xl">
+                      <p className="text-xs text-blue-700">
+                        <strong>Calculated Balance:</strong> Ksh {(directForm.totalAmount - directForm.paidAmount).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Adjustment</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g., Scholarship scholarship, manual reconciliation"
+                        value={directForm.reason}
+                        onChange={(e) => setDirectForm(prev => ({ ...prev, reason: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <button
                   type="submit"
                   className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Send size={18} />
-                  {editingHistoryIndex !== null ? 'Save Changes' : 'Confirm Update'}
+                  {editingHistoryIndex !== null 
+                    ? 'Save Changes' 
+                    : updateMode === 'direct' 
+                      ? 'Save Direct Adjustments' 
+                      : 'Confirm Update'}
                 </button>
               </form>
             </motion.div>

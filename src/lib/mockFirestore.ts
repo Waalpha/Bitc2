@@ -278,10 +278,21 @@ async function fetchDocFromCache(docRef: any) {
   try {
     const res = await fetch(`/api/db/get?collection=${docRef.collection || docRef.path}&id=${docRef.id}`);
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    const json = await res.json();
+    
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error("HTML response received instead of JSON database payload (database starting/offline)");
+    }
+
+    const text = await res.text();
+    if (text.trim().startsWith('<')) {
+      throw new Error("HTML content received instead of JSON database payload (database starting/offline)");
+    }
+
+    const json = JSON.parse(text);
     return new MockDocumentSnapshot(docRef.id, json.data, { id: docRef.id, path: docRef.path });
-  } catch (err) {
-    console.error("mockFirestore fetchDocFromCache failed:", err);
+  } catch (err: any) {
+    console.log("[Database Proxy] Cached doc fetch notice:", err.message || err);
     return new MockDocumentSnapshot(docRef.id, null);
   }
 }
@@ -347,11 +358,22 @@ async function fetchDocsFromCache(queryOrRef: any) {
     });
 
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    const json = await res.json();
+    
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error("HTML response received instead of JSON database database (database starting/offline)");
+    }
+
+    const text = await res.text();
+    if (text.trim().startsWith('<')) {
+      throw new Error("HTML content received instead of JSON database database (database starting/offline)");
+    }
+
+    const json = JSON.parse(text);
     const docs = (json.docs || []).map((d: any) => new MockDocumentSnapshot(d.id, d.data, { id: d.id, path: `${collectionName}/${d.id}` }));
     return new MockQuerySnapshot(docs);
-  } catch (err) {
-    console.error("mockFirestore fetchDocsFromCache failed:", err);
+  } catch (err: any) {
+    console.log("[Database Proxy] Cached docs fetch notice:", err.message || err);
     return new MockQuerySnapshot([]);
   }
 }
