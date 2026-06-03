@@ -33,6 +33,8 @@ export interface User {
   specialization?: string;
   residence?: string;
   idNumber?: string;
+  studentId?: string;
+  validUntil?: string;
   nationality?: string;
   emergencyContact?: string;
   emergencyPhone?: string;

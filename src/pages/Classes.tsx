@@ -370,16 +370,6 @@ export const Classes: React.FC = () => {
                         {selectedClass.startTime} - {selectedClass.endTime}
                       </span>
                     )}
-                    {selectedClass.latitude !== undefined && selectedClass.latitude !== null && selectedClass.longitude !== undefined && selectedClass.longitude !== null ? (
-                      <span className="text-xs font-bold uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 flex items-center gap-1">
-                        <MapPin size={12} className="text-purple-600 animate-pulse" />
-                        GPS Geofence: {selectedClass.latitude}, {selectedClass.longitude} ({selectedClass.radius || 100}m)
-                      </span>
-                    ) : (
-                      <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                        GPS disabled
-                      </span>
-                    )}
                   </div>
                 </div>
                 {isAdmin && (
@@ -618,89 +608,7 @@ export const Classes: React.FC = () => {
                   </div>
                 </div>
 
-                {/* GPS Settings */}
-                <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
-                      GPS Attendance Geofence
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!navigator.geolocation) {
-                          addToast("Geolocation is not supported by your browser.", "error");
-                          return;
-                        }
-                        addToast("Acquiring GPS location coordinates...", "success");
-                        const tryGetGps = (highAccuracy: boolean) => {
-                          navigator.geolocation.getCurrentPosition(
-                            (pos) => {
-                              setNewLatitude(pos.coords.latitude.toFixed(6));
-                              setNewLongitude(pos.coords.longitude.toFixed(6));
-                              addToast("Current GPS location filled successfully!");
-                            },
-                            (err) => {
-                              if (highAccuracy && (err.code === 3 || err.code === 2)) {
-                                addToast("Precision GPS timed out. Trying standard localization fallback...", "success");
-                                tryGetGps(false);
-                              } else {
-                                const errMsg = err.code === 3 
-                                  ? "GPS query timed out. Please verify location settings are active." 
-                                  : err.message || "Failed to fetch GPS coordinates automatically.";
-                                addToast(errMsg, "error");
-                              }
-                            },
-                            { 
-                              enableHighAccuracy: highAccuracy, 
-                              timeout: highAccuracy ? 8000 : 25000, 
-                              maximumAge: highAccuracy ? 0 : 60000 
-                            }
-                          );
-                        };
-                        tryGetGps(true);
-                      }}
-                      className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
-                    >
-                      Autofill GPS
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Latitude</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="e.g. -1.2921"
-                        value={newLatitude}
-                        onChange={(e) => setNewLatitude(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Longitude</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="e.g. 36.8219"
-                        value={newLongitude}
-                        onChange={(e) => setNewLongitude(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Geofence Radius (meters)</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 100"
-                      value={newRadius}
-                      onChange={(e) => setNewRadius(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                    />
-                    <p className="text-[10px] text-gray-400 font-medium mt-1 leading-relaxed">Students must be within this range of coordinates to check in via mobile GPS.</p>
-                  </div>
-                </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Initial Unit (Optional)</label>
@@ -800,89 +708,7 @@ export const Classes: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Edit GPS Settings */}
-                <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
-                      GPS Attendance Geofence
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!navigator.geolocation) {
-                          addToast("Geolocation is not supported by your browser.", "error");
-                          return;
-                        }
-                        addToast("Acquiring GPS location coordinates...", "success");
-                        const tryGetGps = (highAccuracy: boolean) => {
-                          navigator.geolocation.getCurrentPosition(
-                            (pos) => {
-                              setEditLatitude(pos.coords.latitude.toFixed(6));
-                              setEditLongitude(pos.coords.longitude.toFixed(6));
-                              addToast("Current GPS location filled successfully!");
-                            },
-                            (err) => {
-                              if (highAccuracy && (err.code === 3 || err.code === 2)) {
-                                addToast("Precision GPS timed out. Trying standard localization fallback...", "success");
-                                tryGetGps(false);
-                              } else {
-                                const errMsg = err.code === 3 
-                                  ? "GPS query timed out. Please verify location settings are active." 
-                                  : err.message || "Failed to fetch GPS coordinates automatically.";
-                                addToast(errMsg, "error");
-                              }
-                            },
-                            { 
-                              enableHighAccuracy: highAccuracy, 
-                              timeout: highAccuracy ? 8000 : 25000, 
-                              maximumAge: highAccuracy ? 0 : 60000 
-                            }
-                          );
-                        };
-                        tryGetGps(true);
-                      }}
-                      className="text-[11px] font-bold text-purple-700 hover:text-purple-800 uppercase hover:underline flex items-center gap-1 bg-white border border-purple-100 px-2 py-1 rounded-lg shadow-sm"
-                    >
-                      Autofill GPS
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Latitude</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="e.g. -1.2921"
-                        value={editLatitude}
-                        onChange={(e) => setEditLatitude(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Target Longitude</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="e.g. 36.8219"
-                        value={editLongitude}
-                        onChange={(e) => setEditLongitude(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Geofence Radius (meters)</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 100"
-                      value={editRadius}
-                      onChange={(e) => setEditRadius(e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
-                    />
-                    <p className="text-[10px] text-gray-400 font-medium mt-1 leading-relaxed">Students must be within this range of coordinates to check in via mobile GPS.</p>
-                  </div>
-                </div>
+
 
                 <div className="pt-2 flex gap-3">
                   <button

@@ -3,7 +3,8 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 
@@ -25,6 +26,14 @@ export const Students: React.FC = () => {
     file: null as File | null
   });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Student ID Card Custom States
+  const [selectedIdCardStudent, setSelectedIdCardStudent] = useState<User | null>(null);
+  const [showBulkIdCards, setShowBulkIdCards] = useState(false);
+  const [idCardThemeColor, setIdCardThemeColor] = useState<'indigo' | 'blue' | 'emerald' | 'rose' | 'amber' | 'slate'>('indigo');
+  const [idCardOrientation, setIdCardOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [idCardShowBack, setIdCardShowBack] = useState(false);
+  const [idCardCustomRole, setIdCardCustomRole] = useState('STUDENT');
 
   const toggleStudentSelection = (uid: string) => {
     const next = new Set(selectedStudentIds);
@@ -431,6 +440,1038 @@ export const Students: React.FC = () => {
     printWindow.document.close();
   };
 
+  const handlePrintIdCards = (studentsToPrint: User[]) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const schoolLogo = settings?.logoUrl || '';
+
+    // Color definitions
+    const colors = {
+      indigo: { primary: '#4f46e5', text: '#ffffff', light: '#e0e7ff', border: '#c7d2fe' },
+      blue: { primary: '#2563eb', text: '#ffffff', light: '#dbeafe', border: '#bfdbfe' },
+      emerald: { primary: '#059669', text: '#ffffff', light: '#d1fae5', border: '#a7f3d0' },
+      rose: { primary: '#e11d48', text: '#ffffff', light: '#ffe4e6', border: '#fecdd3' },
+      amber: { primary: '#d97706', text: '#ffffff', light: '#fef3c7', border: '#fde68a' },
+      slate: { primary: '#1e293b', text: '#ffffff', light: '#f1f5f9', border: '#e2e8f0' },
+    };
+
+    const scheme = colors[idCardThemeColor] || colors.indigo;
+
+    // Build the bulk layout
+    const cardsHtml = studentsToPrint.map(student => {
+      // Get the QR code base64 from the DOM
+      const canvasEl = document.getElementById(`qr-canvas-${student.uid}`) as HTMLCanvasElement;
+      const qrDataUrl = canvasEl ? canvasEl.toDataURL() : '';
+
+      const photoPlaceholder = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(student.name)}&backgroundColor=cbd5e1`;
+      const photoSrc = student.photoUrl || photoPlaceholder;
+
+      const classLabel = getClassNames(student.classIds) || 'Unassigned';
+
+      if (idCardOrientation === 'portrait') {
+        return `
+          <div class="card-container portrait border-${idCardThemeColor}">
+            <!-- Front Side -->
+            <div class="card-side front">
+              <!-- Top Header Wave bg -->
+              <div class="card-header" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+                <div class="school-logo-container">
+                  ${schoolLogo ? `<img src="${schoolLogo}" class="school-logo-img" />` : `<div class="logo-fallback">★</div>`}
+                </div>
+                <div class="school-header-text">
+                  <div class="school-name">${schoolName}</div>
+                  <div class="school-motto">EXCELLENCE & CREATIVITY</div>
+                </div>
+              </div>
+              
+              <div class="id-badge-tag" style="background-color: ${scheme.light}; color: ${scheme.primary}; border: 1px solid ${scheme.border};">
+                ${idCardCustomRole.toUpperCase()}
+              </div>
+
+              <!-- Profile Space -->
+              <div class="profile-row">
+                <div class="photo-wrapper" style="border-color: ${scheme.primary};">
+                  <img src="${photoSrc}" class="student-photo" crossorigin="anonymous" />
+                </div>
+              </div>
+
+              <!-- Student Meta -->
+              <div class="student-details">
+                <div class="student-name">${student.name}</div>
+                <div class="meta-item flex">
+                  <span class="label">ADM NO:</span>
+                  <span class="value val-bold">${student.admissionNumber || 'Pending'}</span>
+                </div>
+                <div class="meta-item flex">
+                  <span class="label">COURSE:</span>
+                  <span class="value truncate">${student.course || 'Technical Course'}</span>
+                </div>
+                <div class="meta-item flex">
+                  <span class="label">CLASS:</span>
+                  <span class="value truncate">${classLabel}</span>
+                </div>
+              </div>
+
+              <!-- QR Code & Signature -->
+              <div class="card-footer-row flex justify-between items-center bg-slate-50">
+                <div class="qr-box">
+                  ${qrDataUrl ? `<img src="${qrDataUrl}" class="qr-img" />` : `<div class="no-qr">No QR</div>`}
+                  <div class="qr-caption" style="color: ${scheme.primary}">QR SECURE ID</div>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-line"></div>
+                  <div class="signature-caption">AUTHORIZED SIGNATURE</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Back Side -->
+            <div class="card-side back">
+              <div class="back-accent" style="background-color: ${scheme.primary};"></div>
+              <div class="back-header">
+                <div class="school-title-back">${schoolName}</div>
+                <div class="school-subtitle-back">STUDENT IDENTIFICATION RECORD</div>
+              </div>
+              
+              <div class="bullet-rules">
+                <div class="rule-title">TERMS & INSTRUCTIONS</div>
+                <ul>
+                  <li>This card is strictly non-transferable and remains the official property of the Institution.</li>
+                  <li>It must be visibly displayed at all times when within the institution premises.</li>
+                  <li>Required for entry at main gates, registration, examinations, and library loans.</li>
+                  <li>If lost, report immediately to the Registrar's Office. Replacement fee applies.</li>
+                  <li>In case of emergency, please alert the contacts shown below.</li>
+                </ul>
+              </div>
+
+              <div class="emergency-contact-box bg-slate-50" style="border-top: 1px dashed ${scheme.border}">
+                <div class="info-line"><span>Email:</span> ${schoolEmail}</div>
+                <div class="info-line"><span>Phone:</span> ${schoolPhone}</div>
+                <div class="info-line"><span>Address:</span> ${schoolAddress}</div>
+              </div>
+
+              <div class="back-footer flex items-center justify-between" style="background-color: ${scheme.primary}; color: #ffffff;">
+                <span>STAY DISCIPLINED, EXCEL ALWAYS</span>
+                <span>ID: ${student.uid.slice(0, 8).toUpperCase()}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Landscape Card Layout (designed after the provided reference image)
+        const validUntil = getValidUntil(student);
+        return `
+          <div class="card-container landscape">
+            <!-- Front Side -->
+            <div class="card-side front flex flex-col justify-between">
+              <!-- Top Header Banner -->
+              <div class="bitc-header flex items-center justify-center">
+                <div class="bitc-logo-container">
+                  ${schoolLogo ? `<img src="${schoolLogo}" class="bitc-header-logo" crossorigin="anonymous" />` : `
+                    <svg class="bitc-header-logo-svg" viewBox="0 0 100 100" width="36" height="36">
+                      <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="#facc15" stroke="#ffffff" stroke-width="3"/>
+                      <polygon points="50,12 82,28 82,72 50,88 18,72 18,28" fill="#0d1b94"/>
+                      <path d="M50,22 L65,37 M50,22 L35,37 M50,22 L50,78" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+                      <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                  `}
+                </div>
+                <div class="bitc-header-titles">
+                  <div class="bitc-title-main">Breakthrough International Training</div>
+                  <div class="bitc-title-sub">College</div>
+                </div>
+              </div>
+
+              <!-- Main Card Body -->
+              <div class="bitc-body flex-1 flex row">
+                <!-- Left column: Photo + Big QR Code -->
+                <div class="bitc-left-col flex flex-col items-center justify-between">
+                  <div class="bitc-photo-wrapper">
+                    <img src="${photoSrc}" class="bitc-student-photo" crossorigin="anonymous" />
+                  </div>
+                  <div class="bitc-qr-wrapper">
+                    ${qrDataUrl ? `<img src="${qrDataUrl}" class="bitc-qr-image" />` : `<div class="bitc-qr-fallback">QR</div>`}
+                  </div>
+                </div>
+
+                <!-- Right column: Category Pill + Details Grid -->
+                <div class="bitc-right-col flex-1 flex flex-col justify-between">
+                  <!-- Red Pill Category tag stretching to the right edge of the card body -->
+                  <div class="bitc-red-pill-outer">
+                    <div class="bitc-red-pill">
+                      Student ID Card
+                    </div>
+                  </div>
+
+                  <!-- Details Grid -->
+                  <div class="bitc-details-grid flex-1 flex flex-col justify-center">
+                    <div class="bitc-grid-row">
+                      <div class="bitc-key">Name</div>
+                      <div class="bitc-colon">:</div>
+                      <div class="bitc-val font-black-caps">${student.name}</div>
+                    </div>
+                    <div class="bitc-grid-row">
+                      <div class="bitc-key">Adm No</div>
+                      <div class="bitc-colon">:</div>
+                      <div class="bitc-val font-black-caps">${student.admissionNumber || 'PENDING'}</div>
+                    </div>
+                    <div class="bitc-grid-row">
+                      <div class="bitc-key">Course</div>
+                      <div class="bitc-colon">:</div>
+                      <div class="bitc-val font-black-caps">${student.course || 'COSMETOLOGY'}</div>
+                    </div>
+                    <div class="bitc-grid-row">
+                      <div class="bitc-key">Valid Until</div>
+                      <div class="bitc-colon">:</div>
+                      <div class="bitc-val font-black-caps text-valid-until">${validUntil}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Footer Banner -->
+              <div class="bitc-footer-stripe"></div>
+            </div>
+
+            <!-- Back Side -->
+            <div class="card-side back flex flex-col justify-between">
+              <div class="back-header-landscape flex justify-between items-center" style="background-color: #0d1b94; color: #ffffff;">
+                <span class="school-title-back-landscape">${schoolName}</span>
+                <span class="back-id">ID: ${student.uid.slice(0, 8).toUpperCase()}</span>
+              </div>
+
+              <div class="landscape-back-grid flex flex-1">
+                <div class="landscape-rules-left flex-1 font-bold">
+                  <div class="rule-title-landscape">RULES OF USE</div>
+                  <p class="rule-p" style="font-size: 8px; color: #475569; line-height: 1.4; text-align: left;">
+                    This card is the official property of Breakthrough International Training College.
+                    It verifies active enrollment status and is non-transferable.
+                    It must be carried at all times on campus.
+                    If found, please return to the Registrar's Office.
+                  </p>
+                </div>
+                <div class="landscape-emergency-right bg-slate-50 border-l border-slate-200" style="text-align: left;">
+                  <div class="rule-title-landscape">EMERGENCY CONTACTS</div>
+                  <div class="info-line"><span>Tel:</span> ${schoolPhone}</div>
+                  <div class="info-line"><span>Mail:</span> ${schoolEmail}</div>
+                  <div class="info-line"><span>Addr:</span> ${schoolAddress}</div>
+                </div>
+              </div>
+
+              <div class="back-footer-landscape text-center" style="background-color: #f8fafc; color: #0d1b94; border-top: 1px solid #e2e8f0; font-size: 8px; font-weight: bold; letter-spacing: 0.5px; padding: 4px;">
+                IF FOUND, PLEASE RETURN TO REGISTRAR'S OFFICE
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }).join('\n');
+
+    const layoutCss = `
+      @import url('https://fonts.googleapis.com/css2family=Inter:wght@400;500;600;700;800;900&display=swap');
+      
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #f1f5f9;
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      /* Card Layout - 54mm x 85.6mm (CR80) mapped to 330px x 510px */
+      .card-container {
+        border-radius: 16px;
+        width: 320px;
+        height: 500px;
+        background: #ffffff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+        position: relative;
+        page-break-inside: avoid;
+        display: inline-block;
+        border: 2px solid #e2e8f0;
+      }
+
+      .card-container.landscape {
+        width: 500px;
+        height: 320px;
+      }
+
+      /* Custom styles matching Breakthrough International Training College Reference ID card */
+      .bitc-header {
+        background-color: #0d1b94;
+        color: #ffffff;
+        padding: 4px 10px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+        position: relative;
+      }
+
+      .bitc-logo-container {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .bitc-header-logo {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .bitc-header-logo-svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .bitc-header-titles {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        text-align: center;
+        margin-right: 0;
+        padding-left: 68px;
+        padding-right: 14px;
+      }
+
+      .bitc-title-main {
+        font-family: 'Inter', sans-serif;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: -0.2px;
+        text-transform: uppercase;
+        line-height: 1.1;
+        color: #ffffff;
+        white-space: nowrap;
+      }
+
+      .bitc-title-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0.1px;
+        text-transform: uppercase;
+        line-height: 1.1;
+        color: #ffffff;
+        margin-top: 1px;
+        white-space: nowrap;
+      }
+
+      .bitc-body {
+        background-color: #FFFDF6;
+        padding: 8px 12px 6px 12px;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .bitc-left-col {
+        width: 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        margin-right: 12px;
+        flex-shrink: 0;
+        height: 100%;
+      }
+
+      .bitc-photo-wrapper {
+        width: 98px;
+        height: 102px;
+        border-radius: 4px;
+        border: 1px solid #c7d2fe;
+        overflow: hidden;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .bitc-student-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .bitc-qr-wrapper {
+        width: 82px;
+        height: 82px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 4px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 4px;
+      }
+
+      .bitc-qr-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .bitc-qr-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        color: #64748b;
+      }
+
+      .bitc-right-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: 100%;
+        position: relative;
+        padding-top: 2px;
+      }
+
+      .bitc-red-pill-outer {
+        margin-right: -12px; /* make pill bleed to edge */
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .bitc-red-pill {
+        background-color: #ee1c24;
+        color: #000c40; /* High status premium heavy blue text */
+        font-size: 15.5px;
+        font-weight: 950;
+        letter-spacing: 0.2px;
+        padding: 5px 24px 5px 36px;
+        border-top-left-radius: 999px;
+        border-bottom-left-radius: 999px;
+        text-transform: uppercase;
+        text-align: right;
+        display: inline-block;
+        font-family: 'Inter', sans-serif;
+      }
+
+      .bitc-details-grid {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 6px;
+        padding-left: 2px;
+        padding-top: 4px;
+      }
+
+      .bitc-grid-row {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        font-size: 13.5px;
+      }
+
+      .bitc-key {
+        width: 115px;
+        font-weight: 800;
+        color: #0b1654;
+        font-size: 12.5px;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+      }
+
+      .bitc-colon {
+        width: 14px;
+        font-weight: bold;
+        color: #0b1654;
+        text-align: center;
+      }
+
+      .bitc-val {
+        flex: 1;
+        font-weight: 950;
+        color: #000c40;
+        font-size: 14.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.1px;
+        font-family: 'Inter', sans-serif;
+        text-align: left;
+      }
+
+      .bitc-val.text-valid-until {
+        color: #000c40 !important;
+      }
+
+      .font-black-caps {
+        text-transform: uppercase;
+        font-weight: 900 !important;
+      }
+
+      .bitc-footer-stripe {
+        background-color: #0d1b94;
+        height: 11px;
+        width: 100%;
+      }
+
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .flex-1 { flex: 1; }
+      .row { flex-direction: row; }
+      .justify-between { justify-content: space-between; }
+      .items-center { align-items: center; }
+      .content-center { justify-content: center; }
+      .bg-slate-50 { background-color: #f8fafc; }
+      .border-l { border-left: 1px solid #e2e8f0; }
+      .ml-4 { margin-left: 16px; }
+      .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      /* Vertical Badge Design */
+      .card-side {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      /* When printing, display side-by-side or stack them nicely */
+      .card-side.back {
+        background: #ffffff;
+        border-top: 1px dashed #e2e8f0;
+      }
+
+      /* Portrait Front components */
+      .card-header {
+        padding: 14px 12px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 3px solid rgba(0,0,0,0.15);
+      }
+
+      .school-logo-container {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 2px;
+      }
+
+      .school-logo-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .logo-fallback {
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      .school-header-text {
+        text-align: left;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .school-name {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .school-motto {
+        font-size: 6px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        opacity: 0.85;
+        margin-top: 2px;
+      }
+
+      .id-badge-tag {
+        font-size: 9px;
+        font-weight: 950;
+        letter-spacing: 1px;
+        text-align: center;
+        padding: 4px 12px;
+        margin: 8px auto 0;
+        border-radius: 20px;
+        text-transform: uppercase;
+        width: 130px;
+      }
+
+      .profile-row {
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+      }
+
+      .photo-wrapper {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        border: 3px solid;
+        overflow: hidden;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      }
+
+      .student-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .student-details {
+        padding: 0 20px;
+        text-align: center;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 10px 0;
+      }
+
+      .student-name {
+        font-size: 15px;
+        font-weight: 850;
+        color: #0f172a;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .meta-item {
+        font-size: 9px;
+        margin: 3px 0;
+        color: #475569;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .meta-item .label {
+        font-weight: 700;
+        color: #94a3b8;
+      }
+
+      .meta-item .value {
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .meta-item .value.val-bold {
+        font-weight: 800;
+      }
+
+      .card-footer-row {
+        padding: 10px 16px;
+        border-top: 1px solid #f1f5f9;
+        height: 85px;
+      }
+
+      .qr-box {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .qr-img {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+      }
+
+      .qr-caption {
+        font-size: 6px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+        text-transform: uppercase;
+      }
+
+      .signature-box {
+        text-align: center;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-left: 20px;
+      }
+
+      .signature-line {
+        width: 110px;
+        height: 1px;
+        border-top: 1.5px solid #64748b;
+        margin-top: 25px;
+      }
+
+      .signature-caption {
+        font-size: 6px;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-top: 5px;
+        text-transform: uppercase;
+      }
+
+      /* Portrait Back components */
+      .back-accent {
+        height: 8px;
+        width: 100%;
+      }
+
+      .back-header {
+        padding: 15px 15px 5px 15px;
+        text-align: center;
+      }
+
+      .school-title-back {
+        font-size: 11px;
+        font-weight: 800;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .school-subtitle-back {
+        font-size: 7px;
+        font-weight: 700;
+        color: #64748b;
+        margin-top: 3px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+      }
+
+      .bullet-rules {
+        padding: 0 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .rule-title {
+        font-size: 8px;
+        font-weight: 800;
+        color: #475569;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+      }
+
+      .bullet-rules ul {
+        margin: 0;
+        padding-left: 12px;
+        font-size: 7.5px;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      .bullet-rules li {
+        margin-bottom: 4px;
+      }
+
+      .emergency-contact-box {
+        padding: 8px 16px;
+        font-size: 7.5px;
+        color: #475569;
+        line-height: 1.3;
+      }
+
+      .info-line span {
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      .back-footer {
+        padding: 6px 16px;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+      }
+
+      /* Landscape Front components */
+      .landscape-left {
+        width: 140px;
+        padding: 15px 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+      }
+
+      .school-logo-landscape-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .school-logo-landscape {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #ffffff;
+        padding: 2px;
+        object-fit: contain;
+      }
+
+      .logo-fallback-landscape {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+
+      .school-name-landscape {
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
+        margin-top: 4px;
+      }
+
+      .landscape-badge-tag {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        width: 100%;
+        text-align: center;
+      }
+
+      .landscape-right {
+        flex: 1;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .landscape-top-row {
+        align-items: center;
+      }
+
+      .landscape-photo-wrapper {
+        width: 72px;
+        height: 72px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        overflow: hidden;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .student-photo-landscape {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .landscape-meta-details .landscape-student-name {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+      }
+
+      .landscape-meta-details .meta-item {
+        font-size: 8.5px;
+        margin: 2px 0;
+        text-align: left;
+        justify-content: flex-start;
+      }
+
+      .landscape-bottom-row {
+        border-top: 1px solid #f1f5f9;
+        padding-top: 8px;
+      }
+
+      .qr-box-landscape {
+        gap: 6px;
+      }
+
+      .qr-img-landscape {
+        width: 38px;
+        height: 38px;
+        object-fit: contain;
+      }
+
+      .qr-side-caption {
+        font-size: 6px;
+        color: #64748b;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
+      }
+
+      .signature-box-landscape {
+        text-align: right;
+      }
+
+      .signature-line-landscape {
+        width: 90px;
+        height: 1px;
+        border-top: 1.5px solid #64748b;
+        margin-top: 15px;
+      }
+
+      /* Landscape Back components */
+      .back-header-landscape {
+        padding: 8px 12px;
+        font-size: 8px;
+        font-weight: bold;
+      }
+
+      .school-title-back-landscape {
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+      }
+
+      .landscape-back-grid {
+        align-items: stretch;
+      }
+
+      .landscape-rules-left {
+        padding: 12px;
+      }
+
+      .rule-title-landscape {
+        font-size: 8px;
+        font-weight: bold;
+        color: #475569;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .rule-p {
+        font-size: 7.5px;
+        color: #64748b;
+        line-height: 1.3;
+        margin: 0;
+      }
+
+      .landscape-emergency-right {
+        padding: 12px;
+        width: 180px;
+      }
+
+      @media print {
+        body {
+          background: transparent !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          display: block !important;
+        }
+
+        .card-container {
+          box-shadow: none !important;
+          border: 1.5px solid #333333 !important;
+          margin: 10mm 5mm !important;
+          page-break-inside: avoid !important;
+          float: left !important;
+        }
+
+        .card-side.back {
+          border-top: 1px dashed #333333 !important;
+        }
+
+        html, body {
+          height: 99%;
+        }
+      }
+    `;
+
+    const html = `
+      <html>
+        <head>
+          <title>${studentsToPrint.length === 1 ? `ID Card - ${studentsToPrint[0].name}` : 'Bulk ID Cards Collection'}</title>
+          <style>
+            ${layoutCss}
+          </style>
+        </head>
+        <body>
+          ${cardsHtml}
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 400);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -550,6 +1591,21 @@ export const Students: React.FC = () => {
       const cls = classes.find(c => c.id === id);
       return cls ? cls.name : 'Unknown';
     }).join(', ');
+  };
+
+  const getValidUntil = (student: User) => {
+    if (student.validUntil) return student.validUntil;
+    if (student.admissionNumber) {
+      const parts = student.admissionNumber.split('/');
+      const lastPart = parts[parts.length - 1];
+      if (lastPart && /^\d+$/.test(lastPart.trim())) {
+        const year = parseInt(lastPart.trim());
+        if (year > 2000 && year < 2100) {
+          return `JANUARY ${year + 1}`;
+        }
+      }
+    }
+    return 'JANUARY 2027';
   };
 
   const handleUpdateStudent = async (e: React.FormEvent) => {
@@ -755,13 +1811,22 @@ export const Students: React.FC = () => {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           {selectedStudentIds.size > 0 && (
-            <button
-              onClick={openBulkMessage}
-              className="flex items-center gap-2 bg-success text-white px-4 py-2 rounded-lg hover:bg-success-hover transition-colors shadow-lg shadow-success/20 font-bold flex-1 md:flex-none justify-center"
-            >
-              <Send size={18} />
-              Message ({selectedStudentIds.size})
-            </button>
+            <>
+              <button
+                onClick={openBulkMessage}
+                className="flex items-center gap-2 bg-success text-white px-4 py-2 rounded-lg hover:bg-success-hover transition-colors shadow-lg shadow-success/20 font-bold flex-1 md:flex-none justify-center"
+              >
+                <Send size={18} />
+                Message ({selectedStudentIds.size})
+              </button>
+              <button
+                onClick={() => setShowBulkIdCards(true)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo/20 font-bold flex-1 md:flex-none justify-center"
+              >
+                <QrCode size={18} />
+                Print ID Cards ({selectedStudentIds.size})
+              </button>
+            </>
           )}
           <button
             onClick={toggleSelectAll}
@@ -890,6 +1955,13 @@ export const Students: React.FC = () => {
                     title="Send Message"
                   >
                     <MessageSquare size={20} />
+                  </button>
+                  <button
+                    onClick={() => setSelectedIdCardStudent(student)}
+                    className="text-gray-400 hover:text-indigo-600 transition-colors"
+                    title="Generate QR ID Card"
+                  >
+                    <QrCode size={20} />
                   </button>
                   {isAdmin && (
                     <>
@@ -1068,6 +2140,16 @@ export const Students: React.FC = () => {
                   className="px-6 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   Close
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedIdCardStudent(viewingStudent);
+                    setViewingStudent(null);
+                  }}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center gap-2"
+                >
+                  <QrCode size={18} />
+                  Print ID Card
                 </button>
                 {isAdmin && (
                   <button 
@@ -1510,6 +2592,468 @@ export const Students: React.FC = () => {
             </motion.div>
           </div>
         )}
+
+        {/* Student ID Card Preview Modal */}
+        {(selectedIdCardStudent || showBulkIdCards) && (() => {
+          const studentsToPrint = selectedIdCardStudent 
+            ? [selectedIdCardStudent] 
+            : students.filter(s => selectedStudentIds.has(s.uid));
+
+          const previewStudent = studentsToPrint[0];
+          if (!previewStudent) return null;
+
+          const activeScheme = idCardThemeColor;
+          const classLabel = getClassNames(previewStudent.classIds) || 'Unassigned';
+          const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(previewStudent.name)}&backgroundColor=cbd5e1`;
+
+          const colorsList = [
+            { id: 'indigo', name: 'Indigo Blue', color: 'bg-indigo-600' },
+            { id: 'blue', name: 'Royal Blue', color: 'bg-blue-600' },
+            { id: 'emerald', name: 'Emerald Green', color: 'bg-emerald-600' },
+            { id: 'rose', name: 'Crimson Rose', color: 'bg-rose-600' },
+            { id: 'amber', name: 'Amber Gold', color: 'bg-amber-600' },
+            { id: 'slate', name: 'Midnight Slate', color: 'bg-slate-800' }
+          ];
+
+          return (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-slate-50 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[550px]"
+              >
+                {/* Left customization panel */}
+                <div className="lg:col-span-12 xl:col-span-5 bg-white p-8 border-r border-gray-100 flex flex-col justify-between">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-indigo-100 p-2.5 rounded-2xl text-indigo-600 animate-pulse">
+                        <CreditCard size={24} />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">ID Card Designer</h2>
+                        <p className="text-xs text-gray-500">Configure layout & print ready physical badges</p>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-gray-100" />
+
+                    {/* Theme colors */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Choose Color Theme</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {colorsList.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setIdCardThemeColor(c.id as any)}
+                            className={`flex items-center gap-2 p-2 rounded-xl text-xs font-semibold border transition-all ${
+                              activeScheme === c.id 
+                                ? 'border-gray-900 bg-gray-50 text-gray-900 shadow-sm' 
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className={`w-3.5 h-3.5 rounded-full ${c.color} shrink-0`} />
+                            <span className="truncate">{c.id.charAt(0).toUpperCase() + c.id.slice(1)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Orientation selection */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Orientation Format</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIdCardOrientation('portrait')}
+                          className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all text-center uppercase tracking-wider ${
+                            idCardOrientation === 'portrait'
+                              ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 font-extrabold shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Vertical Badge
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIdCardOrientation('landscape')}
+                          className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all text-center uppercase tracking-wider ${
+                            idCardOrientation === 'landscape'
+                              ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 font-extrabold shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Horizontal Card
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Role Banner text */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Category label</label>
+                      <input
+                        type="text"
+                        maxLength={18}
+                        value={idCardCustomRole}
+                        onChange={(e) => setIdCardCustomRole(e.target.value.toUpperCase())}
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400"
+                        placeholder="e.g. STUDENT, FACULTY, VISITOR"
+                      />
+                    </div>
+
+                    {/* Toggles */}
+                    <div className="space-y-4 pt-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs font-bold text-gray-700 block">Preview Side</span>
+                          <span className="text-[10px] text-gray-400">Toggle front and back card sides</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIdCardShowBack(!idCardShowBack)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-widest border transition-all ${
+                            idCardShowBack 
+                              ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50' 
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {idCardShowBack ? 'Back Side' : 'Front Side'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-gray-100 flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedIdCardStudent(null);
+                        setShowBulkIdCards(false);
+                      }}
+                      className="px-5 py-3.5 border border-gray-200 rounded-2xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                    >
+                      Close Designer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePrintIdCards(studentsToPrint)}
+                      className="flex-1 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-extrabold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-150 flex items-center justify-center gap-2"
+                    >
+                      <Printer size={16} />
+                      Print {studentsToPrint.length === 1 ? 'Badge' : `Badges (${studentsToPrint.length})`}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right beautiful mock-up display card panel */}
+                <div className="lg:col-span-12 xl:col-span-7 bg-slate-950 border-l border-slate-800 p-8 flex flex-col items-center justify-center relative min-h-[480px]">
+                  <div className="absolute top-4 left-4 text-xs font-extrabold tracking-widest uppercase text-slate-500">
+                    Live HTML Print Preview ({studentsToPrint.length} Card{studentsToPrint.length > 1 ? 's' : ''})
+                  </div>
+
+                  {/* Hidden QR Draw Area */}
+                  <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '256px', height: '256px', opacity: 0, overflow: 'hidden' }}>
+                    {studentsToPrint.map(student => (
+                      <QRCodeCanvas
+                        key={student.uid}
+                        id={`qr-canvas-${student.uid}`}
+                        value={student.uid}
+                        size={128}
+                        level="H"
+                        includeMargin={false}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Canvas mockup wrapper */}
+                  <div className="w-full h-full flex flex-col justify-center items-center gap-4 py-8">
+                    {idCardOrientation === 'portrait' ? (
+                      /* PORTRAIT BADGE PREVIEW */
+                      <div className="relative animate-fade-in w-[310px] h-[480px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
+                        {idCardShowBack ? (
+                          /* PORTRAIT BACK */
+                          <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
+                            {/* Accent indicator */}
+                            <div className={`absolute top-0 left-0 w-full h-2 ${
+                              activeScheme === 'blue' ? 'bg-blue-600' :
+                              activeScheme === 'emerald' ? 'bg-emerald-600' :
+                              activeScheme === 'rose' ? 'bg-rose-600' :
+                              activeScheme === 'amber' ? 'bg-amber-600' :
+                              activeScheme === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`} />
+                            
+                            <div className="text-center pt-4">
+                              <span className="text-[10px] font-black text-slate-800 block uppercase tracking-wider">
+                                {settings?.schoolName || 'BREAKTHROUGH INT COLLEGE'}
+                              </span>
+                              <span className="text-[7px] text-slate-400 font-extrabold uppercase block tracking-widest mt-1">
+                                Identification Badge System
+                              </span>
+                            </div>
+
+                            <div className="space-y-3 px-2 flex-1 justify-center flex flex-col">
+                              <p className="text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-2">Rules & Disciplinary Rules</p>
+                              <ul className="list-disc text-[7px] leading-relaxed text-slate-400 space-y-1.5 pl-3 font-semibold text-left">
+                                <li>The badge is non-transferable and remains physical property of the institution.</li>
+                                <li>Visibly display your ID card inside the class or campus gates.</li>
+                                <li>Present barcode or QR ID for lecture check-in & school gate entry.</li>
+                                <li>Lost cards must be reported to the Registrar Office immediately.</li>
+                              </ul>
+                            </div>
+
+                            <div className="p-2 border-t border-dashed bg-slate-50 border-slate-250">
+                              <div className="text-[7px] text-slate-500 text-left font-bold space-y-0.5">
+                                <p><span className="text-slate-400">Email:</span> {settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+                                <p><span className="text-slate-400">Tel:</span> {settings?.publicPhone || '+254 7XX XXX'}</p>
+                                <p><span className="text-slate-400">Addr:</span> {settings?.publicAddress || 'Thika, Kenya'}</p>
+                              </div>
+                            </div>
+
+                            <div className={`-mx-4 -mb-4 px-4 py-2 flex items-center justify-between text-white text-[7px] font-extrabold uppercase mt-2 ${
+                              activeScheme === 'blue' ? 'bg-blue-600' :
+                              activeScheme === 'emerald' ? 'bg-emerald-600' :
+                              activeScheme === 'rose' ? 'bg-rose-600' :
+                              activeScheme === 'amber' ? 'bg-amber-600' :
+                              activeScheme === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`}>
+                              <span>EXCEL & GROW ALWAYS</span>
+                              <span>ID: {previewStudent.uid.slice(0, 8).toUpperCase()}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* PORTRAIT FRONT */
+                          <div className="w-full h-full flex flex-col justify-between relative bg-white">
+                            <div className={`p-3.5 flex items-center gap-2 border-b-2 border-black/10 text-white ${
+                              activeScheme === 'blue' ? 'bg-blue-600' :
+                              activeScheme === 'emerald' ? 'bg-emerald-600' :
+                              activeScheme === 'rose' ? 'bg-rose-600' :
+                              activeScheme === 'amber' ? 'bg-amber-600' :
+                              activeScheme === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`}>
+                              <div className="w-8 h-8 rounded-lg bg-white shrink-0 flex items-center justify-center p-1 overflow-hidden font-bold text-slate-800 text-xs">
+                                {settings?.logoUrl ? <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" /> : '★'}
+                              </div>
+                              <div className="text-left min-w-0">
+                                <h4 className="text-[9px] font-black uppercase tracking-wide leading-tight truncate">
+                                  {settings?.schoolName || 'BREAKTHROUGH COLLEGE'}
+                                </h4>
+                                <p className="text-[6px] font-bold text-white/80 uppercase tracking-widest mt-0.5">EXCELLENCE & CREATIVITY</p>
+                              </div>
+                            </div>
+
+                            <div className={`text-[8px] font-black uppercase tracking-widest block mx-auto py-1 px-4 rounded-full mt-2 border ${
+                              activeScheme === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                              activeScheme === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                              activeScheme === 'rose' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                              activeScheme === 'amber' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                              activeScheme === 'slate' ? 'bg-slate-100 text-slate-700 border-slate-200' :
+                              'bg-indigo-50 text-indigo-700 border-indigo-100'
+                            }`}>
+                              {idCardCustomRole.toUpperCase() || 'STUDENT'}
+                            </div>
+
+                            {/* Avatar Display */}
+                            <div className="flex justify-center mt-2.5">
+                              <div className={`w-20 h-20 rounded-full border-2 overflow-hidden bg-slate-50 flex items-center justify-center text-slate-800 ${
+                                activeScheme === 'blue' ? 'border-blue-600' :
+                                activeScheme === 'emerald' ? 'border-emerald-600' :
+                                activeScheme === 'rose' ? 'border-rose-600' :
+                                activeScheme === 'amber' ? 'border-amber-600' :
+                                activeScheme === 'slate' ? 'border-slate-800' : 'border-indigo-600'
+                              }`}>
+                                {previewStudent.photoUrl ? (
+                                  <img src={previewStudent.photoUrl} className="w-full h-full object-cover" />
+                                ) : (
+                                  <img src={defaultAvatar} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Info */}
+                            <div className="px-5 text-center flex-1 flex flex-col justify-center mt-2 space-y-1">
+                              <h3 className="text-sm font-black text-slate-900 uppercase truncate leading-snug">{previewStudent.name}</h3>
+                              
+                              <div className="flex justify-between text-[8px] border-b border-gray-150 py-0.5 text-slate-400 font-bold">
+                                <span>ADM NO:</span>
+                                <span className="text-slate-800 uppercase font-black">{previewStudent.admissionNumber || 'PENDING'}</span>
+                              </div>
+                              <div className="flex justify-between text-[8px] border-b border-gray-150 py-0.5 text-slate-400 font-bold">
+                                <span>COURSE:</span>
+                                <span className="text-slate-800 truncate font-black w-40 text-right">{previewStudent.course || 'NOT SPECIFIED'}</span>
+                              </div>
+                              <div className="flex justify-between text-[8px] py-0.5 text-slate-400 font-bold">
+                                <span>CLASS:</span>
+                                <span className="text-slate-800 truncate font-black w-40 text-right">{classLabel}</span>
+                              </div>
+                            </div>
+
+                            {/* QR Footer display */}
+                            <div className="border-t bg-slate-50 p-2.5 flex justify-between items-center h-20">
+                              <div className="flex flex-col items-center ml-2">
+                                <QRCodeCanvas
+                                  value={previewStudent.uid}
+                                  size={44}
+                                  level="H"
+                                />
+                                <span className={`text-[5px] font-extrabold uppercase mt-1 ${
+                                  activeScheme === 'blue' ? 'text-blue-600' :
+                                  activeScheme === 'emerald' ? 'text-emerald-600' :
+                                  activeScheme === 'rose' ? 'text-rose-600' :
+                                  activeScheme === 'amber' ? 'text-amber-600' :
+                                  activeScheme === 'slate' ? 'text-slate-800' : 'text-indigo-600'
+                                }`}>QR ID SCAN</span>
+                              </div>
+                              <div className="flex-1 flex flex-col items-center justify-center px-4">
+                                <div className="w-24 border-t border-slate-350" />
+                                <span className="text-[5px] text-slate-400 font-semibold uppercase mt-1">AUTHORIZED SIGNATURE</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* LANDSCAPE BADGE PREVIEW */
+                      <div className="relative animate-fade-in w-[480px] h-[300px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
+                        {idCardShowBack ? (
+                          /* LANDSCAPE BACK */
+                          <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
+                            <div className={`p-2 flex justify-between items-center text-white -mx-4 -mt-4 px-4 ${
+                              activeScheme === 'blue' ? 'bg-blue-600' :
+                              activeScheme === 'emerald' ? 'bg-emerald-600' :
+                              activeScheme === 'rose' ? 'bg-rose-600' :
+                              activeScheme === 'amber' ? 'bg-amber-600' :
+                              activeScheme === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`}>
+                              <span className="text-[8px] font-black uppercase tracking-wide">
+                                {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}
+                              </span>
+                              <span className="text-[7px] text-white/80 font-bold font-mono">ID: {previewStudent.uid.slice(0, 8).toUpperCase()}</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 flex-1 items-center mt-3">
+                              <div className="text-left space-y-1">
+                                <p className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">TERMS & POLICY</p>
+                                <p className="text-[7px] text-slate-400 font-semibold leading-relaxed">
+                                  This badge identifies the verified holder. Please keep visual at all school events. If lost, file report directly to Administration.
+                                </p>
+                              </div>
+                              <div className="text-right space-y-0.5 border-l pl-4 border-slate-200">
+                                <p className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">SUPPORT</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate">Email: {settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate">Phone: {settings?.publicPhone || '+2547000'}</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate">Region: {settings?.publicAddress || 'Thika, Kenya'}</p>
+                              </div>
+                            </div>
+
+                            <div className={`text-center py-1.5 -mx-4 -mb-4 text-[7px] font-extrabold uppercase mt-2 ${
+                              activeScheme === 'blue' ? 'bg-blue-50 text-blue-700 border-t border-blue-100' :
+                              activeScheme === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-t border-emerald-100' :
+                              activeScheme === 'rose' ? 'bg-rose-50 text-rose-700 border-t border-rose-100' :
+                              activeScheme === 'amber' ? 'bg-amber-50 text-amber-700 border-t border-amber-100' :
+                              activeScheme === 'slate' ? 'bg-slate-100 text-slate-700 border-t border-slate-200' :
+                              'bg-indigo-50 text-indigo-700 border-t border-indigo-100'
+                            }`}>
+                              FOUND THIS BADGE? PLEASE RETURN IT IMMEDIATELY TO THE REGISTRAR'S OFFICE
+                            </div>
+                          </div>
+                        ) : (
+                          /* LANDSCAPE FRONT - BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE STYLE */
+                          <div className="w-full h-full flex flex-col bg-[#FFFDF6] select-none text-slate-800">
+                            {/* Top Header Banner */}
+                            <div className="bg-[#0d1b94] text-white py-1 pr-3.5 pl-[68px] flex items-center justify-center h-[58px] relative">
+                              <div className="absolute left-[14px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] rounded bg-white flex items-center justify-center p-0.5 shrink-0 shadow-sm">
+                                {settings?.logoUrl ? (
+                                  <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                                    <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="#facc15" stroke="#ffffff" stroke-width="3"/>
+                                    <polygon points="50,12 82,28 82,72 50,88 18,72 18,28" fill="#0d1b94"/>
+                                    <path d="M50,22 L65,37 M50,22 L35,37 M50,22 L50,78" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+                                    <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="2"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="text-center w-full flex flex-col justify-center items-center">
+                                <h4 className="text-[14.5px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">Breakthrough International Training</h4>
+                                <h5 className="text-[17.5px] font-black uppercase leading-none text-white tracking-wide mt-0.5 whitespace-nowrap">College</h5>
+                              </div>
+                            </div>
+
+                            {/* Main Body */}
+                            <div className="flex-1 flex p-3 justify-between">
+                              {/* Left Column: Photo & Big QR Code */}
+                              <div className="w-[105px] flex flex-col items-center justify-between h-[195px] shrink-0">
+                                <div className="w-[90px] h-[95px] rounded border border-indigo-100 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-sm">
+                                  {previewStudent.photoUrl ? (
+                                    <img src={previewStudent.photoUrl} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <img src={defaultAvatar} className="w-full h-full object-cover" />
+                                  )}
+                                </div>
+                                <div className="w-[78px] h-[78px] bg-white border border-gray-200 rounded p-1 flex items-center justify-center shadow-sm">
+                                  <QRCodeCanvas
+                                    value={previewStudent.uid}
+                                    size={70}
+                                    level="H"
+                                    includeMargin={false}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Right Column: Category pill & details info */}
+                              <div className="flex-1 pl-4 flex flex-col justify-start relative">
+                                {/* Red Category pill tag - extends to right boundary */}
+                                <div className="flex justify-end -mr-3 mb-2.5">
+                                  <div className="bg-[#ee1c24] text-white text-[13.5px] font-black uppercase px-6 py-1 tracking-widest rounded-l-full shadow-sm text-right min-w-[200px]">
+                                    Student ID Card
+                                  </div>
+                                </div>
+
+                                {/* Information Records */}
+                                <div className="flex-1 flex flex-col justify-center space-y-2 pl-1">
+                                  <div className="flex items-baseline text-[13px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Name</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[14.5px]">{previewStudent.name}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[13px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Adm No</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[14.5px]">{previewStudent.admissionNumber || 'PENDING'}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[13px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Course</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[14.5px]">{previewStudent.course || 'COSMETOLOGY'}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[13px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Valid Until</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[14.5px]">{getValidUntil(previewStudent)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Accent bottom border strip */}
+                            <div className="h-2 bg-[#0d1b94] w-full shrink-0" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {studentsToPrint.length > 1 && (
+                      <p className="text-slate-400 text-[10px] font-bold mt-2 bg-slate-800/50 py-1.5 px-3 rounded-full border border-slate-700/30">
+                        Showing Preview for {previewStudent.name}. All {studentsToPrint.length} cards will be fully rendered with their matching QR codes upon printing.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {filteredStudents.length === 0 && (
