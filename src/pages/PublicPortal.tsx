@@ -239,7 +239,7 @@ export function PublicPortal() {
     },
     {
       question: "Are the training programs national and internationally recognized?",
-      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETACDACC. Our curriculum preparatories are fully aligned with premium exam boards including TVETCDACC (Technical and Vocational Education and Training Curriculum Development, Assessment and Certification Council) KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority), and KASNEB."
+      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETACDACC. Our curriculum preparatories are fully aligned with premium exam boards including TVETCDACC (Technical and Vocational Education and Training Curriculum Development, Assessment and Certification Council) KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority)."
     },
     {
       question: "Is there a hostel facility for distant students?",
@@ -993,7 +993,6 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>KNEC examinations</li>
               <li>NITA technical metrics</li>
-              <li>KASNEB accounting</li>
               <li>TVETA certifications</li>
             </ul>
           </div>
