@@ -417,7 +417,7 @@ export function PublicPortal() {
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Licensed Bureau</span>
               </div>
               <div className="text-left">
-                <span className="block text-2.5xl font-black text-white leading-none">5,000+</span>
+                <span className="block text-2.5xl font-black text-white leading-none">200+</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Graduates Alumni</span>
               </div>
             </div>
