@@ -66,12 +66,12 @@ export function PublicPortal() {
       title: heroTitle,
       description: heroDescription,
       badge: 'Admissions Open for Year 2026/2027',
-      tagline: 'World-Class Technical & Business Training'
+      tagline: 'World-Class Technical & Healthcare Training'
     },
     {
       url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2070&auto=format&fit=crop',
       title: 'Practical Hands-on Skill Offerings',
-      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Business Management, and Culinary Arts.',
+      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Healthcare & Caregiver, and Culinary Arts.',
       badge: '100% Practical Training Labs',
       tagline: 'Equipping Competence and Readiness'
     },
@@ -151,7 +151,7 @@ export function PublicPortal() {
   };
 
   const currentSlide = heroSlides[currentSlideIndex];
-  const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and business education. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
+  const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and Healthcare & Caregiver. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
   const aboutTitle = settings?.aboutTitle || 'A Breakthrough in Professional Education';
   const aboutImage = settings?.aboutImageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop';
 
@@ -192,16 +192,15 @@ export function PublicPortal() {
       requirements: 'KCSE D+ & above'
     },
     {
-      id: 'business-1',
-      title: 'School of Business & Accountancy',
-      category: 'business',
-      desc: 'Prepare for top certifications (KASNEB, CPA, ATD) and acquire skills in business management and financial record keeping.',
+      id: 'Healthcare-1',
+      title: 'School of Healthcare & Caregiver',
+      category: 'Health',
+      desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in Healthcare & Caregiver.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      badge: 'KASNEB Certified',
-      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Business Management'],
-      requirements: 'KCSE C- & above'
+      badge: 'TVETCDACC Certified'],
+      requirements: 'KCSE D- & above'
     },
     {
       id: 'hospitality-1',
@@ -211,7 +210,7 @@ export function PublicPortal() {
       duration: '6 - 12 Months',
       icon: Sparkles,
       color: 'bg-amber-50 text-amber-600 border-amber-100',
-      badge: 'KNEC Certified',
+      badge: 'NITA Certified',
       skills: ['Cake Decoration', 'Catering Management', 'Culinary Methods', 'Food Safety'],
       requirements: 'Open enrollment'
     },
@@ -922,7 +921,7 @@ export function PublicPortal() {
                         <option value="">Select an Academic Path</option>
                         <option value="School of Cosmetology & Hairdressing">Cosmetology & Hairdressing</option>
                         <option value="School of ICT & Software Engineering">ICT & Software Engineering</option>
-                        <option value="School of Business & Accountancy">Business Studies & KASNEB Prep</option>
+                        <option value="School of Healthcare & Caregiver">Healthcare & Caregiver</option>
                         <option value="School of Hospitality & Food Operations">Hospitality & Food Baking</option>
                         <option value="School of Electrical & Tech Engineering">Electrical Tech Engineering</option>
                       </select>
@@ -984,7 +983,7 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>School of Cosmetology</li>
               <li>School of Software Engineering</li>
-              <li>School of Business & Accountancy</li>
+              <li>School of Healthcare & Caregiver</li>
               <li>School of Electric Tech</li>
             </ul>
           </div>
