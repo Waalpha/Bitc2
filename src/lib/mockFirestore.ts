@@ -25,10 +25,13 @@ export function isQuotaOrPermissionError(error: any): boolean {
   return (
     code === 'resource-exhausted' || 
     code === 'permission-denied' ||
+    code === 'quota-exceeded' ||
+    code === 'unavailable' ||
     msg.includes('quota') || 
     msg.includes('exhausted') || 
     msg.includes('permission denied') ||
-    msg.includes('insufficient permissions')
+    msg.includes('insufficient permissions') ||
+    msg.includes('resource exhausted')
   );
 }
 

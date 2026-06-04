@@ -53,7 +53,7 @@ export function PublicPortal() {
   const [inquirySuccess, setInquirySuccess] = useState(false);
 
   // Interface Interactive States
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'Healthcare' | 'hospitality' | 'engineering'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'business' | 'hospitality' | 'engineering'>('all');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const heroTitle = settings?.publicHeroTitle || 'Empowering Professionals, Shaping Futures';
@@ -66,12 +66,12 @@ export function PublicPortal() {
       title: heroTitle,
       description: heroDescription,
       badge: 'Admissions Open for Year 2026/2027',
-      tagline: 'World-Class Technical & Healthcare Training'
+      tagline: 'World-Class Technical & Business Training'
     },
     {
       url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2070&auto=format&fit=crop',
       title: 'Practical Hands-on Skill Offerings',
-      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Healthcare, and Culinary Arts.',
+      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Business Management, and Culinary Arts.',
       badge: '100% Practical Training Labs',
       tagline: 'Equipping Competence and Readiness'
     },
@@ -192,15 +192,16 @@ export function PublicPortal() {
       requirements: 'KCSE D+ & above'
     },
     {
-      id: 'healthcare-1',
-      title: 'School of Healthcare & Caregiver',
+      id: 'business-1',
+      title: 'School of Business & Accountancy',
       category: 'business',
-      desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in healthcare support services.',
+      desc: 'Prepare for top certifications (KASNEB, CPA, ATD) and acquire skills in business management and financial record keeping.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      badge: 'TVETCDACC Certified',
-      requirements: 'KCSE D- & above'
+      badge: 'KASNEB Certified',
+      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Business Management'],
+      requirements: 'KCSE C- & above'
     },
     {
       id: 'hospitality-1',
@@ -416,7 +417,7 @@ export function PublicPortal() {
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Licensed Bureau</span>
               </div>
               <div className="text-left">
-                <span className="block text-2.5xl font-black text-white leading-none">200+</span>
+                <span className="block text-2.5xl font-black text-white leading-none">5,000+</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Graduates Alumni</span>
               </div>
             </div>
@@ -549,7 +550,7 @@ export function PublicPortal() {
               { id: 'all', label: 'All Schools' },
               { id: 'cosmetology', label: 'Cosmetology' },
               { id: 'ict', label: 'ICT & Software' },
-              { id: 'healthcare', label: 'Healthcare & Caregiver' },
+              { id: 'business', label: 'Business Studies' },
               { id: 'hospitality', label: 'Hospitality & Baking' },
               { id: 'engineering', label: 'Electrical Tech' }
             ].map(tab => (

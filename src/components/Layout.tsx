@@ -46,10 +46,31 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     // Read initial database mode
-    setDbModeState(getDbMode());
+    const initialMode = getDbMode();
+    setDbModeState(initialMode);
+
+    if (initialMode === 'local_cached') {
+      const initId = Math.random().toString(36).substring(2, 11);
+      setToasts(prev => [...prev, {
+        id: initId,
+        text: "Low-Data Backup Mode is Active. Your cloud limits are exceeded, but data is served locally with zero-downtime!",
+        type: 'warning'
+      }]);
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== initId)), 6000);
+    }
 
     const handleModeChange = () => {
-      setDbModeState(getDbMode());
+      const newMode = getDbMode();
+      setDbModeState(newMode);
+
+      const changeId = Math.random().toString(36).substring(2, 11);
+      const text = newMode === 'local_cached'
+        ? "Notice: Firestore quota limit reached! Automatically switched to Low-Data Backup Mode seamlessly."
+        : "Connected to live Cloud Firestore database.";
+      const type = newMode === 'local_cached' ? 'warning' : 'success';
+
+      setToasts(prev => [...prev, { id: changeId, text, type }]);
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== changeId)), 6000);
     };
 
     window.addEventListener('db-mode-changed', handleModeChange);

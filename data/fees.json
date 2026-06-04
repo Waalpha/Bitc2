@@ -1,0 +1,4078 @@
+{
+  "std_john_doe": {
+    "studentId": "std_john_doe",
+    "totalAmount": 1850,
+    "paidAmount": 1200,
+    "balance": 650,
+    "lastUpdated": "2026-06-04T11:59:19.200Z",
+    "history": [
+      {
+        "date": "2026-05-28T10:00:00.000Z",
+        "amount": 1200,
+        "type": "payment",
+        "description": "Initial Semester Payment"
+      },
+      {
+        "date": "2026-05-28T09:00:00.000Z",
+        "amount": 1500,
+        "type": "charge",
+        "description": "Semester 1 Tuition Fee"
+      },
+      {
+        "date": "2026-05-28T09:05:00.000Z",
+        "amount": 250,
+        "type": "charge",
+        "description": "External Examination Board Fee"
+      },
+      {
+        "date": "2026-06-04T11:59:19.200Z",
+        "amount": 100,
+        "type": "charge",
+        "description": "Monthly Fee: Computer Lab Maintenance Fee (Jun 2026)"
+      }
+    ]
+  },
+  "std_jane_smith": {
+    "studentId": "std_jane_smith",
+    "totalAmount": 1850,
+    "paidAmount": 1750,
+    "balance": 100,
+    "lastUpdated": "2026-06-04T11:59:19.200Z",
+    "history": [
+      {
+        "date": "2026-05-28T10:30:00.000Z",
+        "amount": 1750,
+        "type": "payment",
+        "description": "Full Fee Payment with Bank Slip"
+      },
+      {
+        "date": "2026-05-28T09:00:00.000Z",
+        "amount": 1750,
+        "type": "charge",
+        "description": "Semester 1 Tuition & Board Fees"
+      },
+      {
+        "date": "2026-06-04T11:59:19.200Z",
+        "amount": 100,
+        "type": "charge",
+        "description": "Monthly Fee: Computer Lab Maintenance Fee (Jun 2026)"
+      }
+    ]
+  },
+  "std_alice_williams": {
+    "studentId": "std_alice_williams",
+    "totalAmount": 1800,
+    "paidAmount": 800,
+    "balance": 1000,
+    "lastUpdated": "2026-05-28T12:10:00.000Z",
+    "history": [
+      {
+        "date": "2026-05-28T11:00:00.000Z",
+        "amount": 800,
+        "type": "payment",
+        "description": "Part payment"
+      },
+      {
+        "date": "2026-05-28T09:00:00.000Z",
+        "amount": 1800,
+        "type": "charge",
+        "description": "Semester 1 Tuition Fee"
+      }
+    ]
+  },
+  "0kotrZzQqJepGGYVX870GXh8VDK2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z"
+      },
+      {
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "0kotrZzQqJepGGYVX870GXh8VDK2",
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 0,
+    "balance": 6000
+  },
+  "298xqgtS7L5c4JjQqCPR": {
+    "studentId": "298xqgtS7L5c4JjQqCPR",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:20:58.383Z",
+        "type": "charge"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-07T10:42:11.630Z"
+      },
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000
+  },
+  "2n7ElHy2Swa1uZCun7Qe0F1v9OJ2": {
+    "balance": 1000,
+    "totalAmount": 6000,
+    "paidAmount": 5000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "studentId": "2n7ElHy2Swa1uZCun7Qe0F1v9OJ2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T04:44:56.909Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 5000
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ]
+  },
+  "3fAJcbSwLlYhXUG5rKVVrmtXSyN2": {
+    "studentId": "3fAJcbSwLlYhXUG5rKVVrmtXSyN2",
+    "history": [
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:20:58.383Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-06T06:08:25.500Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": ""
+      },
+      {
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-06T06:21:40.366Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 0
+  },
+  "45ce3WxI1tPfqaQmP3LNLTJVV662": {
+    "studentId": "45ce3WxI1tPfqaQmP3LNLTJVV662",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000,
+        "type": "charge"
+      },
+      {
+        "amount": 3000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-11T07:22:24.975Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "balance": 3000,
+    "totalAmount": 6000,
+    "paidAmount": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z"
+  },
+  "49ZtkRHcCrNOm3aA5ns3hdDXFhf2": {
+    "studentId": "49ZtkRHcCrNOm3aA5ns3hdDXFhf2",
+    "history": [
+      {
+        "description": "Fee Charge",
+        "type": "charge",
+        "amount": 70000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:03:57.724Z"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:04:16.019Z",
+        "description": "Fee Payment",
+        "amount": 16000,
+        "attachmentName": "",
+        "type": "payment"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "balance": 61500,
+    "paidAmount": 16000,
+    "totalAmount": 77500,
+    "lastUpdated": "2026-06-01T08:46:03.334Z"
+  },
+  "4KbRRavNa6TccsSiaHHTN06i8z72": {
+    "paidAmount": 2000,
+    "totalAmount": 3000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000,
+    "studentId": "4KbRRavNa6TccsSiaHHTN06i8z72",
+    "history": [
+      {
+        "type": "charge",
+        "amount": 2000,
+        "attachmentName": "",
+        "description": "Fee Charge",
+        "date": "2026-05-11T08:22:44.908Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 2000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-11T08:23:10.282Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ]
+  },
+  "4Wu2hkflfOUK73P1nukJn54268A3": {
+    "studentId": "4Wu2hkflfOUK73P1nukJn54268A3",
+    "history": [
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 2000
+  },
+  "59MB2JJNGXqCO5AjeONA": {
+    "history": [
+      {
+        "description": "Fee Charge",
+        "type": "charge",
+        "attachmentName": "",
+        "amount": 3000,
+        "attachmentUrl": "",
+        "date": "2026-05-20T09:48:15.358Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "studentId": "59MB2JJNGXqCO5AjeONA",
+    "balance": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 0
+  },
+  "59liPUqB7sNwmLlv8dCkfkYDT1T2": {
+    "totalAmount": 70000,
+    "paidAmount": 22000,
+    "balance": 48000,
+    "lastUpdated": "2026-06-03T08:34:06.578Z",
+    "studentId": "59liPUqB7sNwmLlv8dCkfkYDT1T2",
+    "history": [
+      {
+        "type": "charge",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "amount": 70000,
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:11:24.792Z"
+      },
+      {
+        "date": "2026-05-22T10:11:37.800Z",
+        "attachmentUrl": "",
+        "amount": 16000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "amount": 6000,
+        "attachmentUrl": "",
+        "date": "2026-06-03T05:50:24.201Z"
+      },
+      {
+        "type": "payment",
+        "description": "Direct Invoice Adjustment: manual recorded",
+        "amount": 4500,
+        "date": "2026-06-03T08:34:06.578Z"
+      }
+    ]
+  },
+  "5wsze1BnnYbmrobUqs7eKB9GQSX2": {
+    "totalAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-03T12:02:40.950Z"
+      }
+    ],
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-03T12:02:40.950Z",
+    "studentId": "5wsze1BnnYbmrobUqs7eKB9GQSX2"
+  },
+  "6HEwCYPwN0jE8s9U13hj": {
+    "balance": 2000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      }
+    ],
+    "studentId": "6HEwCYPwN0jE8s9U13hj"
+  },
+  "6KcUGcgGcWtRoQYetZXt": {
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-21T15:42:16.463Z",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "amount": 54000,
+        "type": "charge"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-21T15:56:28.381Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 15000
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "6KcUGcgGcWtRoQYetZXt",
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "paidAmount": 15000,
+    "totalAmount": 55000,
+    "balance": 40000
+  },
+  "6YbWrZKQfedwGs3yHQkV3t9cifH3": {
+    "history": [
+      {
+        "date": "2026-05-22T10:07:30.289Z",
+        "attachmentUrl": "",
+        "type": "charge",
+        "attachmentName": "",
+        "amount": 70000,
+        "description": "Fee Charge"
+      },
+      {
+        "date": "2026-05-22T10:07:45.473Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 20500,
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "date": "2026-06-01T08:45:39.862Z",
+        "amount": 4500,
+        "type": "charge"
+      }
+    ],
+    "studentId": "6YbWrZKQfedwGs3yHQkV3t9cifH3",
+    "lastUpdated": "2026-06-01T08:45:39.862Z",
+    "totalAmount": 74500,
+    "paidAmount": 20500,
+    "balance": 54000
+  },
+  "6brKtnNt91S32v7NVQ1uMLOFZYu1": {
+    "studentId": "6brKtnNt91S32v7NVQ1uMLOFZYu1",
+    "balance": -3000,
+    "paidAmount": 5000,
+    "lastUpdated": "2026-06-04T10:16:29.406Z",
+    "totalAmount": 2000,
+    "history": [
+      {
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "amount": 5000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-06-04T10:16:29.406Z",
+        "description": "Fee Payment",
+        "attachmentName": ""
+      }
+    ]
+  },
+  "7ceahdcPjdb3bAkmfiikkXRnIkr1": {
+    "studentId": "7ceahdcPjdb3bAkmfiikkXRnIkr1",
+    "lastUpdated": "2026-06-03T11:23:23.945Z",
+    "paidAmount": 3000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge"
+      },
+      {
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "amount": 3000,
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-11T07:26:36.636Z",
+        "type": "payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "date": "2026-06-03T11:20:49.346Z",
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-03T11:23:23.945Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000
+      }
+    ],
+    "balance": 3000,
+    "totalAmount": 6000
+  },
+  "7frcZ0zprkdC4hIYKTAfuWBPQ703": {
+    "balance": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 3000,
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T04:45:50.548Z",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 3000
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "7frcZ0zprkdC4hIYKTAfuWBPQ703"
+  },
+  "8omBpcynCIUdJTpuyIWFMrz0Xsq2": {
+    "studentId": "8omBpcynCIUdJTpuyIWFMrz0Xsq2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "paidAmount": 0,
+    "totalAmount": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000
+  },
+  "9HqRhEer1tfojcZvpiieBlKrren1": {
+    "studentId": "9HqRhEer1tfojcZvpiieBlKrren1",
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-06T06:42:42.781Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z"
+  },
+  "9fJyQ1UyPebEZlMDVad0XU7Rmij1": {
+    "balance": 1000,
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "9fJyQ1UyPebEZlMDVad0XU7Rmij1",
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-11T07:15:37.313Z",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ]
+  },
+  "AaeYw47L2yVMCZJNcZtI4hYDxMH2": {
+    "balance": 61500,
+    "totalAmount": 74500,
+    "paidAmount": 13000,
+    "lastUpdated": "2026-06-01T08:45:39.862Z",
+    "studentId": "AaeYw47L2yVMCZJNcZtI4hYDxMH2",
+    "history": [
+      {
+        "description": "Fee Charge",
+        "amount": 70000,
+        "type": "charge",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:10:45.192Z"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 10000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:10:58.016Z"
+      },
+      {
+        "description": "Fee Payment",
+        "amount": 3000,
+        "attachmentName": "",
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-26T08:03:44.644Z"
+      },
+      {
+        "type": "charge",
+        "amount": 4500,
+        "date": "2026-06-01T08:45:39.862Z",
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)"
+      }
+    ]
+  },
+  "BJuaLHeajDMGoKSNQj64i5kAZkq1": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-13T06:39:58.870Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ],
+    "studentId": "BJuaLHeajDMGoKSNQj64i5kAZkq1"
+  },
+  "BTj9AtALbmQ48t84SCTlSrzi5jB3": {
+    "studentId": "BTj9AtALbmQ48t84SCTlSrzi5jB3",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-20T09:26:07.936Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 10000
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ],
+    "paidAmount": 10000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "balance": -8000
+  },
+  "C8ucug8uwXNLrNGcpkHtVfS2Bai2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:02.200Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-01T08:45:28.467Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "C8ucug8uwXNLrNGcpkHtVfS2Bai2",
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "balance": 2000
+  },
+  "CVr9SrE7EFYDtq08zFLJ28yciTr2": {
+    "studentId": "CVr9SrE7EFYDtq08zFLJ28yciTr2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T06:35:34.246Z",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ],
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z"
+  },
+  "CdBIxGy2ZAeEyGrvIHPjEXrBYZx1": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-11T07:25:20.717Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ],
+    "studentId": "CdBIxGy2ZAeEyGrvIHPjEXrBYZx1"
+  },
+  "D5eI1ZZfK2WKJItaQ32RiBV31yB3": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000
+      },
+      {
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-12T10:17:53.049Z",
+        "attachmentUrl": ""
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "D5eI1ZZfK2WKJItaQ32RiBV31yB3"
+  },
+  "EDXemEC0oFgdJ7XlbKZVnowqTPI3": {
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "EDXemEC0oFgdJ7XlbKZVnowqTPI3",
+    "history": [
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-06T05:01:13.120Z"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "EoazsERoxFN0dwcm1wcTrt4l7xG2": {
+    "studentId": "EoazsERoxFN0dwcm1wcTrt4l7xG2",
+    "balance": -4000,
+    "paidAmount": 10000,
+    "totalAmount": 6000,
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "description": "Fee Payment",
+        "date": "2026-05-06T07:24:55.747Z",
+        "amount": 3000,
+        "type": "payment",
+        "attachmentName": "",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-03T08:41:22.181Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge"
+      },
+      {
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 7000,
+        "date": "2026-06-03T14:36:15.416Z",
+        "description": "Fee Payment"
+      }
+    ],
+    "lastUpdated": "2026-06-03T14:36:15.416Z"
+  },
+  "EwvWvAkh2HbhdjgGm2bE": {
+    "lastUpdated": "2026-04-29T22:21:12.834Z",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "amount": 2000,
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "date": "2026-04-29T22:21:12.834Z"
+      }
+    ],
+    "studentId": "EwvWvAkh2HbhdjgGm2bE",
+    "balance": 3000,
+    "paidAmount": 0,
+    "totalAmount": 3000
+  },
+  "FDqy4OzK3gdnbcFigsqIAGQHn0p1": {
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:02.200Z"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-13T07:46:14.850Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:28.467Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ],
+    "studentId": "FDqy4OzK3gdnbcFigsqIAGQHn0p1"
+  },
+  "FnfuUL2IjHST0MnZ77aEW8o7zW13": {
+    "studentId": "FnfuUL2IjHST0MnZ77aEW8o7zW13",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "totalAmount": 6000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 6000
+  },
+  "G83nD41ubxHcP2wzBe7G": {
+    "balance": 2000,
+    "totalAmount": 2000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "studentId": "G83nD41ubxHcP2wzBe7G",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:02.200Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:28.467Z"
+      }
+    ]
+  },
+  "HcJTz0V76VdJLbmkIuGfIvmHAJs2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:20:58.383Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T05:49:52.908Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 3000
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "HcJTz0V76VdJLbmkIuGfIvmHAJs2",
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "paidAmount": 3000,
+    "totalAmount": 6000,
+    "balance": 3000
+  },
+  "I3iFV3UgzZRkufoxaBD69F13AYX2": {
+    "studentId": "I3iFV3UgzZRkufoxaBD69F13AYX2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge"
+      },
+      {
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-06T05:00:23.489Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000
+  },
+  "IOm6weeibuVB1Ot34UisBUdpBv33": {
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "IOm6weeibuVB1Ot34UisBUdpBv33",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge"
+      },
+      {
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-12T06:41:14.069Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ]
+  },
+  "J1l03t6wM9gyJ0t6TOgik20pJap1": {
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 3000,
+    "balance": 3000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "date": "2026-05-18T05:22:04.802Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 3000,
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "studentId": "J1l03t6wM9gyJ0t6TOgik20pJap1"
+  },
+  "JnZUVbC5ytUgLMLVZj4heC8VcxF2": {
+    "studentId": "JnZUVbC5ytUgLMLVZj4heC8VcxF2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T05:51:29.684Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 3000,
+        "attachmentName": ""
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 3000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": -1000
+  },
+  "KHBo4JgWMxMBRLKQnHyvMfTeMQF3": {
+    "balance": 2000,
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "studentId": "KHBo4JgWMxMBRLKQnHyvMfTeMQF3",
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "type": "charge",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-21T13:40:15.511Z"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "KQ2KCCw6yph0LYETzMgbCuuGC102": {
+    "lastUpdated": "2026-06-04T06:24:26.586Z",
+    "paidAmount": 9000,
+    "studentId": "KQ2KCCw6yph0LYETzMgbCuuGC102",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:08.281Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "amount": 3000,
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "description": "Fee Charge",
+        "date": "2026-05-12T06:35:06.041Z",
+        "type": "charge"
+      },
+      {
+        "amount": 5000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "description": "Fee Payment",
+        "date": "2026-05-12T06:35:45.423Z",
+        "type": "payment"
+      },
+      {
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge"
+      },
+      {
+        "amount": 4000,
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "date": "2026-06-04T06:24:26.586Z",
+        "description": "Fee Payment",
+        "type": "payment"
+      }
+    ],
+    "balance": 0,
+    "totalAmount": 9000
+  },
+  "M6NR8elEM7a1xvBdVapoqhfr6wM2": {
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "M6NR8elEM7a1xvBdVapoqhfr6wM2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge"
+      },
+      {
+        "date": "2026-05-06T06:11:59.562Z",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "M9awqvDwuQQJGHaH5C8fgKNnIRO2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 3000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-08T04:47:34.052Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000
+      },
+      {
+        "date": "2026-06-03T05:53:54.003Z",
+        "attachmentUrl": "",
+        "amount": 2000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment"
+      }
+    ],
+    "studentId": "M9awqvDwuQQJGHaH5C8fgKNnIRO2",
+    "lastUpdated": "2026-06-03T05:53:54.003Z",
+    "totalAmount": 6000,
+    "paidAmount": 5000,
+    "balance": 1000
+  },
+  "MQ5nB0GNYkPAFzqDEKMJpUJlbSt1": {
+    "totalAmount": 3000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 3000,
+    "studentId": "MQ5nB0GNYkPAFzqDEKMJpUJlbSt1",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ]
+  },
+  "MwGyVfM78sSmtGlR5s1742U4DBu1": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "amount": 5000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "date": "2026-05-08T04:49:28.154Z",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000
+      },
+      {
+        "description": "Fee Payment",
+        "date": "2026-06-04T08:07:38.672Z",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 3000
+      }
+    ],
+    "lastUpdated": "2026-06-04T08:07:38.672Z",
+    "studentId": "MwGyVfM78sSmtGlR5s1742U4DBu1",
+    "balance": -2000,
+    "paidAmount": 8000,
+    "totalAmount": 6000
+  },
+  "NAknI7LE76bWBYyF6NcauHG2uJw2": {
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000,
+    "studentId": "NAknI7LE76bWBYyF6NcauHG2uJw2",
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "date": "2026-05-08T06:06:32.199Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ]
+  },
+  "NC7Ufh5tNxa3wZZFclPz0Vchrwe2": {
+    "lastUpdated": "2026-06-03T08:52:00.185Z",
+    "paidAmount": 17000,
+    "studentId": "NC7Ufh5tNxa3wZZFclPz0Vchrwe2",
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "amount": 70000,
+        "date": "2026-06-03T08:51:42.866Z",
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-03T08:52:00.185Z",
+        "type": "payment",
+        "amount": 17000,
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "attachmentUrl": ""
+      }
+    ],
+    "balance": 53000,
+    "totalAmount": 70000
+  },
+  "NOXTN8shrodkkEr9mmJqG1flwCu2": {
+    "studentId": "NOXTN8shrodkkEr9mmJqG1flwCu2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 2000
+  },
+  "NSsOehco9ngEqEcG4XE3CYomoru2": {
+    "lastUpdated": "2026-06-03T08:36:00.961Z",
+    "studentId": "NSsOehco9ngEqEcG4XE3CYomoru2",
+    "balance": 50000,
+    "paidAmount": 20000,
+    "totalAmount": 70000,
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:09:09.080Z",
+        "attachmentName": "",
+        "description": "Fee Charge",
+        "type": "charge",
+        "amount": 70000
+      },
+      {
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "amount": 20000,
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:09:23.577Z"
+      },
+      {
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:39.862Z",
+        "amount": 4500
+      },
+      {
+        "description": "Direct Invoice Adjustment: manual recorded",
+        "type": "payment",
+        "amount": 4500,
+        "date": "2026-06-03T08:36:00.961Z"
+      }
+    ]
+  },
+  "NaSLzhrXn9fENgLTbY322BhNRWY2": {
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "studentId": "NaSLzhrXn9fENgLTbY322BhNRWY2",
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 3000,
+    "paidAmount": 0,
+    "balance": 3000
+  },
+  "OGO3SCqYO2hWn1xGFgwsq15JHEu1": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000
+      },
+      {
+        "date": "2026-05-12T06:43:22.421Z",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ],
+    "studentId": "OGO3SCqYO2hWn1xGFgwsq15JHEu1"
+  },
+  "OMjf8vTT2UP9mz1a4gIfeOYoK1H3": {
+    "studentId": "OMjf8vTT2UP9mz1a4gIfeOYoK1H3",
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 1000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "balance": 1000
+  },
+  "OWfqe2iDjzeldtJgmin5r09R9AM2": {
+    "paidAmount": 0,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 6000,
+    "studentId": "OWfqe2iDjzeldtJgmin5r09R9AM2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ]
+  },
+  "Or7B6btbI5XdORIcVAjC": {
+    "studentId": "Or7B6btbI5XdORIcVAjC",
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:15:16.622Z",
+        "description": "Fee Charge",
+        "amount": 70000,
+        "attachmentName": "",
+        "type": "charge"
+      },
+      {
+        "date": "2026-05-22T10:15:31.446Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 15000,
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "amount": 4500,
+        "type": "charge",
+        "date": "2026-06-01T08:45:39.862Z"
+      }
+    ],
+    "balance": 59500,
+    "totalAmount": 74500,
+    "paidAmount": 15000,
+    "lastUpdated": "2026-06-01T08:45:39.862Z"
+  },
+  "P7AXxK9Q7ePjHBYzfbYtCZleGsR2": {
+    "balance": 6000,
+    "totalAmount": 6000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "studentId": "P7AXxK9Q7ePjHBYzfbYtCZleGsR2",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ]
+  },
+  "PK85MXLM8Kbg6oMSxtpmXtieKX03": {
+    "history": [
+      {
+        "amount": 70000,
+        "attachmentUrl": "",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "date": "2026-05-22T10:12:05.296Z",
+        "type": "charge"
+      },
+      {
+        "date": "2026-05-22T10:12:32.151Z",
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "attachmentUrl": "",
+        "amount": 25000
+      },
+      {
+        "amount": 4500,
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:39.862Z"
+      },
+      {
+        "description": "Direct Invoice Adjustment: MANUAL",
+        "amount": 4500,
+        "date": "2026-06-03T12:00:24.195Z",
+        "type": "payment"
+      }
+    ],
+    "paidAmount": 25000,
+    "lastUpdated": "2026-06-03T12:00:24.195Z",
+    "studentId": "PK85MXLM8Kbg6oMSxtpmXtieKX03",
+    "totalAmount": 70000,
+    "balance": 45000
+  },
+  "PPCmdmIUCPRIgMamZkTephiCoJn2": {
+    "balance": 56000,
+    "totalAmount": 70000,
+    "studentId": "PPCmdmIUCPRIgMamZkTephiCoJn2",
+    "lastUpdated": "2026-06-03T12:01:07.692Z",
+    "paidAmount": 14000,
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "date": "2026-05-22T10:19:12.029Z",
+        "type": "charge",
+        "amount": 70000,
+        "attachmentUrl": ""
+      },
+      {
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-22T10:19:30.116Z",
+        "type": "payment",
+        "amount": 12000,
+        "attachmentUrl": ""
+      },
+      {
+        "attachmentUrl": "",
+        "amount": 2000,
+        "type": "payment",
+        "date": "2026-05-26T11:52:59.996Z",
+        "description": "Fee Payment",
+        "attachmentName": ""
+      },
+      {
+        "amount": 4500,
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:39.862Z"
+      },
+      {
+        "type": "payment",
+        "date": "2026-06-03T12:01:07.692Z",
+        "amount": 4500,
+        "description": "Direct Invoice Adjustment: manual"
+      }
+    ]
+  },
+  "PT8K6iwftTVo9c0yBoB9PTAb7wF3": {
+    "paidAmount": 3000,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 3000,
+    "studentId": "PT8K6iwftTVo9c0yBoB9PTAb7wF3",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 3000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-07T05:12:04.108Z"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ]
+  },
+  "PoQDVkARViNCXt8naRcIKq3H3cF3": {
+    "balance": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "paidAmount": 3000,
+    "totalAmount": 6000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "amount": 3000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-08T05:56:50.554Z",
+        "attachmentUrl": ""
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "studentId": "PoQDVkARViNCXt8naRcIKq3H3cF3"
+  },
+  "PzyJv8oKQfeVQ1uiEeQwPYty3zq2": {
+    "history": [
+      {
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "date": "2026-05-11T07:11:40.715Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "PzyJv8oKQfeVQ1uiEeQwPYty3zq2",
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000
+  },
+  "QKKZFnXbw5eAFJadcNC5Lj7EBY92": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-11T08:11:22.326Z",
+        "description": "Fee Payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "QKKZFnXbw5eAFJadcNC5Lj7EBY92"
+  },
+  "Rwv5Ji6RJUcExm9PTcFMBi88hkB3": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1400,
+    "balance": 600,
+    "history": [
+      {
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "date": "2026-05-05T06:35:02.273Z",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 1400,
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "Rwv5Ji6RJUcExm9PTcFMBi88hkB3"
+  },
+  "SjgzlF4MN7RQoauEdfrv6pg8JeC2": {
+    "paidAmount": 9000,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": -3000,
+    "studentId": "SjgzlF4MN7RQoauEdfrv6pg8JeC2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T04:51:35.016Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 5000,
+        "attachmentName": ""
+      },
+      {
+        "date": "2026-05-20T09:28:40.221Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 4000,
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000
+      }
+    ]
+  },
+  "TAySOjbH10Z4uWPlMalgD2P4Q2K3": {
+    "studentId": "TAySOjbH10Z4uWPlMalgD2P4Q2K3",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000
+      },
+      {
+        "amount": 10000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-11T07:18:37.144Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "paidAmount": 10000,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": -4000
+  },
+  "TcdW1DmS8NYJ60m2jkKwA3YHros2": {
+    "studentId": "TcdW1DmS8NYJ60m2jkKwA3YHros2",
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "charge",
+        "attachmentUrl": "",
+        "date": "2026-05-07T07:39:00.293Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "balance": 2000,
+    "totalAmount": 2000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:45:49.838Z"
+  },
+  "UDej9ULJkPWY6ixDDCJMgdaMIhm2": {
+    "history": [
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-06T06:12:36.050Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "studentId": "UDej9ULJkPWY6ixDDCJMgdaMIhm2",
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "balance": 1000
+  },
+  "V6BwBWOWRwMDlKvV13aaxJKML763": {
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000,
+    "studentId": "V6BwBWOWRwMDlKvV13aaxJKML763",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-06T05:44:33.430Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ]
+  },
+  "VOKfKN1wKFM2coAa16XYoVijIJE3": {
+    "history": [
+      {
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-12T06:54:22.240Z"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "VOKfKN1wKFM2coAa16XYoVijIJE3",
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "balance": 1000
+  },
+  "Vrpn6pYuv0lTYYjeI8eB": {
+    "paidAmount": 4150,
+    "totalAmount": 5150,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000,
+    "studentId": "Vrpn6pYuv0lTYYjeI8eB",
+    "history": [
+      {
+        "amount": 4150,
+        "type": "charge",
+        "attachmentName": "",
+        "description": "Fee Charge",
+        "date": "2026-05-18T05:49:38.758Z",
+        "attachmentUrl": ""
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-18T05:49:52.902Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 4150
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "WlONBDy0EDg302TrLfKIjRo36Pu2": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 0,
+    "balance": 2000,
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000
+      }
+    ],
+    "studentId": "WlONBDy0EDg302TrLfKIjRo36Pu2"
+  },
+  "WnGHiwroWsd1f5LqQcOMfD7twUA2": {
+    "balance": 1000,
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "studentId": "WnGHiwroWsd1f5LqQcOMfD7twUA2",
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-07T10:45:46.213Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000
+      }
+    ]
+  },
+  "XDMxORhwozRWIUqvSu9mvSsKDDB3": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "balance": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "date": "2026-05-07T06:14:14.570Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000
+      }
+    ],
+    "studentId": "XDMxORhwozRWIUqvSu9mvSsKDDB3"
+  },
+  "XbkEwzpeg2aad8wAq2jgi1eGP7F2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:44:19.399Z"
+      }
+    ],
+    "studentId": "XbkEwzpeg2aad8wAq2jgi1eGP7F2",
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "paidAmount": 0,
+    "totalAmount": 1000
+  },
+  "YSMns2b7ssCmAN3pBJRi": {
+    "history": [
+      {
+        "type": "charge",
+        "attachmentName": "",
+        "amount": 70000,
+        "description": "Fee Charge",
+        "date": "2026-05-22T10:16:00.254Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 20000,
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:16:23.030Z"
+      },
+      {
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "type": "charge",
+        "amount": 4500,
+        "date": "2026-06-01T08:45:39.862Z"
+      }
+    ],
+    "studentId": "YSMns2b7ssCmAN3pBJRi",
+    "balance": 54500,
+    "lastUpdated": "2026-06-01T08:45:39.862Z",
+    "paidAmount": 20000,
+    "totalAmount": 74500
+  },
+  "YdSij8XxQoRHJ45nllNosRgXqSJ3": {
+    "studentId": "YdSij8XxQoRHJ45nllNosRgXqSJ3",
+    "lastUpdated": "2026-06-03T12:02:40.950Z",
+    "paidAmount": 0,
+    "history": [
+      {
+        "amount": 1000,
+        "attachmentUrl": "",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "type": "charge",
+        "date": "2026-06-03T11:59:30.150Z"
+      },
+      {
+        "date": "2026-06-03T12:02:40.950Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000
+      }
+    ],
+    "balance": 2000,
+    "totalAmount": 2000
+  },
+  "Yj860o6bePWFD5P5zeACyYZMITa2": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 5000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 5000,
+        "description": "Fee Payment",
+        "date": "2026-05-08T04:50:02.913Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "type": "charge"
+      }
+    ],
+    "studentId": "Yj860o6bePWFD5P5zeACyYZMITa2"
+  },
+  "YkXAIGkY9RQuRUECIdkImXL7JYX2": {
+    "balance": 1000,
+    "totalAmount": 1000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "YkXAIGkY9RQuRUECIdkImXL7JYX2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ]
+  },
+  "YyV6vDmF3ATT7YPC0p2Xdchu2md2": {
+    "totalAmount": 2000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 2000,
+    "studentId": "YyV6vDmF3ATT7YPC0p2Xdchu2md2",
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "YzET7zLNOlTLu9bJhPtwd8cAB6E2": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T06:30:25.087Z",
+        "description": "Fee Charge",
+        "type": "charge",
+        "amount": 1000,
+        "attachmentName": ""
+      },
+      {
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-08T06:30:33.206Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "YzET7zLNOlTLu9bJhPtwd8cAB6E2"
+  },
+  "ZqmntBwLnwgZagobz7Nm1uxKBtd2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000
+      },
+      {
+        "attachmentName": "",
+        "amount": 10000,
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-20T09:26:47.702Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "ZqmntBwLnwgZagobz7Nm1uxKBtd2",
+    "balance": -8000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 10000,
+    "totalAmount": 2000
+  },
+  "aCVVT1qpYPXS8DYtdfqgWEfnzWo2": {
+    "studentId": "aCVVT1qpYPXS8DYtdfqgWEfnzWo2",
+    "history": [
+      {
+        "date": "2026-05-25T12:07:32.006Z",
+        "attachmentUrl": "",
+        "amount": 70000,
+        "attachmentName": "",
+        "type": "charge",
+        "description": "Fee Charge"
+      },
+      {
+        "date": "2026-05-25T12:07:52.660Z",
+        "attachmentUrl": "",
+        "amount": 16000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "amount": 4500,
+        "date": "2026-06-01T08:45:39.862Z",
+        "type": "charge"
+      }
+    ],
+    "balance": 58500,
+    "totalAmount": 74500,
+    "paidAmount": 16000,
+    "lastUpdated": "2026-06-01T08:45:39.862Z"
+  },
+  "bMyvf4fIJaWxaeCroLoTpXDfiiT2": {
+    "studentId": "bMyvf4fIJaWxaeCroLoTpXDfiiT2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 3000,
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-07T10:40:12.879Z"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "balance": 3000,
+    "totalAmount": 6000,
+    "paidAmount": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z"
+  },
+  "bUTaFYYKf5a44bnr2EdHa5Si1GE2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge"
+      },
+      {
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-05T07:57:17.797Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge"
+      }
+    ],
+    "studentId": "bUTaFYYKf5a44bnr2EdHa5Si1GE2",
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000
+  },
+  "bZyet01c7I3UG9whSKlt": {
+    "studentId": "bZyet01c7I3UG9whSKlt",
+    "history": [
+      {
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-12T06:26:01.147Z",
+        "description": "Fee Payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment"
+      },
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z"
+  },
+  "cExItymDOiaUdSrm8959": {
+    "balance": -3000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "totalAmount": 2000,
+    "paidAmount": 5000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z"
+      },
+      {
+        "date": "2026-05-08T04:50:30.040Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 5000,
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      }
+    ],
+    "studentId": "cExItymDOiaUdSrm8959"
+  },
+  "csvOo0B7Xua62pjAC5fvhpjM0Vw1": {
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:20:58.383Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-04T05:37:54.556Z",
+        "type": "payment",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-06-03T08:15:31.804Z",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000
+      }
+    ],
+    "lastUpdated": "2026-06-03T08:15:31.804Z",
+    "studentId": "csvOo0B7Xua62pjAC5fvhpjM0Vw1",
+    "balance": 0,
+    "paidAmount": 2000,
+    "totalAmount": 2000
+  },
+  "esc7FpQHlygsc977D5sGKgYHS8p1": {
+    "lastUpdated": "2026-04-29T22:21:08.281Z",
+    "balance": 1000,
+    "history": [
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      }
+    ],
+    "studentId": "esc7FpQHlygsc977D5sGKgYHS8p1",
+    "totalAmount": 1000,
+    "paidAmount": 0
+  },
+  "f0zpZ7BsIgUOfuDZGNuHX8Pz8bg1": {
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-11T07:28:16.076Z",
+        "description": "Fee Charge",
+        "type": "charge",
+        "attachmentName": "",
+        "amount": 1000
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-11T07:28:27.044Z"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "f0zpZ7BsIgUOfuDZGNuHX8Pz8bg1"
+  },
+  "f28JXH6YH3gPztHXFQrPZBhJ0F73": {
+    "studentId": "f28JXH6YH3gPztHXFQrPZBhJ0F73",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T05:47:12.294Z",
+        "description": "Fee Payment",
+        "amount": 2000,
+        "attachmentName": "",
+        "type": "payment"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-19T06:59:47.929Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "balance": 3000,
+    "totalAmount": 6000,
+    "paidAmount": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z"
+  },
+  "fZNtKOsS3yZqXYm9j6A2Vvgq4YD3": {
+    "balance": 2000,
+    "totalAmount": 2000,
+    "studentId": "fZNtKOsS3yZqXYm9j6A2Vvgq4YD3",
+    "lastUpdated": "2026-06-03T12:02:40.950Z",
+    "paidAmount": 0,
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "date": "2026-06-03T11:58:42.516Z",
+        "type": "charge",
+        "amount": 1000,
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-03T12:02:40.950Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000
+      }
+    ]
+  },
+  "fmEoeELh4MPns4E8QBMdGLxXsFZ2": {
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:02.200Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:28.467Z",
+        "type": "charge"
+      }
+    ],
+    "studentId": "fmEoeELh4MPns4E8QBMdGLxXsFZ2",
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "balance": 2000
+  },
+  "ge1vpSL5yMWiREcYzNwHbQzJYkD2": {
+    "balance": 2000,
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "studentId": "ge1vpSL5yMWiREcYzNwHbQzJYkD2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:02.200Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:28.467Z"
+      }
+    ]
+  },
+  "hSVlrVdQsEOslaNja6kOfpfvaSF3": {
+    "paidAmount": 9000,
+    "totalAmount": 3000,
+    "balance": -6000,
+    "lastUpdated": "2026-05-20T10:33:57.515Z",
+    "studentId": "hSVlrVdQsEOslaNja6kOfpfvaSF3",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge"
+      },
+      {
+        "attachmentUrl": "",
+        "amount": 5000,
+        "date": "2026-05-08T04:52:26.295Z",
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "type": "payment",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "date": "2026-05-20T10:33:57.515Z",
+        "amount": 4000,
+        "attachmentUrl": ""
+      }
+    ]
+  },
+  "hvxddm6cuZh1hMT2JuIu5fMmPyS2": {
+    "totalAmount": 3000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 3000,
+    "studentId": "hvxddm6cuZh1hMT2JuIu5fMmPyS2",
+    "history": [
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "amount": 2000,
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ]
+  },
+  "j1RLlv7eU0MimFb02ODuVRLZlBs1": {
+    "history": [
+      {
+        "amount": 70000,
+        "type": "charge",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "date": "2026-05-22T10:14:34.687Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-05-22T10:14:53.766Z",
+        "attachmentUrl": "",
+        "amount": 9000,
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment"
+      },
+      {
+        "amount": 4500,
+        "date": "2026-06-01T08:45:39.862Z",
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "type": "charge"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-03T07:44:41.395Z",
+        "attachmentUrl": "",
+        "amount": 10000,
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": ""
+      },
+      {
+        "amount": 6500,
+        "date": "2026-06-03T08:32:23.140Z",
+        "description": "Direct Invoice Adjustment: Error",
+        "type": "payment"
+      }
+    ],
+    "balance": 51000,
+    "studentId": "j1RLlv7eU0MimFb02ODuVRLZlBs1",
+    "lastUpdated": "2026-06-03T08:32:23.140Z",
+    "totalAmount": 70000,
+    "paidAmount": 19000
+  },
+  "jSDBuxX1zuhfhMkLOGf1VJPzUt52": {
+    "balance": 1000,
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "studentId": "jSDBuxX1zuhfhMkLOGf1VJPzUt52",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:16.103Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-08T07:30:25.627Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z"
+      }
+    ]
+  },
+  "jZtkDqMtyrdG0nmEnjyuiADpbYz1": {
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000,
+    "studentId": "jZtkDqMtyrdG0nmEnjyuiADpbYz1",
+    "history": [
+      {
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-15T09:31:35.729Z"
+      },
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:46:15.116Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ]
+  },
+  "k3xKnF8MUPgaTKM9ntiaDPGzKqg1": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "date": "2026-05-11T06:42:29.110Z"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "k3xKnF8MUPgaTKM9ntiaDPGzKqg1"
+  },
+  "kXwK2yDzV6ZFmfqYpilot55tN123": {
+    "studentId": "kXwK2yDzV6ZFmfqYpilot55tN123",
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:08:32.689Z",
+        "description": "Fee Charge",
+        "amount": 70000,
+        "attachmentName": "",
+        "type": "charge"
+      },
+      {
+        "amount": 20500,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-22T10:08:40.769Z",
+        "attachmentUrl": ""
+      },
+      {
+        "date": "2026-06-01T08:45:39.862Z",
+        "amount": 4500,
+        "type": "charge",
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)"
+      }
+    ],
+    "balance": 54000,
+    "totalAmount": 74500,
+    "paidAmount": 20500,
+    "lastUpdated": "2026-06-01T08:45:39.862Z"
+  },
+  "lKE0blCcMvOD57IBl3Eisio0vgR2": {
+    "balance": 3000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "paidAmount": 3000,
+    "totalAmount": 6000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z"
+      },
+      {
+        "date": "2026-05-06T06:29:54.339Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "amount": 2000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-06T06:30:14.330Z",
+        "attachmentUrl": ""
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "lKE0blCcMvOD57IBl3Eisio0vgR2"
+  },
+  "lLB6wneSSCw89eYfihoc": {
+    "balance": 500,
+    "paidAmount": 1500,
+    "totalAmount": 2000,
+    "studentId": "lLB6wneSSCw89eYfihoc",
+    "history": [
+      {
+        "type": "charge",
+        "date": "2026-06-04T08:45:55.092Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "date": "2026-06-04T08:47:07.799Z",
+        "description": "Fee Charge",
+        "type": "charge",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": ""
+      },
+      {
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 1500,
+        "attachmentName": "",
+        "date": "2026-06-04T08:48:11.340Z",
+        "description": "Fee Payment"
+      }
+    ],
+    "lastUpdated": "2026-06-04T08:48:11.340Z"
+  },
+  "lfmWQDoC32eSzpqrBAcS3qQpbuv2": {
+    "paidAmount": 6000,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-03T06:14:22.629Z",
+    "balance": 0,
+    "studentId": "lfmWQDoC32eSzpqrBAcS3qQpbuv2",
+    "history": [
+      {
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "attachmentName": "",
+        "amount": 3000,
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-05-06T05:49:02.500Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:44:19.399Z"
+      },
+      {
+        "attachmentName": "",
+        "amount": 3000,
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-06-03T06:11:38.804Z",
+        "attachmentUrl": ""
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "date": "2026-06-03T06:14:22.629Z",
+        "type": "charge",
+        "amount": 2000
+      }
+    ]
+  },
+  "m40BFlu69pcxV8coFeQenk8hqGH2": {
+    "history": [
+      {
+        "attachmentName": "",
+        "type": "charge",
+        "description": "Fee Charge",
+        "amount": 70000,
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:06:01.138Z"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 30000,
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:06:25.858Z"
+      },
+      {
+        "type": "charge",
+        "description": "Monthly Fee: Monthly Fee (Jun 2026)",
+        "amount": 4500,
+        "date": "2026-06-01T08:45:39.862Z"
+      },
+      {
+        "description": "Direct Invoice Adjustment: manual recorded",
+        "type": "payment",
+        "date": "2026-06-03T08:34:58.161Z",
+        "amount": 4500
+      }
+    ],
+    "studentId": "m40BFlu69pcxV8coFeQenk8hqGH2",
+    "lastUpdated": "2026-06-03T08:34:58.161Z",
+    "balance": 40000,
+    "paidAmount": 30000,
+    "totalAmount": 70000
+  },
+  "meUKYsYo2mXOfRqwG09gzJG6SVH2": {
+    "balance": 2000,
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "history": [
+      {
+        "amount": 1000,
+        "date": "2026-04-29T22:21:02.200Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "amount": 1000,
+        "date": "2026-06-01T08:45:28.467Z",
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "meUKYsYo2mXOfRqwG09gzJG6SVH2"
+  },
+  "mlNgDBgcOsTOF4zS3C0nRMZbVCo1": {
+    "studentId": "mlNgDBgcOsTOF4zS3C0nRMZbVCo1",
+    "history": [
+      {
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-05T11:47:15.070Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ],
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "balance": 1000
+  },
+  "nFQayJfgIBgwjsL9XkpOyAcD17Y2": {
+    "balance": -5000,
+    "paidAmount": 9000,
+    "totalAmount": 4000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge"
+      },
+      {
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "type": "charge",
+        "amount": 3000,
+        "description": "Fee Charge",
+        "date": "2026-06-04T07:57:57.629Z"
+      },
+      {
+        "description": "Fee Payment",
+        "date": "2026-06-04T07:58:16.332Z",
+        "attachmentName": "",
+        "amount": 5000,
+        "type": "payment",
+        "attachmentUrl": ""
+      },
+      {
+        "attachmentName": "",
+        "amount": 4000,
+        "attachmentUrl": "",
+        "type": "payment",
+        "description": "Fee Payment",
+        "date": "2026-06-04T08:03:12.266Z"
+      }
+    ],
+    "lastUpdated": "2026-06-04T08:03:12.266Z",
+    "studentId": "nFQayJfgIBgwjsL9XkpOyAcD17Y2"
+  },
+  "nOkrWFZkdiNVTkFYZXimltocRXW2": {
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "totalAmount": 6000,
+    "paidAmount": 1000,
+    "balance": 5000,
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000,
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-08T05:53:04.101Z",
+        "description": "Fee Payment",
+        "amount": 1000,
+        "type": "payment",
+        "attachmentName": ""
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "nOkrWFZkdiNVTkFYZXimltocRXW2"
+  },
+  "nxmOOudlU960qCQkjQP0": {
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000,
+    "balance": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:20:58.383Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "date": "2026-05-11T08:07:42.503Z",
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "amount": 1000,
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ],
+    "studentId": "nxmOOudlU960qCQkjQP0"
+  },
+  "nyihHbSKeblA97rckejB": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z"
+      },
+      {
+        "date": "2026-05-11T07:35:49.585Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z"
+      }
+    ],
+    "studentId": "nyihHbSKeblA97rckejB",
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000
+  },
+  "pmpDIdYFy9hRnsnxn5iwbCKJ2Ti1": {
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-20T09:47:09.309Z",
+        "description": "May fee",
+        "attachmentName": "",
+        "type": "charge",
+        "amount": 3000
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "amount": 5000,
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-20T10:31:00.813Z"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-20T10:32:47.404Z",
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 4000
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "pmpDIdYFy9hRnsnxn5iwbCKJ2Ti1",
+    "balance": -5000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 9000,
+    "totalAmount": 4000
+  },
+  "q6UiKWx5oMbq0D7jnuc0YlAXR7i2": {
+    "studentId": "q6UiKWx5oMbq0D7jnuc0YlAXR7i2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:08.281Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-07T07:36:27.159Z"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-12T11:10:50.586Z",
+        "description": "Fee Payment",
+        "amount": 2000,
+        "type": "payment",
+        "attachmentName": ""
+      },
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "paidAmount": 3000,
+    "totalAmount": 4000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000
+  },
+  "q86OrRhkmpXVabIDm8vek8IvaH32": {
+    "lastUpdated": "2026-06-01T08:45:39.862Z",
+    "totalAmount": 70000,
+    "paidAmount": 10000,
+    "balance": 60000,
+    "history": [
+      {
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "amount": 70000,
+        "type": "charge",
+        "attachmentUrl": "",
+        "date": "2026-05-22T10:06:53.826Z"
+      },
+      {
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 10000,
+        "description": "Fee Payment",
+        "date": "2026-05-22T10:07:07.249Z",
+        "attachmentUrl": ""
+      },
+      {
+        "type": "charge"
+      }
+    ],
+    "studentId": "q86OrRhkmpXVabIDm8vek8IvaH32"
+  },
+  "qawjHsObMUMfse3f9uusoXgL7rT2": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge"
+      },
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-06T06:15:17.489Z",
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "qawjHsObMUMfse3f9uusoXgL7rT2",
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "paidAmount": 1000,
+    "totalAmount": 2000
+  },
+  "qiPuW8qKKtdOuMqOo10oMycAWvh2": {
+    "history": [
+      {
+        "date": "2026-04-29T22:20:58.383Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-12T06:25:35.028Z",
+        "attachmentUrl": ""
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "qiPuW8qKKtdOuMqOo10oMycAWvh2",
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000
+  },
+  "qyX4bMJ0FkgU91ZslRpcLrBeFHG2": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000
+      },
+      {
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "description": "Fee Payment",
+        "date": "2026-05-06T05:33:00.603Z",
+        "attachmentUrl": ""
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "qyX4bMJ0FkgU91ZslRpcLrBeFHG2"
+  },
+  "qzO4JWvtU8TBvCZiyfgogEDrG1T2": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 3000,
+    "paidAmount": 2000,
+    "balance": 1000,
+    "history": [
+      {
+        "attachmentUrl": "",
+        "date": "2026-05-18T09:12:01.164Z",
+        "description": "Fee Charge",
+        "type": "charge",
+        "amount": 2000,
+        "attachmentName": ""
+      },
+      {
+        "date": "2026-05-18T09:12:20.268Z",
+        "attachmentUrl": "",
+        "amount": 2000,
+        "type": "payment",
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:46:15.116Z",
+        "amount": 1000
+      }
+    ],
+    "studentId": "qzO4JWvtU8TBvCZiyfgogEDrG1T2"
+  },
+  "sw7fiR65OlQhQIPELCauE21YTTD2": {
+    "paidAmount": 0,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "balance": 6000,
+    "studentId": "sw7fiR65OlQhQIPELCauE21YTTD2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-04-29T22:21:08.281Z"
+      },
+      {
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "type": "charge",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "amount": 2000,
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ]
+  },
+  "t1iVcUTHR1et4xUF7wGScRzY4dB2": {
+    "totalAmount": 1000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000,
+    "studentId": "t1iVcUTHR1et4xUF7wGScRzY4dB2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ]
+  },
+  "tSojxsXOCaZWP2ErCLeUBb2RML02": {
+    "lastUpdated": "2026-06-01T08:46:03.334Z",
+    "paidAmount": 3000,
+    "totalAmount": 6000,
+    "balance": 3000,
+    "history": [
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "amount": 2000
+      },
+      {
+        "description": "Fee Payment",
+        "amount": 3000,
+        "attachmentName": "",
+        "type": "payment",
+        "attachmentUrl": "",
+        "date": "2026-05-08T06:05:59.119Z"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "amount": 2000,
+        "date": "2026-06-01T08:46:03.334Z",
+        "type": "charge",
+        "description": "Monthly Fee: Hostel (Jun 2026)"
+      }
+    ],
+    "studentId": "tSojxsXOCaZWP2ErCLeUBb2RML02"
+  },
+  "uXVZi9YjlhfqG81TXzvx": {
+    "balance": 1000,
+    "paidAmount": 0,
+    "totalAmount": 1000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "studentId": "uXVZi9YjlhfqG81TXzvx",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "type": "charge"
+      }
+    ]
+  },
+  "uYvpQDoc8hbwfuCSQDCcmpojjES2": {
+    "totalAmount": 22000,
+    "paidAmount": 15000,
+    "balance": 7000,
+    "history": [
+      {
+        "date": "2026-05-13T12:04:25.653Z",
+        "description": "Fee Charge",
+        "attachmentName": "",
+        "attachmentUrl": "",
+        "amount": 22000,
+        "type": "charge"
+      },
+      {
+        "type": "payment",
+        "amount": 15000,
+        "attachmentUrl": "",
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-13T12:05:07.500Z"
+      }
+    ],
+    "studentId": "uYvpQDoc8hbwfuCSQDCcmpojjES2",
+    "lastUpdated": "2026-05-13T12:05:07.500Z"
+  },
+  "vJZPF7VKGNeKC8ycN8COtC41WWk2": {
+    "lastUpdated": "2026-06-01T08:45:28.467Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:02.200Z",
+        "amount": 1000
+      },
+      {
+        "date": "2026-05-11T06:46:11.850Z",
+        "attachmentUrl": "",
+        "type": "payment",
+        "amount": 1000,
+        "attachmentName": "",
+        "description": "Fee Payment"
+      },
+      {
+        "type": "charge",
+        "amount": 1000,
+        "date": "2026-06-01T08:45:28.467Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "vJZPF7VKGNeKC8ycN8COtC41WWk2"
+  },
+  "vRHBBR8oknabgOrx8DH6E1Ge0pc2": {
+    "lastUpdated": "2026-06-01T08:46:15.116Z",
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "balance": 1000,
+    "history": [
+      {
+        "date": "2026-04-29T22:21:16.103Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)"
+      },
+      {
+        "date": "2026-05-12T06:45:28.059Z",
+        "attachmentUrl": "",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "description": "Fee Payment"
+      },
+      {
+        "description": "Monthly Fee: Tution Fees (Jun 2026)",
+        "date": "2026-06-01T08:46:15.116Z",
+        "type": "charge",
+        "amount": 1000
+      }
+    ],
+    "studentId": "vRHBBR8oknabgOrx8DH6E1Ge0pc2"
+  },
+  "vnvk4CDQXlbwUR7Czp2Dcf1Nvy13": {
+    "totalAmount": 70000,
+    "balance": 50000,
+    "history": [
+      {
+        "date": "2026-06-03T11:55:38.777Z",
+        "type": "charge",
+        "attachmentName": "",
+        "description": "Fee Charge",
+        "attachmentUrl": "",
+        "amount": 70000
+      },
+      {
+        "description": "Fee Payment",
+        "attachmentName": "",
+        "type": "payment",
+        "date": "2026-06-03T11:56:24.877Z",
+        "amount": 20000,
+        "attachmentUrl": ""
+      }
+    ],
+    "paidAmount": 20000,
+    "lastUpdated": "2026-06-03T11:56:24.877Z",
+    "studentId": "vnvk4CDQXlbwUR7Czp2Dcf1Nvy13"
+  },
+  "wBaxeSZz1EZHRO7nV9wvcj14vLk1": {
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 0,
+    "totalAmount": 2000,
+    "balance": 2000,
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z",
+        "amount": 1000
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "wBaxeSZz1EZHRO7nV9wvcj14vLk1"
+  },
+  "wZfzSUAjknVcVw6ZdugvSd5Eelt1": {
+    "studentId": "wZfzSUAjknVcVw6ZdugvSd5Eelt1",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z"
+      },
+      {
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:12.834Z",
+        "description": "Monthly Fee: Hostel (Apr 2026)"
+      },
+      {
+        "date": "2026-05-11T07:33:26.796Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "attachmentName": "",
+        "type": "payment",
+        "description": "Fee Payment"
+      },
+      {
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Jun 2026)",
+        "amount": 2000,
+        "type": "charge",
+        "date": "2026-06-01T08:46:03.334Z"
+      }
+    ],
+    "balance": 5000,
+    "paidAmount": 1000,
+    "totalAmount": 6000,
+    "lastUpdated": "2026-06-01T08:46:03.334Z"
+  },
+  "x5xqkLaMR4eR2VpAbKQ4V8wJsF13": {
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:21:08.281Z"
+      },
+      {
+        "description": "Monthly Fee: Hostel (Apr 2026)",
+        "amount": 2000,
+        "date": "2026-04-29T22:21:12.834Z",
+        "type": "charge"
+      },
+      {
+        "date": "2026-06-01T08:45:49.838Z",
+        "amount": 1000,
+        "type": "charge",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "x5xqkLaMR4eR2VpAbKQ4V8wJsF13",
+    "balance": 4000,
+    "lastUpdated": "2026-06-01T08:45:49.838Z",
+    "paidAmount": 0,
+    "totalAmount": 4000
+  },
+  "xP4qMLy4LqcxvaCAK0lozVyhl7q2": {
+    "balance": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "totalAmount": 1000,
+    "paidAmount": 0,
+    "history": [
+      {
+        "date": "2026-06-01T08:44:19.399Z",
+        "type": "charge",
+        "amount": 1000,
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "studentId": "xP4qMLy4LqcxvaCAK0lozVyhl7q2"
+  },
+  "yDm0dl1CHZXhNGUlKgRngEIxQ7p2": {
+    "balance": 3000,
+    "paidAmount": 0,
+    "lastUpdated": "2026-06-04T09:59:07.323Z",
+    "studentId": "yDm0dl1CHZXhNGUlKgRngEIxQ7p2",
+    "totalAmount": 3000,
+    "history": [
+      {
+        "date": "2026-06-04T09:59:07.323Z",
+        "attachmentUrl": "",
+        "amount": 3000,
+        "type": "charge",
+        "description": "Fee Charge",
+        "attachmentName": ""
+      }
+    ]
+  },
+  "yFhFlwYUcxZztP7IEqVggxqha8S2": {
+    "studentId": "yFhFlwYUcxZztP7IEqVggxqha8S2",
+    "history": [
+      {
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-04-29T22:20:58.383Z"
+      },
+      {
+        "description": "Fee Payment",
+        "type": "payment",
+        "attachmentName": "",
+        "amount": 1000,
+        "attachmentUrl": "",
+        "date": "2026-05-06T06:26:23.444Z"
+      },
+      {
+        "amount": 1000,
+        "type": "charge",
+        "date": "2026-06-01T08:44:19.399Z",
+        "description": "Monthly Fee: Tution Fees (Jun 2026)"
+      }
+    ],
+    "totalAmount": 2000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-06-01T08:44:19.399Z",
+    "balance": 1000
+  },
+  "yiT2FUrLU2HHvIHv0eLi": {
+    "balance": 0,
+    "studentId": "yiT2FUrLU2HHvIHv0eLi",
+    "history": [
+      {
+        "date": "2026-04-29T22:20:58.383Z",
+        "description": "Monthly Fee: Tution Fees (Apr 2026)",
+        "type": "charge",
+        "amount": 1000
+      },
+      {
+        "attachmentName": "",
+        "description": "Fee Payment",
+        "date": "2026-05-11T07:35:16.914Z",
+        "attachmentUrl": "",
+        "amount": 1000,
+        "type": "payment"
+      }
+    ],
+    "totalAmount": 1000,
+    "paidAmount": 1000,
+    "lastUpdated": "2026-05-11T07:35:16.914Z"
+  }
+}
