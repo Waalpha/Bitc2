@@ -106,7 +106,7 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
     
     let text = `Welcome to Breakthrough International, ${cleanName}`;
     if (action === 'checkOut') {
-      text = `Goodbye ${cleanName}, check out recorded. Have a safe journey.`;
+      text = `Goodbye ${cleanName}, check out recorded.`;
     } else if (action === 'leaveOut') {
       text = `Leave out approved. Goodbye ${cleanName}.`;
     } else if (action === 'already_checkIn') {
