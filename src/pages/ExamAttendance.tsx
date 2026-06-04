@@ -178,29 +178,33 @@ export const ExamAttendance: React.FC = () => {
   // Fetch students and attendance when class/exam changes
   useEffect(() => {
     if (selectedClassId && selectedExamId) {
-      const fetchData = async () => {
-        try {
-          // Students in this class
-          const studentsQ = query(
-            collection(db, 'users'), 
-            where('classIds', 'array-contains', selectedClassId), 
-            where('role', '==', 'student')
-          );
-          const snapStudents = await getDocs(studentsQ);
-          setStudents(snapStudents.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User)));
+      // Students in this class
+      const studentsQ = query(
+        collection(db, 'users'), 
+        where('classIds', 'array-contains', selectedClassId), 
+        where('role', '==', 'student')
+      );
+      const unsubStudents = onSnapshot(studentsQ, (snap) => {
+        setStudents(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User)));
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'exam-attendance-students');
+      });
 
-          // Attendance records for this exam
-          const attendQ = query(
-            collection(db, 'exam_attendance'),
-            where('examId', '==', selectedExamId)
-          );
-          const snapAttend = await getDocs(attendQ);
-          setAttendanceRecords(snapAttend.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamAttendanceType)));
-        } catch (error) {
-          handleFirestoreError(error, OperationType.LIST, 'exam-attendance-data');
-        }
+      // Attendance records for this exam
+      const attendQ = query(
+        collection(db, 'exam_attendance'),
+        where('examId', '==', selectedExamId)
+      );
+      const unsubAttend = onSnapshot(attendQ, (snap) => {
+        setAttendanceRecords(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamAttendanceType)));
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'exam-attendance-records');
+      });
+
+      return () => {
+        unsubStudents();
+        unsubAttend();
       };
-      fetchData();
     } else {
       setStudents([]);
       setAttendanceRecords([]);

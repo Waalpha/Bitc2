@@ -25,6 +25,7 @@ import { Chat } from './pages/Chat';
 import { WhatsApp } from './pages/WhatsApp';
 import { Timetable } from './pages/Timetable';
 import { Profile } from './pages/Profile';
+import { PublicPortal } from './pages/PublicPortal';
 
 const ProtectedRoute = ({ 
   children, 
@@ -78,7 +79,7 @@ export default function App() {
         <LiveLessonManager />
         <Router>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<PublicPortal />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />

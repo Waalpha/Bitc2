@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, addDoc, doc, updateDoc, getDocs, writeBatch, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, addDoc, doc, updateDoc, getDocs, writeBatch, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Exam, Submission, User, Class, ExamAttendance, Grade, AppNotification, Unit } from '../types';
 import { Search, Filter, Save, Send, CheckCircle, XCircle, AlertCircle, ClipboardCheck, Award, Settings, Paperclip, File as FileIcon, Image as ImageIcon, Loader2, X, FileText, Link as LinkIcon, BookOpen, Plus } from 'lucide-react';
@@ -38,6 +38,7 @@ export const MarksRegister: React.FC = () => {
     uploadProgress: 0
   });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [localGrades, setLocalGrades] = useState<Record<string, string>>({});
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -112,20 +113,24 @@ export const MarksRegister: React.FC = () => {
       return;
     }
 
-    const fetchExamData = async () => {
-      try {
-        const subsQ = query(collection(db, 'submissions'), where('examId', '==', selectedExamId));
-        const snapSubs = await getDocs(subsQ);
-        setSubmissions(snapSubs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
+    const subsQ = query(collection(db, 'submissions'), where('examId', '==', selectedExamId));
+    const unsubSubs = onSnapshot(subsQ, (snap) => {
+      setSubmissions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'exam-submissions');
+    });
 
-        const attendQ = query(collection(db, 'exam_attendance'), where('examId', '==', selectedExamId));
-        const snapAttend = await getDocs(attendQ);
-        setExamAttendance(snapAttend.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamAttendance)));
-      } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'exam-marks-data');
-      }
+    const attendQ = query(collection(db, 'exam_attendance'), where('examId', '==', selectedExamId));
+    const unsubAttend = onSnapshot(attendQ, (snap) => {
+      setExamAttendance(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamAttendance)));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'exam-attendance');
+    });
+
+    return () => {
+      unsubSubs();
+      unsubAttend();
     };
-    fetchExamData();
   }, [selectedExamId]);
 
   const handleMarkAttendance = async (studentId: string, status: 'present' | 'absent' | 'excused') => {
@@ -581,10 +586,26 @@ export const MarksRegister: React.FC = () => {
                       <td className="px-6 py-4">
                         <input
                           type="number"
-                          value={submission?.grade || 0}
+                          value={localGrades[student.uid] !== undefined ? localGrades[student.uid] : (submission?.grade !== undefined ? String(submission.grade) : '')}
+                          placeholder="—"
                           onChange={(e) => {
+                            setLocalGrades(prev => ({ ...prev, [student.uid]: e.target.value }));
+                          }}
+                          onBlur={(e) => {
                             const val = parseInt(e.target.value);
-                            if (!isNaN(val)) handleUpdateMarks(student.uid, val);
+                            if (!isNaN(val)) {
+                              handleUpdateMarks(student.uid, val);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const target = e.target as HTMLInputElement;
+                              const val = parseInt(target.value);
+                              if (!isNaN(val)) {
+                                handleUpdateMarks(student.uid, val);
+                                target.blur();
+                              }
+                            }
                           }}
                           className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-900"
                         />

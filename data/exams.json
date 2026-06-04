@@ -1,0 +1,154 @@
+{
+  "exam_programming_1": {
+    "title": "Programming Midterm Assignment",
+    "type": "Assignment",
+    "unitId": "unit_programming",
+    "classId": "class_cs101",
+    "teacherId": "tech_prof_jones",
+    "questions": [
+      {
+        "id": "q1",
+        "text": "What does CSS stand for in web development?",
+        "type": "multiple-choice",
+        "options": [
+          "Computer Style Sheets",
+          "Cascading Style Sheets",
+          "Creative Style Sheets",
+          "Colorful Style Sheets"
+        ],
+        "correctAnswer": "Cascading Style Sheets"
+      },
+      {
+        "id": "q2",
+        "text": "Which tag is used to create a hyperlink in HTML?",
+        "type": "multiple-choice",
+        "options": [
+          "<link>",
+          "<a>",
+          "<hyper>",
+          "<href>"
+        ],
+        "correctAnswer": "<a>"
+      },
+      {
+        "id": "q3",
+        "text": "Briefly explain the difference between 'let' and 'const' in TypeScript.",
+        "type": "text"
+      }
+    ],
+    "published": true,
+    "isOffline": false,
+    "dueDate": "2026-06-15T23:59:59.000Z",
+    "examDate": "2026-06-15",
+    "maxMarks": 40,
+    "passingMarks": 20,
+    "duration": 65,
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "exam_db_1": {
+    "title": "Introduction to Database Systems Quiz",
+    "type": "Quiz",
+    "unitId": "unit_db",
+    "classId": "class_cs101",
+    "teacherId": "tech_prof_jones",
+    "questions": [
+      {
+        "id": "q11",
+        "text": "What does SQL stand for?",
+        "type": "multiple-choice",
+        "options": [
+          "Structured Query Language",
+          "Standard Query Language",
+          "Server Query Language",
+          "Simple Query Language"
+        ],
+        "correctAnswer": "Structured Query Language"
+      },
+      {
+        "id": "q12",
+        "text": "Which SQL statement is used to remove lines from a table?",
+        "type": "multiple-choice",
+        "options": [
+          "REMOVE",
+          "DELETE",
+          "DROP",
+          "TRUNCATE"
+        ],
+        "correctAnswer": "DELETE"
+      }
+    ],
+    "published": true,
+    "isOffline": false,
+    "dueDate": "2026-06-10T12:00:00.000Z",
+    "examDate": "2026-06-10",
+    "maxMarks": 20,
+    "passingMarks": 10,
+    "duration": 30,
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "2vnbpVCHXgwmNxvzeop5": {
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "passingMarks": 40,
+    "unitId": "hlEGOYg7MeMgbVDBAYiU",
+    "examDate": "2026-05-03T14:00",
+    "type": "Practical",
+    "location": "",
+    "isOffline": true,
+    "maxMarks": 100,
+    "teacherId": "zCv5G48iPIeO2DnwCSYpx7cJPOl2",
+    "questions": [],
+    "duration": 60,
+    "title": "CLIENT DIETARY",
+    "published": true,
+    "createdAt": "2026-06-03T09:40:18.754Z"
+  },
+  "82lYYxwh77u2wBRTRpDX": {
+    "maxMarks": 100,
+    "teacherId": "zCv5G48iPIeO2DnwCSYpx7cJPOl2",
+    "questions": [],
+    "duration": 60,
+    "title": "HOUSEKEEPING",
+    "published": true,
+    "createdAt": "2026-06-03T09:24:40.993Z",
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "passingMarks": 40,
+    "examDate": "2026-05-22T08:30",
+    "unitId": "UUd4rfDKEd3C4aQoJMuW",
+    "type": "Practical",
+    "dueDate": "2026-05-22T09:30",
+    "location": "01",
+    "isOffline": true
+  },
+  "C6Vt2Ppm6aIZagV0aTa9": {
+    "questions": [],
+    "teacherId": "zCv5G48iPIeO2DnwCSYpx7cJPOl2",
+    "maxMarks": 100,
+    "createdAt": "2026-06-03T09:35:22.908Z",
+    "title": "PRE-DEPARTURE",
+    "published": true,
+    "duration": 60,
+    "passingMarks": 40,
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "isOffline": true,
+    "location": "",
+    "type": "Practical",
+    "examDate": "2026-05-25T10:00",
+    "unitId": "6T0zU9GiOedLuyIm7e0m"
+  },
+  "Ild7t71WrskeW9sGo0iQ": {
+    "teacherId": "zCv5G48iPIeO2DnwCSYpx7cJPOl2",
+    "maxMarks": 100,
+    "questions": [],
+    "duration": 60,
+    "createdAt": "2026-06-03T09:38:09.381Z",
+    "title": "PSYCHOSOCIAL",
+    "published": true,
+    "passingMarks": 40,
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "type": "Practical",
+    "examDate": "2026-05-25T12:37",
+    "unitId": "gcYaSMR0xjIvgK5b05Ez",
+    "isOffline": true,
+    "location": ""
+  }
+}

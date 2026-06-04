@@ -3,10 +3,12 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export const Students: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
@@ -34,6 +36,8 @@ export const Students: React.FC = () => {
   const [idCardOrientation, setIdCardOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [idCardShowBack, setIdCardShowBack] = useState(false);
   const [idCardCustomRole, setIdCardCustomRole] = useState('STUDENT');
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+  const [isSavingPng, setIsSavingPng] = useState(false);
 
   const toggleStudentSelection = (uid: string) => {
     const next = new Set(selectedStudentIds);
@@ -765,7 +769,7 @@ export const Students: React.FC = () => {
 
       .bitc-title-main {
         font-family: 'Inter', sans-serif;
-        font-size: 15px;
+        font-size: 18px;
         font-weight: 900;
         letter-spacing: -0.2px;
         text-transform: uppercase;
@@ -1539,6 +1543,127 @@ export const Students: React.FC = () => {
 
     printWindow.document.write(html);
     printWindow.document.close();
+  };
+
+  const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
+    // Save original cssText descriptor so we can restore it down the line
+    const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
+    
+    const memoizedColors: Record<string, string> = {};
+    const resolveOklchColor = (oklchStr: string): string => {
+      if (memoizedColors[oklchStr]) return memoizedColors[oklchStr];
+      try {
+        const tempSpan = document.createElement('span');
+        tempSpan.style.color = oklchStr;
+        tempSpan.style.display = 'none';
+        document.body.appendChild(tempSpan);
+        const resolved = window.getComputedStyle(tempSpan).color;
+        document.body.removeChild(tempSpan);
+        
+        if (!resolved || resolved.includes('oklch')) {
+          memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+        } else {
+          memoizedColors[oklchStr] = resolved;
+        }
+      } catch (err) {
+        memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+      }
+      return memoizedColors[oklchStr];
+    };
+
+    // Override cssText getter temporarily
+    Object.defineProperty(CSSRule.prototype, 'cssText', {
+      get: function() {
+        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
+        if (rawText && rawText.includes('oklch(')) {
+          try {
+            return rawText.replace(/oklch\([^)]+\)/g, (match) => {
+              return resolveOklchColor(match);
+            });
+          } catch (err) {
+            console.error("Error processing oklch color in CSS rule:", err);
+            return rawText;
+          }
+        }
+        return rawText;
+      },
+      configurable: true
+    });
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+      return canvas;
+    } finally {
+      // Restore the original cssText descriptor
+      if (originalDescriptor) {
+        Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
+      } else {
+        delete (CSSRule.prototype as any).cssText;
+      }
+    }
+  };
+
+  const handleSaveAsPNG = async (student: User) => {
+    const cardEl = document.getElementById('id-card-preview-element');
+    if (!cardEl) {
+      addToast("ID Card preview element not found.", "error");
+      return;
+    }
+    setIsSavingPng(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const canvas = await executeHtml2CanvasWithPatch(cardEl);
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${student.name.trim().replace(/\s+/g, '_')}_ID_Card.png`;
+      link.href = dataUrl;
+      link.click();
+      addToast("ID Card saved as PNG!", "success");
+    } catch (error) {
+      console.error("Error generating PNG: ", error);
+      addToast("Failed to save as PNG.", "error");
+    } finally {
+      setIsSavingPng(false);
+    }
+  };
+
+  const handleSaveAsPDF = async (student: User) => {
+    const cardEl = document.getElementById('id-card-preview-element');
+    if (!cardEl) {
+      addToast("ID Card preview element not found.", "error");
+      return;
+    }
+    setIsSavingPdf(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const canvas = await executeHtml2CanvasWithPatch(cardEl);
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      const isPortrait = idCardOrientation === 'portrait';
+      const width = isPortrait ? 54 : 86;
+      const height = isPortrait ? 86 : 54;
+
+      const pdf = new jsPDF({
+        orientation: isPortrait ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [width, height]
+      });
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+      pdf.save(`${student.name.trim().replace(/\s+/g, '_')}_ID_Card.pdf`);
+      addToast("ID Card saved as PDF!", "success");
+    } catch (error) {
+      console.error("Error generating PDF: ", error);
+      addToast("Failed to save as PDF.", "error");
+    } finally {
+      setIsSavingPdf(false);
+    }
   };
 
   const [refreshing, setRefreshing] = useState(false);
@@ -2724,24 +2849,45 @@ export const Students: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100 flex gap-3 mt-6">
+                  <div className="pt-6 border-t border-gray-100 flex flex-wrap gap-2.5 mt-6">
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedIdCardStudent(null);
                         setShowBulkIdCards(false);
                       }}
-                      className="px-5 py-3.5 border border-gray-200 rounded-2xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                      className="px-4 py-3 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
                     >
-                      Close Designer
+                      Close
                     </button>
+                    
+                    <button
+                      type="button"
+                      disabled={isSavingPdf || isSavingPng}
+                      onClick={() => handleSaveAsPDF(previewStudent)}
+                      className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      <Download size={14} className={isSavingPdf ? 'animate-bounce' : ''} />
+                      {isSavingPdf ? 'Saving...' : 'Save PDF'}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSavingPdf || isSavingPng}
+                      onClick={() => handleSaveAsPNG(previewStudent)}
+                      className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      <ImageIcon size={14} className={isSavingPng ? 'animate-bounce' : ''} />
+                      {isSavingPng ? 'Saving...' : 'Save PNG'}
+                    </button>
+                    
                     <button
                       type="button"
                       onClick={() => handlePrintIdCards(studentsToPrint)}
-                      className="flex-1 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-extrabold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-150 flex items-center justify-center gap-2"
+                      className="px-3.5 py-3 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center"
+                      title="Print Original Badges"
                     >
-                      <Printer size={16} />
-                      Print {studentsToPrint.length === 1 ? 'Badge' : `Badges (${studentsToPrint.length})`}
+                      <Printer size={15} />
                     </button>
                   </div>
                 </div>
@@ -2770,7 +2916,7 @@ export const Students: React.FC = () => {
                   <div className="w-full h-full flex flex-col justify-center items-center gap-4 py-8">
                     {idCardOrientation === 'portrait' ? (
                       /* PORTRAIT BADGE PREVIEW */
-                      <div className="relative animate-fade-in w-[310px] h-[480px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
+                      <div id="id-card-preview-element" className="relative animate-fade-in w-[310px] h-[480px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
                         {idCardShowBack ? (
                           /* PORTRAIT BACK */
                           <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
@@ -2914,7 +3060,7 @@ export const Students: React.FC = () => {
                       </div>
                     ) : (
                       /* LANDSCAPE BADGE PREVIEW */
-                      <div className="relative animate-fade-in w-[480px] h-[300px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
+                      <div id="id-card-preview-element" className="relative animate-fade-in w-[480px] h-[300px] bg-white rounded-2xl shadow-2xl border-2 border-slate-150 flex flex-col justify-between overflow-hidden text-slate-800">
                         {idCardShowBack ? (
                           /* LANDSCAPE BACK */
                           <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
@@ -2975,7 +3121,7 @@ export const Students: React.FC = () => {
                                 )}
                               </div>
                               <div className="text-center w-full flex flex-col justify-center items-center">
-                                <h4 className="text-[14.5px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">Breakthrough International Training</h4>
+                                <h4 className="text-[18px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">Breakthrough International Training</h4>
                                 <h5 className="text-[17.5px] font-black uppercase leading-none text-white tracking-wide mt-0.5 whitespace-nowrap">College</h5>
                               </div>
                             </div>
