@@ -199,9 +199,8 @@ export function PublicPortal() {
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      badge: 'KASNEB Certified',
-      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Healthcare & Caregiver'],
-      requirements: 'KCSE C- & above'
+      badge: 'TVETCDACC Certified',
+      requirements: 'KCSE D- & above'
     },
     {
       id: 'hospitality-1',
@@ -922,7 +921,7 @@ export function PublicPortal() {
                         <option value="">Select an Academic Path</option>
                         <option value="School of Cosmetology & Hairdressing">Cosmetology & Hairdressing</option>
                         <option value="School of ICT & Software Engineering">ICT & Software Engineering</option>
-                        <option value="School of Healthcare & Caregiver.">Healthcare & Caregiver Studies & KASNEB Prep</option>
+                        <option value="School of Healthcare & Caregiver.">Healthcare & Caregiver</option>
                         <option value="School of Hospitality & Food Operations">Hospitality & Food Baking</option>
                         <option value="School of Electrical & Tech Engineering">Electrical Tech Engineering</option>
                       </select>
