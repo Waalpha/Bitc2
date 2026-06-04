@@ -73,9 +73,9 @@ export function PublicPortal() {
       color: 'bg-indigo-50 text-indigo-600 border-indigo-100'
     },
     {
-      id: 'business',
-      title: 'School of Business & Accountancy',
-      desc: 'Prepare for professional credentials (KASNEB, CPA) and master standard business management.',
+      id: 'Healthcare',
+      title: 'School of Healthcare & Caregiver',
+      desc: 'Prepare for professional credentials.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100'
