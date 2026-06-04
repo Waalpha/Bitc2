@@ -193,7 +193,7 @@ export function PublicPortal() {
     },
     {
       id: 'Healthcare & Caregiver-1',
-      title: 'School of Healthcare & Caregiver.',
+      title: 'School of Healthcare & Caregiver',
       category: 'Healthcare & Caregiver',
       desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in Healthcare & Caregiver management and financial record keeping.',
       duration: '1 - 2 Years',
@@ -922,7 +922,7 @@ export function PublicPortal() {
                         <option value="">Select an Academic Path</option>
                         <option value="School of Cosmetology & Hairdressing">Cosmetology & Hairdressing</option>
                         <option value="School of ICT & Software Engineering">ICT & Software Engineering</option>
-                        <option value="School of Healthcare & Caregiver.">Healthcare & Caregiver Studies>
+                        <option value="School of Healthcare & Caregiver">Healthcare & Caregiver Studies>
                         <option value="School of Hospitality & Food Operations">Hospitality & Food Baking</option>
                         <option value="School of Electrical & Tech Engineering">Electrical Tech Engineering</option>
                       </select>
@@ -984,7 +984,7 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>School of Cosmetology</li>
               <li>School of Software Engineering</li>
-              <li>School of Healthcare & Caregiver.</li>
+              <li>School of Healthcare & Caregiver</li>
               <li>School of Electric Tech</li>
             </ul>
           </div>
