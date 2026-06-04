@@ -53,7 +53,7 @@ export function PublicPortal() {
   const [inquirySuccess, setInquirySuccess] = useState(false);
 
   // Interface Interactive States
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'business' | 'hospitality' | 'engineering'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'Healthcare & Caregiver' | 'hospitality' | 'engineering'>('all');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const heroTitle = settings?.publicHeroTitle || 'Empowering Professionals, Shaping Futures';
@@ -66,12 +66,12 @@ export function PublicPortal() {
       title: heroTitle,
       description: heroDescription,
       badge: 'Admissions Open for Year 2026/2027',
-      tagline: 'World-Class Technical & Healthcare Training'
+      tagline: 'World-Class Technical & Healthcare & Caregiver Training'
     },
     {
       url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2070&auto=format&fit=crop',
       title: 'Practical Hands-on Skill Offerings',
-      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Healthcare & Caregiver, and Culinary Arts.',
+      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Healthcare & Caregiver Management, and Culinary Arts.',
       badge: '100% Practical Training Labs',
       tagline: 'Equipping Competence and Readiness'
     },
@@ -151,7 +151,7 @@ export function PublicPortal() {
   };
 
   const currentSlide = heroSlides[currentSlideIndex];
-  const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and Healthcare & Caregiver. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
+  const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and Healthcare & Caregiver education. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
   const aboutTitle = settings?.aboutTitle || 'A Breakthrough in Professional Education';
   const aboutImage = settings?.aboutImageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop';
 
@@ -192,15 +192,16 @@ export function PublicPortal() {
       requirements: 'KCSE D+ & above'
     },
     {
-      id: 'Healthcare-1',
-      title: 'School of Healthcare & Caregiver',
-      category: 'Health',
-      desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in Healthcare & Caregiver.',
+      id: 'Healthcare & Caregiver-1',
+      title: 'School of Healthcare & Caregiver.',
+      category: 'Healthcare & Caregiver',
+      desc: 'Prepare for top certifications (KASNEB, CPA, ATD) and acquire skills in Healthcare & Caregiver management and financial record keeping.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      badge: 'TVETCDACC Certified'],
-      requirements: 'KCSE D- & above'
+      badge: 'KASNEB Certified',
+      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Healthcare & Caregiver Management'],
+      requirements: 'KCSE C- & above'
     },
     {
       id: 'hospitality-1',
@@ -210,7 +211,7 @@ export function PublicPortal() {
       duration: '6 - 12 Months',
       icon: Sparkles,
       color: 'bg-amber-50 text-amber-600 border-amber-100',
-      badge: 'NITA Certified',
+      badge: 'KNEC Certified',
       skills: ['Cake Decoration', 'Catering Management', 'Culinary Methods', 'Food Safety'],
       requirements: 'Open enrollment'
     },
@@ -349,16 +350,16 @@ export function PublicPortal() {
               src={currentSlide.url} 
               alt={currentSlide.title} 
               initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 0.85, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover opacity-85" 
               referrerPolicy="no-referrer"
             />
           </AnimatePresence>
           {/* Dual layers of dark gradient overlays to guarantee perfect text contrast and design elegance */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/65 to-slate-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/50 to-slate-950/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/20" />
         </div>
         
         {/* Centered overlays of text and interactive controls */}
@@ -921,7 +922,7 @@ export function PublicPortal() {
                         <option value="">Select an Academic Path</option>
                         <option value="School of Cosmetology & Hairdressing">Cosmetology & Hairdressing</option>
                         <option value="School of ICT & Software Engineering">ICT & Software Engineering</option>
-                        <option value="School of Healthcare & Caregiver">Healthcare & Caregiver</option>
+                        <option value="School of Healthcare & Caregiver.">Healthcare & Caregiver Studies & KASNEB Prep</option>
                         <option value="School of Hospitality & Food Operations">Hospitality & Food Baking</option>
                         <option value="School of Electrical & Tech Engineering">Electrical Tech Engineering</option>
                       </select>
@@ -983,7 +984,7 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>School of Cosmetology</li>
               <li>School of Software Engineering</li>
-              <li>School of Healthcare & Caregiver</li>
+              <li>School of Healthcare & Caregiver.</li>
               <li>School of Electric Tech</li>
             </ul>
           </div>
