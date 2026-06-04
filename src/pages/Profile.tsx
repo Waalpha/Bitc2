@@ -652,6 +652,18 @@ export const Profile: React.FC = () => {
                           >
                             {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
                           </button>
+                          {editForm.photoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditForm(prev => ({ ...prev, photoUrl: '' }));
+                                addToast('Photo deleted from preview. Save changes to commit.');
+                              }}
+                              className="px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all border border-rose-500/10 ml-2"
+                            >
+                              Delete Photo
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div className="relative">

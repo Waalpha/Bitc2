@@ -3,12 +3,13 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon, Camera, Trash2 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { uploadFile } from '../services/uploadService';
 
 export const Students: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
@@ -18,6 +19,8 @@ export const Students: React.FC = () => {
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const studentFileInputRef = React.useRef<HTMLInputElement>(null);
   const [viewingStudent, setViewingStudent] = useState<User | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [messagingStudents, setMessagingStudents] = useState<User[]>([]);
@@ -1733,6 +1736,28 @@ export const Students: React.FC = () => {
     return 'JANUARY 2027';
   };
 
+  const handleStudentPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingStudent) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Photo must be less than 5MB', 'error');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const uploadResult = await uploadFile(file);
+      setEditingStudent(prev => prev ? { ...prev, photoUrl: uploadResult.url } : null);
+      addToast('Photo uploaded successfully');
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      addToast('Failed to upload photo', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   const handleUpdateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) {
@@ -1766,7 +1791,8 @@ export const Students: React.FC = () => {
         guardianPhone: editingStudent.guardianPhone || '',
         year: editingStudent.year || '1',
         course: editingStudent.course || '',
-        earlyCheckoutAllowed: editingStudent.earlyCheckoutAllowed || false
+        earlyCheckoutAllowed: editingStudent.earlyCheckoutAllowed || false,
+        photoUrl: editingStudent.photoUrl || ''
       });
       setEditingStudent(null);
       addToast("Student profile updated successfully!");
@@ -2456,6 +2482,72 @@ export const Students: React.FC = () => {
                         <User2 size={14} />
                         Basic Information
                       </h3>
+                    </div>
+
+                    <div className="lg:col-span-3 bg-gray-50/50 p-6 rounded-3xl border border-gray-100 flex flex-col sm:flex-row items-center gap-6">
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center text-gray-400 font-bold">
+                          {editingStudent.photoUrl ? (
+                            <img src={editingStudent.photoUrl} alt="Student Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            <span className="text-3xl">{editingStudent.name?.charAt(0)}</span>
+                          )}
+                        </div>
+                        {isUploadingPhoto && (
+                          <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white">
+                            <Loader2 className="animate-spin" size={20} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-3 text-center sm:text-left flex-1 w-full">
+                        <h4 className="text-sm font-bold text-gray-800">Student Profile Photo</h4>
+                        <p className="text-xs text-gray-500">Edit, upload, or completely remove the student's portrait photo (Max 5MB)</p>
+                        
+                        <div className="flex flex-wrap gap-2 pt-1 justify-center sm:justify-start">
+                          <input
+                            type="file"
+                            ref={studentFileInputRef}
+                            onChange={handleStudentPhotoUpload}
+                            accept="image/*"
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => studentFileInputRef.current?.click()}
+                            disabled={isUploadingPhoto}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm"
+                          >
+                            <Camera size={14} />
+                            {isUploadingPhoto ? 'Uploading...' : 'Upload/Change Photo'}
+                          </button>
+                          
+                          {editingStudent.photoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingStudent({ ...editingStudent, photoUrl: '' });
+                                addToast('Photo cleared. Click "Update Student Profile" to save changes.');
+                              }}
+                              className="px-4 py-2 bg-rose-50 border border-rose-250 text-rose-600 hover:bg-rose-100 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
+                            >
+                              <Trash2 size={14} />
+                              Delete / Clear Photo
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="pt-2 w-full">
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 align-middle">Or Paste Photo Image URL</label>
+                          <input
+                            type="url"
+                            value={editingStudent.photoUrl || ''}
+                            onChange={(e) => setEditingStudent({ ...editingStudent, photoUrl: e.target.value })}
+                            placeholder="https://images.unsplash.com/..."
+                            className="w-full px-4 py-2 bg-white border border-gray-150 rounded-xl outline-none text-xs font-bold text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div>

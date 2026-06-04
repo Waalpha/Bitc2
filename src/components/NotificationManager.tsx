@@ -73,9 +73,57 @@ export const NotificationManager: React.FC = () => {
     });
 
     const playNotificationSound = () => {
-      notificationSound.play().catch(err => {
-        console.warn('Notification sound playback blocked:', err);
-      });
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) {
+          // Fallback to audio element if Web Audio API is unsupported
+          notificationSound.play().catch(err => {
+            console.warn('Notification sound playback blocked:', err);
+          });
+          return;
+        }
+
+        const ctx = new AudioContextClass();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+
+        // Note 1: E5 (659.25Hz), starts immediately, decays quickly
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(659.25, now);
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.12, now + 0.05);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        // Note 2: A5 (880.00Hz), starts with a short delay (staggered), decays beautifully
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880.00, now + 0.08);
+        gain2.gain.setValueAtTime(0, now);
+        gain2.gain.setValueAtTime(0, now + 0.08);
+        gain2.gain.linearRampToValueAtTime(0.12, now + 0.13);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.50);
+      } catch (err) {
+        console.warn('Offline Web Audio synthesis failed, trying backup audio stream:', err);
+        notificationSound.play().catch(e => {
+          console.warn('Notification backup sound playback blocked:', e);
+        });
+      }
     };
 
     return () => unsubscribe();

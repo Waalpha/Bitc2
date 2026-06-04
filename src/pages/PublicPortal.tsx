@@ -200,6 +200,7 @@ export function PublicPortal() {
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
       badge: 'TVETCDACC Certified',
+      skills: ['Healthcare & Caregiver'],
       requirements: 'KCSE D- & above'
     },
     {
@@ -235,7 +236,7 @@ export function PublicPortal() {
   const faqs = [
     {
       question: "What are the entry requirements for courses?",
-      answer: "Most certificate and diploma programs require a minimum of KCSE grade C- or D+ respectively. However, our modular hands-on short courses (such as Baking, CNA, Caregiver and Cosmetology) are open to all passionate learners regardless of previous educational background."
+      answer: "Most certificate and diploma programs require a minimum of KCSE grade C- or D+ respectively. However, our modular hands-on short courses (such as Baking and Cosmetology) are open to all passionate learners regardless of previous educational background."
     },
     {
       question: "Are the training programs national and internationally recognized?",
