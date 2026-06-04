@@ -236,11 +236,11 @@ export function PublicPortal() {
   const faqs = [
     {
       question: "What are the entry requirements for courses?",
-      answer: "Most certificate and diploma programs require a minimum of KCSE grade C- or D+ respectively. However, our modular hands-on short courses (such as Baking and Cosmetology) are open to all passionate learners regardless of previous educational background."
+      answer: "Most certificate and diploma programs require a minimum of KCSE grade C- or D+ respectively. However, our modular hands-on short courses (such as Baking, CNA, Caregiver and Cosmetology) are open to all passionate learners regardless of previous educational background."
     },
     {
       question: "Are the training programs national and internationally recognized?",
-      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETA. Our curriculum preparatories are fully aligned with premium exam boards including KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority), and KASNEB."
+      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETACDACC. Our curriculum preparatories are fully aligned with premium exam boards including TVETCDACC (Technical and Vocational Education and Training Curriculum Development, Assessment and Certification Council) KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority), and KASNEB."
     },
     {
       question: "Is there a hostel facility for distant students?",
