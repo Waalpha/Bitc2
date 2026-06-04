@@ -340,130 +340,125 @@ export function PublicPortal() {
         </div>
       </nav>
 
-      {/* Hero Section with Interactive Slideshow and Grid Accent */}
-      <header className="relative bg-white overflow-hidden border-b border-gray-100 min-h-[660px] lg:min-h-[720px] flex items-center">
-        {/* Modern decorative grid overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-60 pointer-events-none" />
-        <div className="absolute inset-0 bg-linear-to-b from-indigo-50/20 via-transparent to-transparent pointer-events-none" />
+      {/* Hero Section with Interactive Slideshow spanning full dimension */}
+      <header className="relative bg-slate-950 overflow-hidden h-[calc(100vh-76px)] min-h-[600px] flex items-center justify-center">
+        {/* Full screen Background Slides Layer */}
+        <div className="absolute inset-0 z-0 select-none">
+          <AnimatePresence mode="wait">
+            <motion.img 
+              key={currentSlideIndex}
+              src={currentSlide.url} 
+              alt={currentSlide.title} 
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+            />
+          </AnimatePresence>
+          {/* Dual layers of dark gradient overlays to guarantee perfect text contrast and design elegance */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/65 to-slate-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30" />
+        </div>
         
-        <div className="max-w-7xl mx-auto px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
-          
-          {/* Left Text Slide content */}
-          <div className="lg:col-span-7 space-y-6 text-left min-h-[380px] flex flex-col justify-center">
+        {/* Centered overlays of text and interactive controls */}
+        <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 w-full text-white">
+          <div className="max-w-3xl space-y-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlideIndex}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.45, ease: "easeInOut" }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="space-y-6"
               >
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full">
-                  <Sparkles size={11} className="text-indigo-600 animate-pulse" />
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[10px] font-black uppercase tracking-widest rounded-full backdrop-blur-md">
+                  <Sparkles size={11} className="text-indigo-400 animate-pulse" />
                   <span>{currentSlide.badge}</span>
                 </div>
                 
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1] min-h-[88px] md:min-h-[140px] font-sans">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-sans font-black text-white tracking-tight leading-[1.12]">
                   {currentSlide.title}
                 </h1>
                 
-                <p className="text-sm md:text-base text-slate-500 leading-relaxed max-w-xl font-medium min-h-[60px]">
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed max-w-xl font-medium">
                   {currentSlide.description}
                 </p>
               </motion.div>
             </AnimatePresence>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-6">
+            
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button
                 onClick={navToAuth}
-                className="px-7.5 py-4.5 bg-indigo-600 text-white hover:bg-slate-900 transition-all duration-300 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-150/40 flex items-center justify-center gap-2.5 cursor-pointer"
+                className="px-8 py-4.5 bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-650/30 flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
               >
                 <span>Access Student Portal</span>
                 <ArrowRight size={14} />
               </button>
               <a
                 href="#contact"
-                className="px-7.5 py-4.5 border-2 border-slate-200 text-slate-700 hover:border-indigo-600 hover:text-indigo-600 transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                className="px-8 py-4.5 bg-slate-900/60 hover:bg-slate-800 border-2 border-white/20 text-white hover:border-white transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 backdrop-blur-md"
               >
                 <MessageCircle size={15} />
                 <span>Quick Inquiry</span>
               </a>
             </div>
 
-            {/* Quick specifications counter line */}
-            <div className="grid grid-cols-3 gap-6 pt-10 border-t border-gray-100 max-w-lg mt-4">
+            {/* Quick specifications counter overlay */}
+            <div className="grid grid-cols-3 gap-6 pt-10 border-t border-white/15 max-w-lg mt-8">
               <div className="text-left">
-                <span className="block text-2.5xl font-black text-slate-900 leading-none">100%</span>
+                <span className="block text-2.5xl font-black text-white leading-none">100%</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Hands-On Labs</span>
               </div>
               <div className="text-left">
-                <span className="block text-2.5xl font-black text-slate-900 leading-none">TVETA</span>
+                <span className="block text-2.5xl font-black text-white leading-none">TVETA</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Licensed Bureau</span>
               </div>
               <div className="text-left">
-                <span className="block text-2.5xl font-black text-slate-900 leading-none">5,000+</span>
+                <span className="block text-2.5xl font-black text-white leading-none">5,000+</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Graduates Alumni</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right Image Slide content */}
-          <div className="lg:col-span-5 relative w-full flex flex-col items-center">
-            <div className="absolute inset-0 bg-indigo-600/10 rounded-3xl rotate-3 scale-[1.01] opacity-70 blur-xs" />
-            <div className="relative w-full aspect-[4/3] sm:aspect-square bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border-[6px] border-white">
-              <AnimatePresence mode="wait">
-                <motion.img 
-                  key={currentSlideIndex}
-                  src={currentSlide.url} 
-                  alt={currentSlide.title} 
-                  initial={{ opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.52, ease: "easeInOut" }}
-                  className="w-full h-full object-cover" 
-                  referrerPolicy="no-referrer"
-                />
-              </AnimatePresence>
+        {/* Side Chevrons Overlays */}
+        <div className="absolute inset-y-0 left-4 z-20 flex items-center">
+          <button
+            onClick={handlePrevSlide}
+            className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md hover:bg-slate-900 text-white flex items-center justify-center border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg hover:scale-105"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        </div>
+        <div className="absolute inset-y-0 right-4 z-20 flex items-center">
+          <button
+            onClick={handleNextSlide}
+            className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md hover:bg-slate-900 text-white flex items-center justify-center border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg hover:scale-105"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
 
-              {/* Slider Navigation Controls overlaying the slide image */}
-              <div className="absolute inset-x-4 bottom-4 flex justify-between items-center z-20">
-                <div className="flex gap-1.5 bg-slate-900/75 backdrop-blur-md px-3.5 py-2 rounded-full border border-white/10">
-                  {heroSlides.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentSlideIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${idx === currentSlideIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
-                      aria-label={`Go to slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={handlePrevSlide}
-                    className="w-9 h-9 rounded-full bg-slate-900/75 backdrop-blur-md text-white flex items-center justify-center border border-white/10 hover:bg-indigo-600 hover:text-white transition-all shadow-md cursor-pointer"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    onClick={handleNextSlide}
-                    className="w-9 h-9 rounded-full bg-slate-900/75 backdrop-blur-md text-white flex items-center justify-center border border-white/10 hover:bg-indigo-600 hover:text-white transition-all shadow-md cursor-pointer"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Tagline pill overlay */}
-              <div className="absolute top-4 left-4 z-20 bg-slate-900/75 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 text-[10px] font-black text-indigo-200 uppercase tracking-wider">
-                {currentSlide.tagline}
-              </div>
-            </div>
+        {/* Bottom Navigation Indicators and Tagline */}
+        <div className="absolute bottom-8 right-6 z-20 flex items-center gap-4 bg-slate-950/60 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10">
+          <div className="flex gap-1.5">
+            {heroSlides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentSlideIndex(idx)}
+                className={`h-2 rounded-full transition-all cursor-pointer ${idx === currentSlideIndex ? 'w-6 bg-indigo-500' : 'w-2 bg-white/40 hover:bg-white/65'}`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
-
+          <div className="text-[10px] font-black text-indigo-200 uppercase tracking-wider border-l border-white/10 pl-4 select-none">
+            {currentSlide.tagline}
+          </div>
         </div>
       </header>
 

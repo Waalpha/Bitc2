@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -14,7 +14,7 @@ import { uploadFile, getCloudinaryConfig } from '../services/uploadService';
 
 export const AdminSettings: React.FC = () => {
   const { userData, settings: globalSettings } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance' | 'portal'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -753,6 +753,14 @@ export const AdminSettings: React.FC = () => {
           }`}
         >
           Maintenance
+        </button>
+        <button
+          onClick={() => setActiveTab('portal')}
+          className={`flex-none px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'portal' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Public Portal Settings
         </button>
       </div>
 
@@ -1589,6 +1597,250 @@ export const AdminSettings: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {activeTab === 'portal' && (
+        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-8 max-w-4xl">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Globe size={24} className="text-purple-600 animate-pulse" />
+              Public Website Portal Settings
+            </h2>
+            <p className="text-xs text-gray-500">Customize physical locations, phone, email, map positions, dynamic slider slides, and gallery collections rendered on your public website.</p>
+          </div>
+
+          <form onSubmit={handleSaveSettings} className="space-y-6">
+            
+            {/* School Contact Information Section */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                <MapPin size={16} className="text-purple-500" />
+                Public Contact Info
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Inquiry Phone Line</label>
+                  <input
+                    type="text"
+                    value={appSettings.publicPhone || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicPhone: e.target.value })}
+                    placeholder="e.g. +254 712 345 678"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Support Email</label>
+                  <input
+                    type="email"
+                    value={appSettings.publicEmail || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicEmail: e.target.value })}
+                    placeholder="e.g. info@college.ac.ke"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Physical Location Address</label>
+                  <input
+                    type="text"
+                    value={appSettings.publicAddress || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicAddress: e.target.value })}
+                    placeholder="e.g. Kiganjo Corner 2, Thika"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Google Maps Embed Location URL</label>
+                <input
+                  type="text"
+                  value={appSettings.publicLocationEmbed || ''}
+                  onChange={(e) => setAppSettings({ ...appSettings, publicLocationEmbed: e.target.value })}
+                  placeholder="https://www.google.com/maps/embed?..."
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
+                />
+                <p className="mt-1 text-[10px] text-gray-405">Paste the raw src link of a Google Maps embed iframe to render on the contact section.</p>
+              </div>
+            </div>
+
+            {/* Hero Main Defaults Section */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                <Shield size={16} className="text-purple-500" />
+                Hero Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Title Heading</label>
+                  <input
+                    type="text"
+                    value={appSettings.publicHeroTitle || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitle: e.target.value })}
+                    placeholder="Empowering Professionals, Shaping Futures"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Subtitle Description</label>
+                  <textarea
+                    value={appSettings.publicHeroDescription || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescription: e.target.value })}
+                    placeholder="Breakthrough training college offers..."
+                    className="w-full px-4 py-2 bg-white border border-gray-305 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm min-h-[40px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Default Backing Image / Fallback</label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="text"
+                    value={appSettings.publicHeroImageUrl || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroImageUrl: e.target.value })}
+                    placeholder="Paste image URL or upload below..."
+                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
+                  />
+                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
+                    <Upload size={14} className="text-gray-400" />
+                    <span>Upload Image</span>
+                    <input type="file" accept="image/*" onChange={handleHeroFallbackUpload} className="hidden" />
+                  </label>
+                </div>
+                {appSettings.publicHeroImageUrl && (
+                  <img src={appSettings.publicHeroImageUrl} alt="Fallback Preview" className="h-20 w-auto rounded mt-2 object-cover border border-gray-200" referrerPolicy="no-referrer" />
+                )}
+              </div>
+            </div>
+
+            {/* About Us and Overview Section */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                <BookOpen size={16} className="text-purple-500" />
+                About Section Content
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Us Headline Title</label>
+                  <input
+                    type="text"
+                    value={appSettings.aboutTitle || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, aboutTitle: e.target.value })}
+                    placeholder="A Breakthrough in Professional Education"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Us Description</label>
+                  <textarea
+                    value={appSettings.portalAboutUs || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, portalAboutUs: e.target.value })}
+                    placeholder="Enter thorough operational summary..."
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm min-h-[80px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Section Right Image</label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="text"
+                    value={appSettings.aboutImageUrl || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, aboutImageUrl: e.target.value })}
+                    placeholder="Paste image URL or upload below..."
+                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
+                  />
+                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
+                    <Upload size={14} className="text-gray-400" />
+                    <span>Upload Image</span>
+                    <input type="file" accept="image/*" onChange={handleAboutImageUpload} className="hidden" />
+                  </label>
+                </div>
+                {appSettings.aboutImageUrl && (
+                  <img src={appSettings.aboutImageUrl} alt="About Us Preview" className="h-20 w-auto rounded mt-2 object-cover border border-gray-200" referrerPolicy="no-referrer" />
+                )}
+              </div>
+            </div>
+
+            {/* Slideshow and Gallery Media Managers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Dynamic Slideshow Manager */}
+              <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                <h3 className="text-xs font-black tracking-widest text-gray-700 uppercase leading-none">Slideshow Slides</h3>
+                <p className="text-[10px] text-gray-450">Add up to 12 sliding photos to loop in high resolution on the hero header section.</p>
+                
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 bg-white rounded-xl p-3 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-all">
+                    <Upload size={16} className="text-gray-400" />
+                    <span className="text-xs text-gray-600 font-bold">Upload Custom Slide</span>
+                    <input type="file" multiple accept="image/*" onChange={handleHeroImagesUpload} className="hidden" />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 max-h-[160px] overflow-y-auto pr-1">
+                  {(appSettings.publicHeroImages || []).map((slideUrl, idx) => (
+                    <div key={`slide_admin_${idx}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                      <img src={slideUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <button
+                        type="button"
+                        onClick={() => removeHeroImage(idx)}
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+                        title="Remove Slide Photo"
+                      >
+                        <Trash2 size={12} className="text-white fill-white" />
+                      </button>
+                    </div>
+                  ))}
+                  {(appSettings.publicHeroImages || []).length === 0 && (
+                    <span className="text-[10px] text-gray-400 col-span-3 text-center py-4 italic">No slideshow photos uploaded. Using default collection.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Campus Life Gallery Manager */}
+              <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                <h3 className="text-xs font-black tracking-widest text-gray-700 uppercase leading-none">Campus Operations Gallery</h3>
+                <p className="text-[10px] text-gray-450">Add up to 12 direct snapshots showcasing campuses operations, labs, and student activities.</p>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 bg-white rounded-xl p-3 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-all">
+                    <Upload size={16} className="text-gray-400" />
+                    <span className="text-xs text-gray-600 font-bold">Upload Gallery Snap</span>
+                    <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 max-h-[160px] overflow-y-auto pr-1">
+                  {(appSettings.portalGallery || []).map((galUrl, idx) => (
+                    <div key={`gal_admin_${idx}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                      <img src={galUrl} alt={`Gallery Snap ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(idx)}
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+                        title="Remove Gallery Photo"
+                      >
+                        <Trash2 size={12} className="text-white fill-white" />
+                      </button>
+                    </div>
+                  ))}
+                  {(appSettings.portalGallery || []).length === 0 && (
+                    <span className="text-[10px] text-gray-400 col-span-3 text-center py-4 italic">No gallery photos uploaded. Using default collection.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="w-full bg-purple-600 text-white font-black py-4.5 rounded-2xl hover:bg-purple-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-200"
+            >
+              {isSaving ? <Loader2 className="animate-spin text-white" size={20} /> : <Save size={18} />}
+              {isSaving ? 'Saving' : 'Persist Public Portal Settings'}
+            </button>
+          </form>
+        </div>
+      )}
 
       <Toast messages={toasts} onRemove={removeToast} />
 
