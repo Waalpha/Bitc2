@@ -207,11 +207,11 @@ export function PublicPortal() {
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Practical Labs</span>
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-950 leading-none">NITA/KNEC</span>
+                <span className="block text-2xl font-black text-slate-950 leading-none">TVETCDAAC</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Accredited Exams</span>
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-950 leading-none">5000+</span>
+                <span className="block text-2xl font-black text-slate-950 leading-none">200+</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Graduates</span>
               </div>
             </div>
@@ -470,7 +470,7 @@ export function PublicPortal() {
                         <option value="">Select a Program</option>
                         <option value="Cosmetology">Cosmetology & Hairdressing</option>
                         <option value="ICT">ICT & Software Engineering</option>
-                        <option value="Business">Business Studies & Accounting</option>
+                        <option value="Health">Healthcare Support Services</option>
                         <option value="Hospitality">Hospitality & Food Operations</option>
                         <option value="Electrical">Electrical Tech Engineering</option>
                       </select>
