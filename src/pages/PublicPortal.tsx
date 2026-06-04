@@ -550,7 +550,7 @@ export function PublicPortal() {
               { id: 'all', label: 'All Schools' },
               { id: 'cosmetology', label: 'Cosmetology' },
               { id: 'ict', label: 'ICT & Software' },
-              { id: 'business', label: 'Business Studies' },
+              { id: 'Healthcare', label: 'Healthcare & Caregiver' },
               { id: 'hospitality', label: 'Hospitality & Baking' },
               { id: 'engineering', label: 'Electrical Tech' }
             ].map(tab => (
