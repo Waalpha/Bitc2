@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   GraduationCap, 
   Phone, 
@@ -17,7 +17,9 @@ import {
   Heart,
   Calendar,
   CheckCircle,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -40,6 +42,98 @@ export function PublicPortal() {
   const heroTitle = settings?.publicHeroTitle || 'Empowering Professionals, Shaping Futures';
   const heroDescription = settings?.publicHeroDescription || 'Breakthrough International Training College offers world-class professional training, focusing on practical skills and career readiness.';
   const heroImage = settings?.publicHeroImageUrl || 'https://images.unsplash.com/photo-1523050853064-85216775870f?q=80&w=2070&auto=format&fit=crop';
+
+  const defaultSlides = [
+    {
+      url: heroImage,
+      title: heroTitle,
+      description: heroDescription,
+      badge: 'Admissions Open for Year 2026/2027',
+      tagline: 'World-Class Technical & Business Training'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2070&auto=format&fit=crop',
+      title: 'Practical Hands-on Skill Offerings',
+      description: 'Master practical industry operations across Cosmetology, ICT & Software, Electrical Engineering, Business Management, and Culinary Arts.',
+      badge: '100% Practical Training Labs',
+      tagline: 'Equipping Competence and Readiness'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop',
+      title: 'Accredited Professional Certifications',
+      description: 'Our technical curriculums are fully customized to guarantee national and international examination success (NITA, KNEC, KASNEB).',
+      badge: 'Fully Accredited & Licensed',
+      tagline: 'Guaranteed Academic Success'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop',
+      title: 'Flexible Semesters & Payment Models',
+      description: 'Enjoy highly subsidized and modular technical course fees designed with easy installment arrangements for student learners.',
+      badge: 'Affordable World-Class Training',
+      tagline: 'Low Costs & Installment Plans'
+    }
+  ];
+
+  const heroSlides = settings?.publicHeroImages && settings.publicHeroImages.length > 0
+    ? settings.publicHeroImages.map((url, idx) => {
+        if (idx === 0) {
+          return {
+            url,
+            title: heroTitle,
+            description: heroDescription,
+            badge: 'Admissions Open for Year 2026/2027',
+            tagline: 'Smart Campus Offering'
+          };
+        }
+        const backingInfo = [
+          {
+            title: 'Empowering Professional Competency',
+            description: 'Provide state-of-the-art classroom facilities, fully equipped laboratories, and experienced industry training mentors.',
+            badge: 'Pristine Learning Ecosystem',
+            tagline: 'Practical Skills Priority'
+          },
+          {
+            title: 'Accredited and Career-Ready Paths',
+            description: 'Elevate your employment opportunities by training in officially licensed and globally recognized certificate syllabuses.',
+            badge: 'Industrial Accreditation Included',
+            tagline: 'Seamless Professional Growth'
+          },
+          {
+            title: 'Learn, Innovate, and Breakthrough',
+            description: 'Be part of a thriving campus community focusing on actual product designs, creative development, and real-world tools.',
+            badge: 'Nurturing Global Innovators',
+            tagline: 'Start Your Journey Today'
+          }
+        ];
+        const backup = backingInfo[(idx - 1) % backingInfo.length];
+        return {
+          url,
+          title: backup.title,
+          description: backup.description,
+          badge: backup.badge,
+          tagline: backup.tagline
+        };
+      })
+    : defaultSlides;
+
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 6500);
+    return () => clearInterval(timer);
+  }, [heroSlides.length]);
+
+  const handleNextSlide = () => {
+    setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
+  };
+
+  const handlePrevSlide = () => {
+    setCurrentSlideIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const currentSlide = heroSlides[currentSlideIndex];
   const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and business education. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
   const aboutTitle = settings?.aboutTitle || 'A Breakthrough in Professional Education';
   const aboutImage = settings?.aboutImageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop';
@@ -73,9 +167,9 @@ export function PublicPortal() {
       color: 'bg-indigo-50 text-indigo-600 border-indigo-100'
     },
     {
-      id: 'Healthcare',
-      title: 'School of Healthcare & Caregiver',
-      desc: 'Prepare for professional credentials.',
+      id: 'business',
+      title: 'School of Business & Accountancy',
+      desc: 'Prepare for professional credentials (KASNEB, CPA) and master standard business management.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -167,22 +261,36 @@ export function PublicPortal() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="relative bg-white overflow-hidden border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-16 md:py-28 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
-              <Sparkles size={12} />
-              <span>Admissions Open for Year 2026/2027</span>
-            </div>
-            
-            <h1 className="text-4xl md:text-6xl font-black text-slate-950 tracking-tight leading-[1.1]">
-              {heroTitle}
-            </h1>
-            
-            <p className="text-sm md:text-base text-gray-500 leading-relaxed max-w-xl font-medium">
-              {heroDescription}
-            </p>
+      {/* Hero Section with Interactive Slideshow */}
+      <header className="relative bg-white overflow-hidden border-b border-gray-100 min-h-[640px] lg:min-h-[700px] flex items-center">
+        <div className="absolute inset-0 bg-slate-50/55 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
+          
+          {/* Left Text Slide content */}
+          <div className="lg:col-span-7 space-y-6 text-left min-h-[360px] flex flex-col justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlideIndex}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="space-y-6"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
+                  <Sparkles size={12} className="text-indigo-650 animate-pulse" />
+                  <span>{currentSlide.badge}</span>
+                </div>
+                
+                <h1 className="text-4xl md:text-6xl font-black text-slate-950 tracking-tight leading-[1.1] min-h-[88px] md:min-h-[132px]">
+                  {currentSlide.title}
+                </h1>
+                
+                <p className="text-sm md:text-base text-gray-500 leading-relaxed max-w-xl font-medium min-h-[60px]">
+                  {currentSlide.description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
@@ -194,7 +302,7 @@ export function PublicPortal() {
               </button>
               <a
                 href="#contact"
-                className="px-7 py-4 border border-gray-200 text-slate-700 hover:bg-gray-50 transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center"
+                className="px-7 py-4 border border-gray-200 text-slate-700 hover:bg-gray-50 transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center animate-pulse"
               >
                 Enroll / Send Inquiry
               </a>
@@ -207,26 +315,71 @@ export function PublicPortal() {
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Practical Labs</span>
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-950 leading-none">TVETCDAAC</span>
+                <span className="block text-2xl font-black text-slate-950 leading-none">NITA/KNEC</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Accredited Exams</span>
               </div>
               <div>
-                <span className="block text-2xl font-black text-slate-950 leading-none">200+</span>
+                <span className="block text-2xl font-black text-slate-950 leading-none">5000+</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Graduates</span>
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-5 relative">
+          {/* Right Image Slide content */}
+          <div className="lg:col-span-5 relative w-full flex flex-col items-center">
             <div className="absolute inset-0 bg-indigo-200 rounded-3xl rotate-3 scale-95 opacity-50 blur-sm" />
-            <div className="relative aspect-[4/3] sm:aspect-square bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-              <img 
-                src={heroImage} 
-                alt="Breakthrough Students" 
-                className="w-full h-full object-cover transition-transform hover:scale-105 duration-700" 
-              />
+            <div className="relative w-full aspect-[4/3] sm:aspect-square bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={currentSlideIndex}
+                  src={currentSlide.url} 
+                  alt={currentSlide.title} 
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="w-full h-full object-cover" 
+                />
+              </AnimatePresence>
+
+              {/* Slider Navigation Controls overlaying the slide image */}
+              <div className="absolute inset-x-4 bottom-4 flex justify-between items-center z-20">
+                <div className="flex gap-1.5 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                  {heroSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlideIndex(idx)}
+                      className={`h-2 rounded-full transition-all ${idx === currentSlideIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex gap-1">
+                  <button
+                    onClick={handlePrevSlide}
+                    className="w-8 h-8 rounded-full bg-slate-900/60 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-indigo-650 transition-all shadow-md"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={handleNextSlide}
+                    className="w-8 h-8 rounded-full bg-slate-900/60 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-indigo-650 transition-all shadow-md"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Tagline pill overlay */}
+              <div className="absolute top-4 left-4 z-20 bg-slate-900/60 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/20 text-[10px] font-black text-indigo-200 uppercase tracking-wider">
+                {currentSlide.tagline}
+              </div>
             </div>
           </div>
+
         </div>
       </header>
 
@@ -470,7 +623,7 @@ export function PublicPortal() {
                         <option value="">Select a Program</option>
                         <option value="Cosmetology">Cosmetology & Hairdressing</option>
                         <option value="ICT">ICT & Software Engineering</option>
-                        <option value="Health">Healthcare Support Services</option>
+                        <option value="Business">Business Studies & Accounting</option>
                         <option value="Hospitality">Hospitality & Food Operations</option>
                         <option value="Electrical">Electrical Tech Engineering</option>
                       </select>
