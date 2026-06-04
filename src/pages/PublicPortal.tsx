@@ -193,14 +193,14 @@ export function PublicPortal() {
     },
     {
       id: 'Healthcare & Caregiver-1',
-      title: 'School of Healthcare & Caregiver',
+      title: 'School of Healthcare & Caregiver.',
       category: 'Healthcare & Caregiver',
-      desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in Healthcare & Caregiver management and financial record keeping.',
+      desc: 'Prepare for top certifications (TVETCDACC, NITA) and acquire skills in Healthcare & Caregiver.',
       duration: '1 - 2 Years',
       icon: Award,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      badge: 'TVETCDACC Certified',
-      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Healthcare & Caregiver Management'],
+      badge: 'KASNEB Certified',
+      skills: ['CPA Preps', 'ATD Syllabus', 'Tally ERP', 'Healthcare & Caregiver'],
       requirements: 'KCSE C- & above'
     },
     {
@@ -240,7 +240,7 @@ export function PublicPortal() {
     },
     {
       question: "Are the training programs national and internationally recognized?",
-      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETA. Our curriculum preparatories are fully aligned with premium exam boards including KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority)."
+      answer: "Yes, Breakthrough International Training College is fully registered and licensed by TVETA. Our curriculum preparatories are fully aligned with premium exam boards including KNEC (Kenya National Examinations Council), NITA (National Industrial Training Authority), and KASNEB."
     },
     {
       question: "Is there a hostel facility for distant students?",
@@ -550,7 +550,7 @@ export function PublicPortal() {
               { id: 'all', label: 'All Schools' },
               { id: 'cosmetology', label: 'Cosmetology' },
               { id: 'ict', label: 'ICT & Software' },
-              { id: 'Healthcare', label: 'Healthcare & Caregiver' },
+              { id: 'Healthcare & Caregiver', label: 'Healthcare & Caregiver' },
               { id: 'hospitality', label: 'Hospitality & Baking' },
               { id: 'engineering', label: 'Electrical Tech' }
             ].map(tab => (
@@ -922,7 +922,7 @@ export function PublicPortal() {
                         <option value="">Select an Academic Path</option>
                         <option value="School of Cosmetology & Hairdressing">Cosmetology & Hairdressing</option>
                         <option value="School of ICT & Software Engineering">ICT & Software Engineering</option>
-                        <option value="School of Healthcare & Caregiver">Healthcare & Caregiver Studies>
+                        <option value="School of Healthcare & Caregiver.">Healthcare & Caregiver Studies & KASNEB Prep</option>
                         <option value="School of Hospitality & Food Operations">Hospitality & Food Baking</option>
                         <option value="School of Electrical & Tech Engineering">Electrical Tech Engineering</option>
                       </select>
@@ -984,7 +984,7 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>School of Cosmetology</li>
               <li>School of Software Engineering</li>
-              <li>School of Healthcare & Caregiver</li>
+              <li>School of Healthcare & Caregiver.</li>
               <li>School of Electric Tech</li>
             </ul>
           </div>
@@ -994,6 +994,7 @@ export function PublicPortal() {
             <ul className="space-y-2 font-bold text-slate-400">
               <li>KNEC examinations</li>
               <li>NITA technical metrics</li>
+              <li>KASNEB accounting</li>
               <li>TVETA certifications</li>
             </ul>
           </div>
