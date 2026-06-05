@@ -417,6 +417,66 @@ void loop() {
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [holidayReason, setHolidayReason] = useState('Public Holiday');
 
+  const checkAllStudentsAbsencesAndDeactivate = async (studentList?: User[]) => {
+    try {
+      const q = query(collection(db, 'attendance'));
+      const snapshot = await getDocs(q);
+      const records = snapshot.docs.map(doc => doc.data() as AttendanceRecord);
+      
+      const targetStudents = studentList || students;
+      
+      for (const student of targetStudents) {
+        if (student.disabled) continue; // Already deactivated
+        
+        let absentCount = 0;
+        records.forEach(rec => {
+          if (rec.records && rec.records[student.uid] === 'absent') {
+            absentCount++;
+          }
+        });
+
+        if (absentCount > 7) {
+          console.log(`Deactivating student ${student.name} due to ${absentCount} absences.`);
+          await updateDoc(doc(db, 'users', student.uid), {
+            disabled: true
+          });
+          addToast(`Profile deactivated: ${student.name} has more than 7 absences (${absentCount}).`, "error");
+          
+          await addDoc(collection(db, 'notifications'), {
+            userId: student.uid,
+            title: "Profile Deactivated",
+            message: `Your profile has been deactivated because you have more than 7 absences (${absentCount}). Please contact the administrator.`,
+            type: 'attendance',
+            read: false,
+            createdAt: new Date().toISOString(),
+            senderId: 'system',
+            link: '/attendance'
+          });
+
+          // Also notify class teacher
+          if (selectedClassId) {
+            const currentClass = classes.find(c => c.id === selectedClassId);
+            const teacherId = currentClass?.teacherId;
+            if (teacherId) {
+              await addDoc(collection(db, 'notifications'), {
+                userId: teacherId,
+                title: `Student Deactivated: ${student.name}`,
+                message: `${student.name} has been deactivated because they accumulated ${absentCount} absences.`,
+                type: 'attendance',
+                read: false,
+                createdAt: new Date().toISOString(),
+                senderId: 'system',
+                link: '/attendance'
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error checking absences and deactivating:", err);
+    }
+  };
+
   // Fetch classes based on role
   useEffect(() => {
     if (!user || !userData) return;
@@ -455,6 +515,9 @@ void loop() {
           const snapshot = await getDocs(q);
           const fetchedStudents = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
           setStudents(fetchedStudents);
+          
+          // Check if any loaded student has > 7 absences and deactivate them
+          checkAllStudentsAbsencesAndDeactivate(fetchedStudents);
 
           // Fetch fee balances for these students
           if (fetchedStudents.length > 0) {
@@ -877,6 +940,7 @@ void loop() {
       addToast(`Recorded refused check-out for ${refusedCheckoutStudent.name}. Status set to Absent.`);
       setRefusedCheckoutStudent(null);
       setRefusalReason('');
+      await checkAllStudentsAbsencesAndDeactivate();
     } catch (error) {
       console.error("Error saving refused checkout", error);
       addToast("Failed to save refused checkout information", "error");
@@ -975,6 +1039,7 @@ void loop() {
       }
       addToast("Attendance saved successfully!");
       await triggerConsecutiveAbsenceNotifications(attendance);
+      await checkAllStudentsAbsencesAndDeactivate();
     } catch (error) {
       console.error("Error saving attendance:", error);
       addToast("Failed to save attendance", "error");
@@ -1431,6 +1496,10 @@ void loop() {
                 (s.idNumber && s.idNumber.trim() === decodedText.trim())
               );
               if (student) {
+                if (student.disabled) {
+                  addToast(`Access Denied: ${student.name}'s profile is deactivated/disabled`, "error");
+                  return;
+                }
                 const currentAct = adminCurrentActionRef.current;
                 const optSettings = globalSettingsRef.current;
                 // Fee Check for Check-In

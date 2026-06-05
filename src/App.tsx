@@ -36,7 +36,7 @@ const ProtectedRoute = ({
   requiredRole?: string,
   excludeRole?: string 
 }) => {
-  const { user, userData, loading, isAuthReady } = useAuth();
+  const { user, userData, loading, isAuthReady, logout } = useAuth();
 
   if (!isAuthReady || loading) {
     return (
@@ -48,6 +48,34 @@ const ProtectedRoute = ({
 
   if (!user || !userData) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (userData.disabled) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
+        <div className="bg-white border border-red-100 max-w-md w-full rounded-2xl p-8 shadow-xl text-center flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-3xl">
+            🚫
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Profile Deactivated</h2>
+          <p className="text-sm text-gray-605 leading-relaxed">
+            Your profile (<strong>{userData.name}</strong>) was automatically deactivated because you accumulated more than 7 absences from class.
+          </p>
+          <div className="p-3 bg-red-50/50 rounded-xl border border-red-100/50 text-xs text-red-700 font-medium">
+            Threshold Breach: &gt; 7 Absences recorded
+          </div>
+          <p className="text-xs text-gray-400">
+            Please contact the school administration or your class supervisor to appeal or reactivate your account.
+          </p>
+          <button
+            onClick={() => logout()}
+            className="mt-2 w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-red-100 uppercase tracking-widest text-xs"
+          >
+            Log Out of Account
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (requiredRole && userData.role !== requiredRole) {

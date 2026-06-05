@@ -809,6 +809,13 @@ async function startServer() {
       const studentId = studentDoc.id;
       const studentData = studentDoc.data();
 
+      // Check if disabled/deactivated
+      if (studentData.disabled) {
+        const msg = "Account Deactivated due to excessive absences.";
+        if (isTextResponse) return res.status(403).send(`SEC_DENIED:${studentData.name}:${msg}`);
+        return res.status(403).json({ success: false, error: msg, student: studentData.name });
+      }
+
       // Fee Balance Check (Ksh protection) - check both 'fees' (live/UI) and 'fee_balances'
       let feeSnap = await db.collection('fees').where('studentId', '==', studentId).limit(1).get();
       if (feeSnap.empty) {
