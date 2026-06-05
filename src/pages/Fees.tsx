@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
-import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup } from '../types';
+import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup, Expense } from '../types';
 import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -13,6 +13,7 @@ export const Fees: React.FC = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports'>('individual');
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classFees, setClassFees] = useState<ClassFee[]>([]);
@@ -963,18 +964,30 @@ export const Fees: React.FC = () => {
             <p>Financial Summary Report - ${format(new Date(), 'MMMM yyyy')}</p>
           </div>
           
-                <div class="stats-grid">
+        <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-label">Monthly Collections (${format(new Date(), 'MMMM')})</div>
+              <div class="stat-label">Money Paid (This Month)</div>
               <div class="stat-value" style="color: #059669;">Ksh ${stats.monthCollected.toLocaleString()}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Monthly Invoices</div>
-              <div class="stat-value" style="color: #2563EB;">Ksh ${stats.monthCharged.toLocaleString()}</div>
+              <div class="stat-label">On-Time Paid (Days 1-5)</div>
+              <div class="stat-value" style="color: #0d9488;">Ksh ${stats.monthCollectedOnTime.toLocaleString()}</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Net Monthly Balance</div>
-              <div class="stat-value" style="color: ${stats.monthBalance > 0 ? '#dc2626' : '#059669'};">Ksh ${stats.monthBalance.toLocaleString()}</div>
+              <div class="stat-label">Money Over Paid (Prepaid)</div>
+              <div class="stat-value" style="color: #0284c7;">Ksh ${stats.totalPrepaidCredits.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Money Not Paid (Outstanding)</div>
+              <div class="stat-value" style="color: #dc2626;">Ksh ${stats.totalOutstandingDue.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Expenses (This Month)</div>
+              <div class="stat-value" style="color: #e11d48;">Ksh ${stats.monthExpenses.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Net Balance (Monthly)</div>
+              <div class="stat-value" style="color: ${(stats.monthCollected - stats.monthExpenses) >= 0 ? '#059669' : '#dc2626'};">Ksh ${(stats.monthCollected - stats.monthExpenses).toLocaleString()}</div>
             </div>
           </div>
           
@@ -1179,6 +1192,10 @@ export const Fees: React.FC = () => {
         // Load fee groups
         const groupsSnap = await getDocs(collection(db, 'feeGroups'));
         setFeeGroups(groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
+
+        // Load expenses
+        const expensesSnap = await getDocs(collection(db, 'expenses'));
+        setExpenses(expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
       }
     } catch (error) {
       console.error("Load fees data error:", error);
@@ -1972,15 +1989,31 @@ export const Fees: React.FC = () => {
     // Period stats (This Month)
     let monthCollected = 0;
     let monthCharged = 0;
+    let monthCollectedOnTime = 0;
 
     activeFeeBalances.forEach(fb => {
       (fb.history || []).forEach(h => {
         const itemDate = new Date(h.date);
         if (itemDate >= monthStart && itemDate <= monthEnd) {
-          if (h.type === 'payment') monthCollected += Number(h.amount) || 0;
+          if (h.type === 'payment') {
+            monthCollected += Number(h.amount) || 0;
+            const dom = itemDate.getDate();
+            if (dom >= 1 && dom <= 5) {
+              monthCollectedOnTime += Number(h.amount) || 0;
+            }
+          }
           if (h.type === 'charge') monthCharged += Number(h.amount) || 0;
         }
       });
+    });
+
+    // Expenses calculation for current month
+    let monthExpenses = 0;
+    expenses.forEach(e => {
+      const itemDate = new Date(e.date);
+      if (itemDate >= monthStart && itemDate <= monthEnd) {
+        monthExpenses += Number(e.amount) || 0;
+      }
     });
 
     // Class breakdown
@@ -2079,6 +2112,11 @@ export const Fees: React.FC = () => {
     const totalPrepaidCredits = overpaidStudentsList.reduce((acc, curr) => acc + Math.abs(Number(curr.balance) || 0), 0);
     const totalOverpaidStudentsCount = overpaidStudentsList.length;
 
+    // Outstanding and Unpaid Credits metrics (Money Not Paid)
+    const dueStudentsList = activeFeeBalances.filter(fb => (Number(fb.balance) || 0) > 0);
+    const totalOutstandingDue = dueStudentsList.reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
+    const totalDueStudentsCount = dueStudentsList.length;
+
     // Detailed Monthly Student Data for specialized reports
     const studentMonthlyData = students.map(student => {
       const balance = activeFeeBalances.find(fb => fb.studentId === student.uid);
@@ -2113,8 +2151,12 @@ export const Fees: React.FC = () => {
       totalBalance: totalLifetimeExpected - totalLifetimeCollected,
       totalPrepaidCredits,
       totalOverpaidStudentsCount,
+      totalOutstandingDue,
+      totalDueStudentsCount,
       monthCollected,
       monthCharged,
+      monthCollectedOnTime,
+      monthExpenses,
       totalProjected,
       monthBalance: monthCharged - monthCollected,
       collectionRate: monthCharged > 0 ? (monthCollected / monthCharged) * 100 : 0,
@@ -2122,7 +2164,7 @@ export const Fees: React.FC = () => {
       studentMonthlyData,
       allPayments: allPayments.slice(0, 50)
     };
-  }, [isAdminView, feeBalances, students, classes, classFees]);
+  }, [isAdminView, feeBalances, students, classes, classFees, expenses]);
 
   const handleDetailedReport = (type: 'due' | 'payments' | 'balance' | 'overpaid') => {
     if (!reportStats) return;
@@ -2708,48 +2750,71 @@ export const Fees: React.FC = () => {
                 >
                   <Sparkles size={16} className="text-emerald-600" /> Prepayments Report
                 </button>
-                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                {/* 1. Money Paid */}
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Invoiced (This Month)</p>
-                    <h3 className="text-2xl font-bold text-gray-900">Ksh {reportStats.monthCharged.toLocaleString()}</h3>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2 text-blue-600">
-                    <BookOpen size={16} />
-                    <span className="text-xs font-bold">Total billed in {format(new Date(), 'MMMM')}</span>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Fees Paid (This Month)</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Money Paid (This Month)</p>
                     <h3 className="text-2xl font-bold text-emerald-600">Ksh {reportStats.monthCollected.toLocaleString()}</h3>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-emerald-600">
-                    <TrendingUp size={16} />
-                    <span className="text-xs font-bold">{reportStats.monthCharged > 0 ? ((reportStats.monthCollected / reportStats.monthCharged) * 100).toFixed(1) : '100'}% Paid of Month's Invoice</span>
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-teal-600 text-xs font-bold">
+                      <CheckCircle2 size={14} />
+                      <span>On-Time (Days 1-5): Ksh {reportStats.monthCollectedOnTime.toLocaleString()}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold">
+                      {reportStats.monthCollected > 0 ? ((reportStats.monthCollectedOnTime / reportStats.monthCollected) * 100).toFixed(0) : 0}% of collections made on-time (1st-5th)
+                    </span>
                   </div>
                 </div>
 
+                {/* 2. Money Overpaid */}
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Balance Left</p>
-                    <h3 className="text-2xl font-bold text-amber-600">Ksh {reportStats.monthBalance.toLocaleString()}</h3>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Money Overpaid (Prepaid)</p>
+                    <h3 className="text-2xl font-bold text-blue-600">Ksh {reportStats.totalPrepaidCredits.toLocaleString()}</h3>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-amber-600">
-                    <History size={16} />
-                    <span className="text-xs font-bold">Unpaid balance for {format(new Date(), 'MMMM')}</span>
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2 text-blue-500">
+                    <Sparkles size={16} />
+                    <span className="text-xs font-bold">{reportStats.totalOverpaidStudentsCount} Accounts with Credits</span>
                   </div>
                 </div>
 
+                {/* 3. Money Not Paid */}
                 <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Expected Monthly Revenue</p>
-                    <h3 className="text-2xl font-bold text-indigo-600">Ksh {reportStats.totalProjected.toLocaleString()}</h3>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Money Not Paid (Outstanding)</p>
+                    <h3 className="text-2xl font-bold text-red-500">Ksh {reportStats.totalOutstandingDue.toLocaleString()}</h3>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-indigo-600">
-                    <Layers size={16} />
-                    <span className="text-xs font-bold">Normalized monthly billing expectation</span>
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2 text-red-500">
+                    <XCircle size={16} />
+                    <span className="text-xs font-bold">{reportStats.totalDueStudentsCount} Students with Arrears</span>
+                  </div>
+                </div>
+
+                {/* 4. Expenses */}
+                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Expenses (This Month)</p>
+                    <h3 className="text-2xl font-bold text-rose-500">Ksh {reportStats.monthExpenses.toLocaleString()}</h3>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2 text-rose-500">
+                    <ArrowUpRight size={16} />
+                    <span className="text-xs font-bold">Total operational outflows</span>
+                  </div>
+                </div>
+
+                {/* 5. Net Profit / Cash Position */}
+                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Net Cash Position</p>
+                    <h3 className={`text-2xl font-bold ${(reportStats.monthCollected - reportStats.monthExpenses) >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                      Ksh {(reportStats.monthCollected - reportStats.monthExpenses).toLocaleString()}
+                    </h3>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2 text-gray-500">
+                    <TrendingUp size={16} className={(reportStats.monthCollected - reportStats.monthExpenses) >= 0 ? 'text-emerald-600' : 'text-red-600'} />
+                    <span className="text-xs font-bold">Net Cash Flow (Paid - Expenses)</span>
                   </div>
                 </div>
               </div>

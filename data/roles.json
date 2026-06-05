@@ -1,0 +1,22 @@
+{
+  "admin": {
+    "description": "Full system access",
+    "name": "Admin",
+    "permissions": [
+      "manage_users",
+      "manage_classes",
+      "manage_courses",
+      "manage_exams",
+      "mark_attendance",
+      "view_reports",
+      "view_students",
+      "system_settings",
+      "view_finance",
+      "manage dashboard",
+      "manage fees",
+      "manage_subjects",
+      "manage_units",
+      "manage_fees"
+    ]
+  }
+}
