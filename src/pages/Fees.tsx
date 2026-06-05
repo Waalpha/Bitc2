@@ -146,6 +146,8 @@ export const Fees: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const actualBalance = (balance.totalAmount || 0) - (balance.paidAmount || 0);
+
     // Sort history chronologically (oldest to newest) to calculate running balance correctly
     const sortedHistory = [...(balance.history || [])].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
@@ -426,13 +428,13 @@ export const Fees: React.FC = () => {
                 <div class="card-label" style="color:#10b981;">Total Paid</div>
                 <div class="card-value" style="color:#065f46;">Ksh ${balance.paidAmount.toLocaleString()}</div>
               </div>
-              <div class="summary-card ${balance.balance > 0 ? 'accent-due' : 'accent-credit'}" style="border-left: 3px solid ${balance.balance > 0 ? '#ef4444' : '#10b981'};">
-                <div class="card-label">${balance.balance > 0 ? 'Outstanding Balance' : 'Prepaid Credit Status'}</div>
+              <div class="summary-card ${actualBalance > 0 ? 'accent-due' : 'accent-credit'}" style="border-left: 3px solid ${actualBalance > 0 ? '#ef4444' : '#10b981'};">
+                <div class="card-label">${actualBalance > 0 ? 'Outstanding Balance' : 'Prepaid Credit Status'}</div>
                 <div class="card-value">
-                  Ksh ${Math.abs(balance.balance).toLocaleString()}
+                  Ksh ${Math.abs(actualBalance).toLocaleString()}
                 </div>
-                <div class="card-status" style="color: ${balance.balance > 0 ? '#b91c1c' : '#047857'};">
-                  ${balance.balance > 0 ? '⚠️ Payment Outstanding' : '🎉 Account Fully Paid / Credit Held'}
+                <div class="card-status" style="color: ${actualBalance > 0 ? '#b91c1c' : '#047857'};">
+                  ${actualBalance > 0 ? '⚠️ Payment Outstanding' : '🎉 Account Fully Paid / Credit Held'}
                 </div>
               </div>
             </div>
@@ -2212,6 +2214,8 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
+  const computedStudentBalance = myBalance ? (myBalance.totalAmount - myBalance.paidAmount) : 0;
+
   if (!isAdminView && !myBalance) {
     return (
       <div className="p-8 text-center bg-bg-card rounded-2xl border border-white/5 shadow-xl">
@@ -2908,39 +2912,39 @@ export const Fees: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
             <div className={`p-8 rounded-3xl text-center border transition-all ${
-              (myBalance?.balance || 0) < 0 
+              computedStudentBalance < 0 
                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                 : 'bg-white border-gray-100 text-gray-900 shadow-sm'
             }`}>
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-                (myBalance?.balance || 0) < 0 ? 'bg-emerald-400/20 text-emerald-400 animate-bounce' : 'bg-blue-50 text-blue-600'
+                computedStudentBalance < 0 ? 'bg-emerald-400/20 text-emerald-400 animate-bounce' : 'bg-blue-50 text-blue-600'
               }`}>
-                { (myBalance?.balance || 0) < 0 ? <Sparkles size={32} /> : <Wallet size={32} /> }
+                { computedStudentBalance < 0 ? <Sparkles size={32} /> : <Wallet size={32} /> }
               </div>
-              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-400' : 'text-gray-400' }`}>
-                { (myBalance?.balance || 0) < 0 ? 'Available Prepaid Credit' : 'Current Balance' }
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${ computedStudentBalance < 0 ? 'text-emerald-400' : 'text-gray-400' }`}>
+                { computedStudentBalance < 0 ? 'Available Prepaid Credit' : 'Current Balance' }
               </p>
               <h2 className={`text-4xl font-extrabold mb-3 tracking-tight ${
-                (myBalance?.balance || 0) > 0 
+                computedStudentBalance > 0 
                   ? 'text-rose-500' 
-                  : (myBalance?.balance || 0) < 0 
+                  : computedStudentBalance < 0 
                     ? 'text-emerald-400' 
                     : 'text-gray-400'
               }`}>
-                Ksh { (myBalance?.balance || 0) < 0 ? Math.abs(myBalance.balance).toLocaleString() : (myBalance?.balance || 0).toLocaleString() }
+                Ksh { computedStudentBalance < 0 ? Math.abs(computedStudentBalance).toLocaleString() : computedStudentBalance.toLocaleString() }
               </h2>
-              { (myBalance?.balance || 0) < 0 && (
+              { computedStudentBalance < 0 && (
                 <p className="text-xs text-emerald-400 font-medium mb-4 bg-emerald-500/10 py-1.5 px-3 rounded-lg inline-block border border-emerald-500/20">
                   🎉 You have pre-paid your fees! This credit covers future invoices automatically.
                 </p>
               )}
-              <div className={`grid grid-cols-2 gap-4 pt-6 border-t ${ (myBalance?.balance || 0) < 0 ? 'border-emerald-500/15' : 'border-gray-50' }`}>
+              <div className={`grid grid-cols-2 gap-4 pt-6 border-t ${ computedStudentBalance < 0 ? 'border-emerald-500/15' : 'border-gray-50' }`}>
                 <div>
-                  <p className={`text-xs mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Invoiced</p>
-                  <p className={`text-lg font-bold ${ (myBalance?.balance || 0) < 0 ? 'text-white' : 'text-gray-800' }`}>Ksh {myBalance?.totalAmount?.toLocaleString() || 0}</p>
+                  <p className={`text-xs mb-1 ${ computedStudentBalance < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Invoiced</p>
+                  <p className={`text-lg font-bold ${ computedStudentBalance < 0 ? 'text-white' : 'text-gray-800' }`}>Ksh {myBalance?.totalAmount?.toLocaleString() || 0}</p>
                 </div>
                 <div>
-                  <p className={`text-xs mb-1 ${ (myBalance?.balance || 0) < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Paid</p>
+                  <p className={`text-xs mb-1 ${ computedStudentBalance < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Paid</p>
                   <p className="text-lg font-bold text-green-500">Ksh {myBalance?.paidAmount?.toLocaleString() || 0}</p>
                 </div>
               </div>

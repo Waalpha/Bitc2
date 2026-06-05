@@ -40,6 +40,7 @@ export const Profile: React.FC = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const directFileInputRef = React.useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     phone: '',
@@ -163,6 +164,50 @@ export const Profile: React.FC = () => {
     }
   };
 
+  const handlePhotoUploadDirect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Photo must be less than 5MB', 'error');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const uploadResult = await uploadFile(file);
+      await updateDoc(doc(db, 'users', user.uid), {
+        photoUrl: uploadResult.url,
+        updatedAt: new Date().toISOString()
+      });
+      addToast('Profile photo updated successfully!');
+    } catch (error) {
+      console.error('Direct photo upload failed:', error);
+      addToast('Failed to update profile photo', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhotoDirect = async () => {
+    if (!user) return;
+    if (!confirm('Are you sure you want to delete your profile photo?')) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        photoUrl: '',
+        updatedAt: new Date().toISOString()
+      });
+      addToast('Profile photo deleted successfully!');
+    } catch (error) {
+      console.error('Direct photo deletion failed:', error);
+      addToast('Failed to delete profile photo', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -213,7 +258,7 @@ export const Profile: React.FC = () => {
 
         <div className="relative inline-block mb-8">
           <div className={`w-36 h-36 rounded-full p-2 border-2 ${isStudent ? 'border-blue-500/30 bg-blue-500/10' : 'border-blue-100 bg-blue-50'}`}>
-            <div className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold overflow-hidden shadow-2xl ${
+            <div className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold overflow-hidden shadow-2xl relative group/avatar ${
               isStudent ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
             }`}>
               {userData?.photoUrl ? (
@@ -221,6 +266,32 @@ export const Profile: React.FC = () => {
               ) : (
                 <span className="text-5xl">{userData?.name?.charAt(0)}</span>
               )}
+              
+              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2">
+                <input
+                  type="file"
+                  ref={directFileInputRef}
+                  onChange={handlePhotoUploadDirect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => directFileInputRef.current?.click()}
+                  className="w-full text-[10px] font-black tracking-wider uppercase text-white bg-blue-600 hover:bg-blue-700 py-1.5 rounded-lg transition-all active:scale-95"
+                >
+                  Change
+                </button>
+                {userData?.photoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePhotoDirect}
+                    className="w-full text-[10px] font-black tracking-wider uppercase text-white bg-rose-600 hover:bg-rose-700 py-1 rounded-lg transition-all active:scale-95"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="absolute bottom-1 right-1 bg-blue-500 text-white p-2.5 rounded-2xl shadow-xl border-4 border-[#1A1F2E]">
