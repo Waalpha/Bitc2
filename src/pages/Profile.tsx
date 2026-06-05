@@ -299,6 +299,28 @@ export const Profile: React.FC = () => {
           </div>
         </div>
 
+        {/* Profile Photo Actions for Mobile and Convenience */}
+        <div className="flex justify-center gap-3 mt-1 mb-6">
+          <button
+            type="button"
+            onClick={() => directFileInputRef.current?.click()}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-sm ${
+              isStudent ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+            }`}
+          >
+            {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
+          </button>
+          {userData?.photoUrl && (
+            <button
+              type="button"
+              onClick={handleDeletePhotoDirect}
+              className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all shadow-sm"
+            >
+              Delete Photo
+            </button>
+          )}
+        </div>
+
         <div className="space-y-2 mb-8">
           <h2 className={`text-4xl font-bold tracking-tight ${isStudent ? 'text-white' : 'text-gray-900'}`}>
             {userData?.name}

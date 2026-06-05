@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 
 export const Fees: React.FC = () => {
-  const { user, userData, hasPermission, settings } = useAuth();
+  const { user, userData, hasPermission, settings, studentContext } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports'>('individual');
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
@@ -146,7 +146,7 @@ export const Fees: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const actualBalance = (balance.totalAmount || 0) - (balance.paidAmount || 0);
+    const actualBalance = typeof balance.balance === 'number' ? balance.balance : ((balance.totalAmount || 0) - (balance.paidAmount || 0));
 
     // Sort history chronologically (oldest to newest) to calculate running balance correctly
     const sortedHistory = [...(balance.history || [])].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1197,12 +1197,13 @@ export const Fees: React.FC = () => {
       if (isAdminView) {
         loadFeesData(true);
       } else {
-        // Student sees only their own balance - listen live to see balance update live on payment checks!
-        const q = query(collection(db, 'fees'), where('studentId', '==', user.uid));
+        // Student/Parent sees only the selected child's balance - listen live to see balance update live
+        const targetStudentId = studentContext?.uid || user.uid;
+        const q = query(collection(db, 'fees'), where('studentId', '==', targetStudentId));
         unsubMyFees = onSnapshot(q, (snap) => {
           if (!snap.empty) {
             const balances = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
-            const studentUid = String(user.uid).trim();
+            const studentUid = String(targetStudentId).trim();
             const sorted = balances.sort((a, b) => {
               const aMatch = String(a.id).trim() === studentUid ? 1 : 0;
               const bMatch = String(b.id).trim() === studentUid ? 1 : 0;
@@ -1210,6 +1211,8 @@ export const Fees: React.FC = () => {
               return (b.lastUpdated || '').localeCompare(a.lastUpdated || '');
             });
             setMyBalance(sorted[0]);
+          } else {
+            setMyBalance(null);
           }
         }, (error) => {
           handleFirestoreError(error, OperationType.LIST, 'fees-student');
@@ -1222,7 +1225,7 @@ export const Fees: React.FC = () => {
     return () => {
       if (unsubMyFees) unsubMyFees();
     };
-  }, [user, isAdminView]);
+  }, [user, isAdminView, studentContext?.uid]);
 
   const handleEditHistoryItem = (student: User, item: any, index: number) => {
     setSelectedStudent(student);
@@ -2965,7 +2968,7 @@ export const Fees: React.FC = () => {
               {myBalance && (
                 <button
                   onClick={() => {
-                    const studentProfile = { name: userData?.name || 'Student', email: userData?.email || '', admissionNumber: userData?.admissionNumber, phone: userData?.phone, guardianName: userData?.guardianName, guardianPhone: userData?.guardianPhone, classIds: userData?.classIds } as User;
+                    const studentProfile = { name: studentContext?.name || 'Student', email: studentContext?.email || '', admissionNumber: studentContext?.admissionNumber, phone: studentContext?.phone, guardianName: studentContext?.guardianName, guardianPhone: studentContext?.guardianPhone, classIds: studentContext?.classIds } as User;
                     handlePrintStudentStatement(studentProfile, myBalance);
                   }}
                   className="w-full mt-6 bg-[#111] text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-[0.98]"
@@ -3051,7 +3054,7 @@ export const Fees: React.FC = () => {
                               onClick={() => {
                                 const studentProfile = isAdminView 
                                   ? students.find(s => s.uid === myBalance?.studentId) 
-                                  : { name: userData?.name || 'Student', email: userData?.email || '', admissionNumber: userData?.admissionNumber } as User;
+                                  : { name: studentContext?.name || 'Student', email: studentContext?.email || '', admissionNumber: studentContext?.admissionNumber } as User;
                                 
                                 handlePrintReceipt(
                                   studentProfile as User,

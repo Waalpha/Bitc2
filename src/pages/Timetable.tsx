@@ -10,7 +10,7 @@ import { Toast, ToastMessage } from '../components/Toast';
 const DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export const Timetable: React.FC = () => {
-  const { user, userData, settings, hasPermission } = useAuth();
+  const { user, userData, settings, hasPermission, studentContext } = useAuth();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -32,7 +32,7 @@ export const Timetable: React.FC = () => {
   });
 
   const canManage = hasPermission('manage_timetable') || userData?.role === 'admin' || userData?.role === 'teacher' || user?.email === 'daudimuchiri4@gmail.com';
-  const isStudent = userData?.role === 'student' && user?.email !== 'daudimuchiri4@gmail.com';
+  const isStudent = (userData?.role === 'student' || userData?.role === 'parent') && user?.email !== 'daudimuchiri4@gmail.com';
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -51,8 +51,9 @@ export const Timetable: React.FC = () => {
         const cls = snapClasses.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         setClasses(cls);
         
-        if (isStudent && userData?.classIds?.[0]) {
-          setSelectedClassId(userData.classIds[0]);
+        const studentClassIds = studentContext?.classIds || userData?.classIds;
+        if (isStudent && studentClassIds?.[0]) {
+          setSelectedClassId(studentClassIds[0]);
         } else if (!selectedClassId && cls.length > 0) {
           setSelectedClassId(cls[0].id);
         }
@@ -69,7 +70,7 @@ export const Timetable: React.FC = () => {
     };
 
     fetchData();
-  }, [isStudent, userData?.classIds]);
+  }, [isStudent, userData?.classIds, studentContext?.classIds]);
 
   useEffect(() => {
     if (!selectedClassId) return;

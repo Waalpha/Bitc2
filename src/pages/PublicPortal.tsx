@@ -91,8 +91,10 @@ export function PublicPortal() {
     }
   ];
 
-  const heroSlides = settings?.publicHeroImages && settings.publicHeroImages.length > 0
-    ? settings.publicHeroImages.map((url, idx) => {
+  const validHeroImages = (settings?.publicHeroImages || []).filter(url => typeof url === 'string' && url.trim() !== '');
+
+  const heroSlides = validHeroImages.length > 0
+    ? validHeroImages.map((url, idx) => {
         if (idx === 0) {
           return {
             url,
@@ -135,7 +137,15 @@ export function PublicPortal() {
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
+  // Auto-reset slide index if it somehow gets out of bounds
   useEffect(() => {
+    if (currentSlideIndex >= heroSlides.length) {
+      setCurrentSlideIndex(0);
+    }
+  }, [heroSlides.length, currentSlideIndex]);
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
     }, 6500);
@@ -143,14 +153,17 @@ export function PublicPortal() {
   }, [heroSlides.length]);
 
   const handleNextSlide = () => {
+    if (heroSlides.length <= 1) return;
     setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
   };
 
   const handlePrevSlide = () => {
+    if (heroSlides.length <= 1) return;
     setCurrentSlideIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  const currentSlide = heroSlides[currentSlideIndex];
+  const safeSlideIndex = currentSlideIndex >= heroSlides.length ? 0 : currentSlideIndex;
+  const currentSlide = heroSlides[safeSlideIndex] || defaultSlides[0];
   const aboutUsText = settings?.portalAboutUs || 'Breakthrough International Training College (BITC) is a premier institution of higher learning committed to providing high-quality, practical, and affordable technical and Healthcare & Caregiver education. Located in Thika, Kenya, we pride ourselves on nurturing talent, developing competence, and fostering innovation across diverse fields.';
   const aboutTitle = settings?.aboutTitle || 'A Breakthrough in Professional Education';
   const aboutImage = settings?.aboutImageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop';
@@ -344,16 +357,16 @@ export function PublicPortal() {
       <header className="relative bg-slate-950 overflow-hidden h-[calc(100vh-76px)] min-h-[600px] flex items-center justify-center">
         {/* Full screen Background Slides Layer */}
         <div className="absolute inset-0 z-0 select-none">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.img 
-              key={currentSlideIndex}
+              key={safeSlideIndex}
               src={currentSlide.url} 
               alt={currentSlide.title} 
               initial={{ opacity: 0, scale: 1.05 }}
               animate={{ opacity: 0.85, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="w-full h-full object-cover opacity-85" 
+              className="absolute inset-0 w-full h-full object-cover opacity-85" 
               referrerPolicy="no-referrer"
             />
           </AnimatePresence>
@@ -367,7 +380,7 @@ export function PublicPortal() {
           <div className="max-w-3xl space-y-6">
             <AnimatePresence mode="wait">
               <motion.div
-                key={currentSlideIndex}
+                key={safeSlideIndex}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
@@ -451,7 +464,7 @@ export function PublicPortal() {
               <button
                 key={idx}
                 onClick={() => setCurrentSlideIndex(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${idx === currentSlideIndex ? 'w-6 bg-indigo-500' : 'w-2 bg-white/40 hover:bg-white/65'}`}
+                className={`h-2 rounded-full transition-all cursor-pointer ${idx === safeSlideIndex ? 'w-6 bg-indigo-500' : 'w-2 bg-white/40 hover:bg-white/65'}`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}

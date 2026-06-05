@@ -15,7 +15,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Sector } fro
 import { uploadFile } from '../services/uploadService';
 
 export const Dashboard: React.FC = () => {
-  const { user, userData, settings, hasPermission } = useAuth();
+  const { user, userData, settings, hasPermission, studentContext } = useAuth();
   const [stats, setStats] = useState({
     classes: 0,
     units: 0,
@@ -346,10 +346,14 @@ export const Dashboard: React.FC = () => {
 
     const fetchAllData = async () => {
       try {
+        const isStudentOrParent = userData?.role === 'student' || userData?.role === 'parent';
+        const targetClassIds = isStudentOrParent ? (studentContext?.classIds || userData?.classIds) : userData?.classIds;
+        const targetStudentId = studentContext?.uid || user.uid;
+
         // Stats and Classes
         const statsClassesQ = (isTeacher || userData?.role === 'admin')
           ? query(collection(db, 'classes'))
-          : query(collection(db, 'classes'), where('__name__', 'in', (userData?.classIds && userData.classIds.length > 0) ? userData.classIds : ['none']));
+          : query(collection(db, 'classes'), where('__name__', 'in', (targetClassIds && targetClassIds.length > 0) ? targetClassIds : ['none']));
 
         const classesSnap = await getDocs(statsClassesQ);
         setStats(prev => ({ ...prev, classes: classesSnap.size }));
@@ -416,32 +420,32 @@ export const Dashboard: React.FC = () => {
         // Attendance
         const attendanceSnap = await getDocs(collection(db, 'attendance'));
         setStats(prev => ({ ...prev, attendance: attendanceSnap.size }));
-        if (userData?.role === 'student') {
+        if (isStudentOrParent) {
           const studentRecords = attendanceSnap.docs
             .map(doc => ({ id: doc.id, ...(doc.data() as any) } as AttendanceRecord))
-            .filter(r => r.records[user.uid])
+            .filter(r => r.records[targetStudentId])
             .sort((a, b) => b.date.localeCompare(a.date));
           setMyAttendance(studentRecords);
         }
 
         // Submissions
-        const subQ = userData?.role === 'student'
-          ? query(collection(db, 'submissions'), where('studentId', '==', user.uid))
+        const subQ = isStudentOrParent
+          ? query(collection(db, 'submissions'), where('studentId', '==', targetStudentId))
           : query(collection(db, 'submissions'));
         const subSnap = await getDocs(subQ);
         setSubmissions(subSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Submission)));
 
         // My Units
-        if (userData?.role === 'student' && userData.classIds?.length) {
-          const myUnitsQ = query(collection(db, 'units'), where('classId', 'in', userData.classIds));
+        if (isStudentOrParent && targetClassIds?.length) {
+          const myUnitsQ = query(collection(db, 'units'), where('classId', 'in', targetClassIds));
           const myUnitsSnap = await getDocs(myUnitsQ);
           setMyUnits(myUnitsSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Unit)));
         }
 
         // Timetable
         let timetableQ;
-        if (userData?.role === 'student' && userData.classIds?.length) {
-          timetableQ = query(collection(db, 'timetable'), where('classId', '==', userData.classIds[0]));
+        if (isStudentOrParent && targetClassIds?.length) {
+          timetableQ = query(collection(db, 'timetable'), where('classId', '==', targetClassIds[0]));
         } else if (isTeacher) {
           timetableQ = query(collection(db, 'timetable'), where('teacherId', '==', user.uid));
         }
@@ -456,11 +460,13 @@ export const Dashboard: React.FC = () => {
         }
 
         // Finance
-        if (userData?.role === 'student') {
-          const feesQ = query(collection(db, 'fees'), where('studentId', '==', user.uid));
+        if (isStudentOrParent) {
+          const feesQ = query(collection(db, 'fees'), where('studentId', '==', targetStudentId));
           const feesSnap = await getDocs(feesQ);
           if (!feesSnap.empty) {
             setFeeBalance({ id: feesSnap.docs[0].id, ...(feesSnap.docs[0].data() as any) } as FeeBalance);
+          } else {
+            setFeeBalance(null);
           }
         }
         if (hasPermission('view_finance')) {
@@ -475,7 +481,7 @@ export const Dashboard: React.FC = () => {
     };
 
     fetchAllData();
-  }, [user, isTeacher, userData?.role, userData?.uid, userData?.classIds?.join(','), hasPermission]);
+  }, [user, isTeacher, userData?.role, userData?.uid, userData?.classIds?.join(','), studentContext, hasPermission]);
 
   // Deduplicate fee balances by studentId to prevent double-counting
   const uniqueFeeBalances = React.useMemo(() => {
@@ -649,19 +655,24 @@ export const Dashboard: React.FC = () => {
 
   const studentAttendanceStats = React.useMemo(() => {
     if (!myAttendance.length) return { present: 0, total: 0, percentage: 0 };
+    const targetStudentId = studentContext?.uid || user!.uid;
     const total = myAttendance.length;
-    const present = myAttendance.filter(r => r.records[user!.uid] === 'present' || r.records[user!.uid] === 'late').length;
+    const present = myAttendance.filter(r => r.records[targetStudentId] === 'present' || r.records[targetStudentId] === 'late').length;
     return { present, total, percentage: Math.round((present / total) * 100) };
-  }, [myAttendance, user]);
+  }, [myAttendance, user, studentContext]);
 
   const verifiedToday = React.useMemo(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
+    const targetStudentId = studentContext?.uid || user!.uid;
     const record = myAttendance.find(r => r.date === today);
-    return !!record?.biometricLogs?.[user!.uid];
-  }, [myAttendance, user]);
+    return !!record?.biometricLogs?.[targetStudentId];
+  }, [myAttendance, user, studentContext]);
 
   // Student Portal Component
   const renderStudentPortal = () => {
+    const isParent = userData?.role === 'parent';
+    const displayStudent = isParent ? studentContext : userData;
+
     const pendingAssignmentsCount = exams.filter(e => {
       const isSubmitted = submissions.some(s => s.examId === e.id);
       return !isSubmitted && e.dueDate && new Date(e.dueDate) > new Date();
@@ -677,11 +688,11 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="relative">
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/10 ring-2 ring-blue-500/20 shadow-2xl">
-                {userData?.photoUrl ? (
-                  <img src={userData.photoUrl} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                {displayStudent?.photoUrl ? (
+                  <img src={displayStudent.photoUrl} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-full h-full bg-slate-800 flex items-center justify-center text-white font-bold text-xl">
-                    {userData?.name?.charAt(0)}
+                    {displayStudent?.name?.charAt(0)}
                   </div>
                 )}
               </div>
@@ -691,10 +702,10 @@ export const Dashboard: React.FC = () => {
             <div className="max-w-[150px] sm:max-w-none">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] font-bold text-blue-400 bg-blue-900/40 px-2 py-0.5 rounded-md uppercase tracking-widest border border-blue-500/10">Active</span>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Student</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{isParent ? "Child" : "Student"}</p>
               </div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight truncate">
-                {userData?.name?.split(' ')[0] || "Student"} <span className="animate-bounce inline-block">👋</span>
+                {displayStudent?.name?.split(' ')[0] || "Student"} <span className="animate-bounce inline-block">👋</span>
               </h2>
             </div>
           </div>
@@ -718,7 +729,7 @@ export const Dashboard: React.FC = () => {
           <div className="bg-blue-600/10 px-5 py-2.5 rounded-2xl border border-blue-500/20 flex items-center gap-2.5 backdrop-blur-md">
             <GraduationCap size={18} className="text-blue-400" />
             <span className="text-xs font-bold text-blue-400 uppercase tracking-wide">
-              {userData?.classIds?.[0] ? classes.find(c => c.id === userData.classIds[0])?.name || "Diploma in ICT" : "Diploma in ICT"}
+              {displayStudent?.classIds?.[0] ? classes.find(c => c.id === displayStudent.classIds[0])?.name || "Diploma in ICT" : "Diploma in ICT"}
             </span>
           </div>
           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{dateStr}</p>
@@ -738,7 +749,7 @@ export const Dashboard: React.FC = () => {
               <BookOpen size={20} />
             </div>
             <p className="text-xl font-bold text-blue-100 leading-snug">
-              You have <span className="text-blue-400 font-extrabold">{todayLessons.length} classes</span> today and <span className="text-blue-400 font-extrabold">{pendingAssignmentsCount} pending</span> assignment
+              {isParent ? "Selected student has" : "You have"} <span className="text-blue-400 font-extrabold">{todayLessons.length} classes</span> today and <span className="text-blue-400 font-extrabold">{pendingAssignmentsCount} pending</span> assignment
             </p>
           </div>
         </motion.div>
@@ -1310,7 +1321,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderDashboard = () => {
-    if (userData?.role === 'student') return renderStudentPortal();
+    if (userData?.role === 'student' || userData?.role === 'parent') return renderStudentPortal();
     if (isTeacher) return renderTeacherPortal();
     
     return (

@@ -86,7 +86,7 @@ export default function App() {
             <Route path="/students/admission" element={<ProtectedRoute><StudentAdmission /></ProtectedRoute>} />
             <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
             <Route path="/units" element={<ProtectedRoute><Units /></ProtectedRoute>} />
-            <Route path="/my-units" element={<ProtectedRoute requiredRole="student"><MyUnits /></ProtectedRoute>} />
+            <Route path="/my-units" element={<ProtectedRoute><MyUnits /></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
             <Route path="/exams" element={<ProtectedRoute><Exams /></ProtectedRoute>} />
             <Route path="/exams/attendance" element={<ProtectedRoute><ExamAttendance /></ProtectedRoute>} />

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 export const ExamResults: React.FC = () => {
-  const { user, userData } = useAuth();
+  const { user, userData, studentContext } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -30,8 +30,11 @@ export const ExamResults: React.FC = () => {
         const classesSnap = await getDocs(query(collection(db, 'classes')));
         setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
 
-        const submissionsQ = userData?.role === 'student'
-          ? query(collection(db, 'submissions'), where('studentId', '==', user.uid))
+        const isStudentOrParent = userData?.role === 'student' || userData?.role === 'parent';
+        const targetStudentId = studentContext?.uid || user.uid;
+
+        const submissionsQ = isStudentOrParent
+          ? query(collection(db, 'submissions'), where('studentId', '==', targetStudentId))
           : query(collection(db, 'submissions'));
 
         const submissionsSnap = await getDocs(submissionsQ);
@@ -44,7 +47,7 @@ export const ExamResults: React.FC = () => {
     };
 
     fetchData();
-  }, [user, userData]);
+  }, [user, userData, studentContext]);
 
   const getExamStats = (examId: string) => {
     const examSubmissions = submissions.filter(s => s.examId === examId);

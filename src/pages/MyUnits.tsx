@@ -7,13 +7,13 @@ import { motion } from 'motion/react';
 import { BookOpen, CheckCircle2, Clock, Award, BookMarked, ChevronRight } from 'lucide-react';
 
 export const MyUnits: React.FC = () => {
-  const { userData } = useAuth();
+  const { studentContext, userData } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userData || !userData.classIds || userData.classIds.length === 0) {
+    if (!studentContext || !studentContext.classIds || studentContext.classIds.length === 0) {
       setLoading(false);
       return;
     }
@@ -23,13 +23,13 @@ export const MyUnits: React.FC = () => {
         const snapClasses = await getDocs(collection(db, 'classes'));
         const clsList = snapClasses.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Class))
-          .filter(c => userData.classIds?.includes(c.id));
+          .filter(c => studentContext.classIds?.includes(c.id));
         setClasses(clsList);
 
         const snapUnits = await getDocs(collection(db, 'units'));
         const unitList = snapUnits.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Unit))
-          .filter(u => userData.classIds?.includes(u.classId));
+          .filter(u => studentContext.classIds?.includes(u.classId));
         setUnits(unitList);
         setLoading(false);
       } catch (error) {
@@ -39,7 +39,7 @@ export const MyUnits: React.FC = () => {
     };
 
     fetchData();
-  }, [userData]);
+  }, [studentContext]);
 
   const activeUnits = units.filter(u => u.status !== 'completed');
   const completedUnits = units.filter(u => u.status === 'completed');

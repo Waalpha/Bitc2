@@ -14,6 +14,11 @@ interface AuthContextType {
   hasPermission: (permission: string) => boolean;
   logout: () => Promise<void>;
   feeBalance: FeeBalance | null;
+  children: any[];
+  activeStudent: any | null;
+  activeStudentUid: string | null;
+  studentContext: any | null;
+  setActiveStudentByUid: (uid: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +31,11 @@ const AuthContext = createContext<AuthContextType>({
   hasPermission: () => false,
   logout: async () => {},
   feeBalance: null,
+  children: [],
+  activeStudent: null,
+  activeStudentUid: null,
+  studentContext: null,
+  setActiveStudentByUid: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -33,6 +43,9 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any | null>(null);
+  const [childrenList, setChildrenList] = useState<any[]>([]);
+  const [activeStudentUid, setActiveStudentUid] = useState<string | null>(null);
+  const [activeStudent, setActiveStudent] = useState<any | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>({
     appTitle: 'BITC',
     fontFamily: 'Inter',
@@ -122,11 +135,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Synchronize user settings and roles
   useEffect(() => {
     if (!isFirebaseReady || !user) return;
 
     let unsubRole: (() => void) | null = null;
-    let unsubFees: (() => void) | null = null;
 
     const userDocRef = doc(db, 'users', user.uid);
     const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
@@ -134,21 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = docSnap.data();
         if (data.role) data.role = data.role.toLowerCase();
         setUserData(data);
-        
-        const role = data.role;
-        // Fetch fee balance for students
-        if (role === 'student' && !unsubFees) {
-          const feesQ = query(collection(db, 'fees'), where('studentId', '==', user.uid));
-          unsubFees = onSnapshot(feesQ, (snap) => {
-            if (!snap.empty) {
-              setFeeBalance({ id: snap.docs[0].id, ...snap.docs[0].data() } as FeeBalance);
-            } else {
-              setFeeBalance(null);
-            }
-          }, (error) => {
-            console.error("Fee sync error:", error);
-          });
-        }
         
         // Fetch permissions for the user's role
         if (data.role) {
@@ -188,16 +186,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
       } catch (e) {
-        // Error is logged by handleFirestoreError, we catch it here to prevent crashing the provider
         console.error("Auth profile sync error:", e);
       }
     });
     return () => {
       unsubscribeUser();
       if (unsubRole) unsubRole();
-      if (unsubFees) unsubFees();
     };
   }, [user]);
+
+  // Sync children list if logged in user is a parent
+  useEffect(() => {
+    if (!isFirebaseReady || !user || !userData || userData.role !== 'parent') {
+      setChildrenList([]);
+      setActiveStudentUid(null);
+      setActiveStudent(null);
+      return;
+    }
+
+    const studentsQ = query(collection(db, 'users'), where('role', '==', 'student'));
+    const unsubStudents = onSnapshot(studentsQ, (snap) => {
+      const parentEmail = (user.email || '').toLowerCase().trim();
+      const parentPhone = (userData.phone || '').toLowerCase().trim();
+      const parentName = (userData.name || '').toLowerCase().trim();
+      const manuallyLinkedUids = userData.childrenUids || [];
+
+      const filtered = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as any))
+        .filter(student => {
+          if (manuallyLinkedUids.includes(student.uid)) return true;
+
+          const gEmail = (student.guardianEmail || '').toLowerCase().trim();
+          const gPhone = (student.guardianPhone || '').toLowerCase().trim();
+          const fPhone = (student.fatherPhone || '').toLowerCase().trim();
+          const mPhone = (student.motherPhone || '').toLowerCase().trim();
+          const gName = (student.guardianName || '').toLowerCase().trim();
+          const fName = (student.fatherName || '').toLowerCase().trim();
+          const mName = (student.motherName || '').toLowerCase().trim();
+
+          const emailMatch = parentEmail && gEmail === parentEmail;
+          const phoneMatch = parentPhone && (gPhone === parentPhone || fPhone === parentPhone || mPhone === parentPhone);
+          const nameMatch = parentName && (gName === parentName || fName === parentName || mName === parentName);
+
+          return emailMatch || phoneMatch || nameMatch;
+        });
+
+      setChildrenList(filtered);
+      
+      if (filtered.length > 0) {
+        // If current selection is not in list, fallback to first
+        if (!activeStudentUid || !filtered.some(c => c.uid === activeStudentUid)) {
+          setActiveStudentUid(filtered[0].uid);
+          setActiveStudent(filtered[0]);
+        } else {
+          const current = filtered.find(c => c.uid === activeStudentUid);
+          setActiveStudent(current || null);
+        }
+      } else {
+        setActiveStudentUid(null);
+        setActiveStudent(null);
+      }
+    }, (error) => {
+      console.error("Parent children sync error:", error);
+    });
+
+    return () => {
+      unsubStudents();
+    };
+  }, [user, userData, activeStudentUid]);
+
+  // Sync fee balance for a student or selected active child
+  useEffect(() => {
+    if (!isFirebaseReady || !user) {
+      setFeeBalance(null);
+      return;
+    }
+    const targetUid = userData?.role === 'student' ? user.uid : activeStudent?.uid;
+    if (!targetUid) {
+      setFeeBalance(null);
+      return;
+    }
+
+    const feesQ = query(collection(db, 'fees'), where('studentId', '==', targetUid));
+    const unsubFeesGlobal = onSnapshot(feesQ, (snap) => {
+      if (!snap.empty) {
+        setFeeBalance({ id: snap.docs[0].id, ...snap.docs[0].data() } as FeeBalance);
+      } else {
+        setFeeBalance(null);
+      }
+    }, (error) => {
+      console.error("Context fee balance sync error:", error);
+    });
+
+    return () => unsubFeesGlobal();
+  }, [user, userData?.role, activeStudent?.uid]);
+
+  const setActiveStudentByUid = useCallback((uid: string) => {
+    setActiveStudentUid(uid);
+    const found = childrenList.find(c => c.uid === uid);
+    if (found) {
+      setActiveStudent(found);
+    }
+  }, [childrenList]);
+
+  const studentContext = userData?.role === 'student' ? userData : activeStudent;
 
   const hasPermission = useCallback((permission: string) => {
     if (userData?.role === 'admin') return true;
@@ -211,7 +302,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, settings, permissions, loading, isAuthReady, hasPermission, logout, feeBalance }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      userData, 
+      settings, 
+      permissions, 
+      loading, 
+      isAuthReady, 
+      hasPermission, 
+      logout, 
+      feeBalance,
+      children: childrenList,
+      activeStudent,
+      activeStudentUid,
+      studentContext,
+      setActiveStudentByUid
+    }}>
       {children}
     </AuthContext.Provider>
   );

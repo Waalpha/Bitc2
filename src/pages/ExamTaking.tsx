@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 
 export const ExamTaking: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
-  const { user } = useAuth();
+  const { user, studentContext } = useAuth();
   const navigate = useNavigate();
   const [exam, setExam] = useState<Exam | null>(null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -77,7 +77,7 @@ export const ExamTaking: React.FC = () => {
     try {
       await addDoc(collection(db, 'submissions'), {
         examId: exam.id,
-        studentId: user.uid,
+        studentId: studentContext?.uid || user.uid,
         answers: Object.entries(answers).map(([questionId, answer]) => ({ questionId, answer })),
         submittedAt: new Date().toISOString(),
       });

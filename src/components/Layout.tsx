@@ -33,7 +33,18 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, userData, settings, hasPermission, feeBalance } = useAuth();
+  const { 
+    user, 
+    userData, 
+    settings, 
+    hasPermission, 
+    feeBalance,
+    children: childrenMatched,
+    activeStudent,
+    activeStudentUid,
+    studentContext,
+    setActiveStudentByUid 
+  } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -114,12 +125,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isDisabled = userData?.disabled === true;
 
+  const isStudent = userData?.role === 'student' || userData?.role === 'parent';
+
   const navGroups = [
     {
       title: 'DASHBOARD',
       items: [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: null },
-        { name: 'Profile', path: '/profile', icon: User, permission: null, role: 'student' },
+        { name: 'Profile', path: '/profile', icon: User, permission: null, showForStudentOnly: true },
       ]
     },
     {
@@ -132,7 +145,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       title: 'ACADEMIC',
       items: [
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: null },
-        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, role: 'student' },
+        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, showForStudentOnly: true },
       ]
     },
     {
@@ -165,7 +178,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     textAlign: settings?.textAlign || 'left' as any,
   };
 
-  const isStudent = userData?.role === 'student';
   const isDashboard = location.pathname === '/dashboard';
 
   const SidebarContent = () => (
@@ -196,6 +208,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         {navGroups.map((group) => {
           const visibleItems = group.items.filter((item: any) => {
             if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
+            if (item.showForStudentOnly && !isStudent) return false;
             if (isStudent && item.path === '/dashboard') return true; // Re-enable for student
             if (isStudent && item.path === '/exams') return true; // Show Exams page for students too so they can take exams
             if (item.role && userData?.role !== item.role) return false;
@@ -534,6 +547,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Parent Selector Switcher */}
+              {userData?.role === 'parent' && childrenMatched && childrenMatched.length > 0 && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${isStudent ? 'bg-white/5 border-white/10' : 'bg-bg-card border-gray-100'} hover:shadow-sm`}>
+                  <Users size={14} className="text-blue-500" />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isStudent ? 'text-gray-400' : 'text-gray-500'} hidden sm:inline`}>Active Child:</span>
+                  <select
+                    value={activeStudentUid || ''}
+                    onChange={(e) => setActiveStudentByUid(e.target.value)}
+                    className="bg-transparent text-white font-bold text-xs border-none outline-none cursor-pointer focus:ring-0 py-0 pl-1 pr-6"
+                    style={{ colorScheme: 'dark' }}
+                  >
+                    {childrenMatched.map((child: any) => (
+                      <option key={child.uid} value={child.uid} className="bg-[#1A1F2E] text-white font-bold text-xs">
+                        {child.name} ({child.admissionNumber || 'No ID'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Year/Period */}
               <div className={`hidden lg:flex items-center gap-3 ${isStudent ? 'bg-white/5' : 'bg-bg-card'} px-5 py-2.5 rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all hover:shadow-sm`}>
