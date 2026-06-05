@@ -176,10 +176,11 @@ export const Fees: React.FC = () => {
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
             body { 
               font-family: 'Inter', sans-serif; 
-              padding: 40px; 
+              padding: 20px 30px; 
               color: #1e293b; 
-              line-height: 1.5; 
+              line-height: 1.4; 
               background-color: #ffffff;
+              font-size: 11px;
             }
             .statement-container { 
               max-width: 800px; 
@@ -190,29 +191,29 @@ export const Fees: React.FC = () => {
               justify-content: space-between;
               align-items: flex-start;
               border-bottom: 2px solid #e2e8f0;
-              padding-bottom: 24px;
-              margin-bottom: 30px;
+              padding-bottom: 12px;
+              margin-bottom: 15px;
             }
             .school-info h1 {
-              font-size: 26px;
+              font-size: 20px;
               font-weight: 800;
               color: #1e3a8a;
               margin: 0;
               letter-spacing: -0.02em;
             }
             .school-info p {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 700;
               color: #64748b;
               text-transform: uppercase;
-              letter-spacing: 0.15em;
-              margin: 4px 0 0 0;
+              letter-spacing: 0.12em;
+              margin: 2px 0 0 0;
             }
             .doc-title {
               text-align: right;
             }
             .doc-title h2 {
-              font-size: 20px;
+              font-size: 16px;
               font-weight: 900;
               color: #0f172a;
               margin: 0;
@@ -220,33 +221,33 @@ export const Fees: React.FC = () => {
               text-transform: uppercase;
             }
             .doc-title p {
-              font-size: 12px;
+              font-size: 10px;
               color: #64748b;
-              margin: 4px 0 0 0;
+              margin: 2px 0 0 0;
             }
             .profile-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 30px;
-              margin-bottom: 30px;
+              gap: 15px;
+              margin-bottom: 15px;
               background: #f8fafc;
-              padding: 20px;
-              border-radius: 16px;
+              padding: 12px 16px;
+              border-radius: 12px;
               border: 1px solid #f1f5f9;
             }
             .profile-block h3 {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 800;
               text-transform: uppercase;
               color: #475569;
               letter-spacing: 0.05em;
-              margin: 0 0 10px 0;
+              margin: 0 0 6px 0;
               border-bottom: 1px solid #e2e8f0;
-              padding-bottom: 6px;
+              padding-bottom: 4px;
             }
             .profile-block p {
-              margin: 4px 0;
-              font-size: 13px;
+              margin: 2px 0;
+              font-size: 11px;
               color: #334155;
             }
             .profile-block p strong {
@@ -256,12 +257,12 @@ export const Fees: React.FC = () => {
             .summary-cards {
               display: grid;
               grid-template-columns: repeat(3, 1fr);
-              gap: 16px;
-              margin-bottom: 35px;
+              gap: 12px;
+              margin-bottom: 15px;
             }
             .summary-card {
-              padding: 16px;
-              border-radius: 14px;
+              padding: 10px 14px;
+              border-radius: 10px;
               border: 1px solid #e2e8f0;
               background-color: #ffffff;
             }
@@ -274,12 +275,12 @@ export const Fees: React.FC = () => {
               border-color: #dcfce7;
             }
             .card-label {
-              font-size: 10px;
+              font-size: 9px;
               font-weight: 800;
               text-transform: uppercase;
               color: #64748b;
               letter-spacing: 0.05em;
-              margin-bottom: 6px;
+              margin-bottom: 4px;
             }
             .summary-card.accent-due .card-label {
               color: #ef4444;
@@ -288,7 +289,7 @@ export const Fees: React.FC = () => {
               color: #10b981;
             }
             .card-value {
-              font-size: 20px;
+              font-size: 15px;
               font-weight: 800;
               color: #0f172a;
             }
@@ -299,20 +300,28 @@ export const Fees: React.FC = () => {
               color: #065f46;
             }
             .card-status {
-              font-size: 11px;
+              font-size: 9px;
               font-weight: 700;
-              margin-top: 4px;
+              margin-top: 2px;
               display: inline-block;
+            }
+            h3.section-title {
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              letter-spacing: 0.05em;
+              margin: 15px 0 8px 0;
             }
             .ledger-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 40px;
+              margin-bottom: 15px;
             }
             .ledger-table th {
               background-color: #f1f5f9;
-              padding: 12px 16px;
-              font-size: 10px;
+              padding: 6px 10px;
+              font-size: 9px;
               font-weight: 800;
               text-transform: uppercase;
               color: #475569;
@@ -321,8 +330,8 @@ export const Fees: React.FC = () => {
               text-align: left;
             }
             .ledger-table td {
-              padding: 12px 16px;
-              font-size: 13px;
+              padding: 6px 10px;
+              font-size: 11px;
               border-bottom: 1px solid #f1f5f9;
               color: #334155;
             }
@@ -332,19 +341,19 @@ export const Fees: React.FC = () => {
             .badge {
               display: inline-flex;
               align-items: center;
-              padding: 2px 8px;
-              border-radius: 6px;
-              font-size: 10px;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-size: 9px;
               font-weight: 700;
               text-transform: uppercase;
             }
             .badge-charge {
-              background-color: #fef2f2;
-              color: #ef4444;
+               background-color: #fef2f2;
+               color: #ef4444;
             }
             .badge-payment {
-              background-color: #f0fdf4;
-              color: #16a34a;
+               background-color: #f0fdf4;
+               color: #16a34a;
             }
             .amount-col {
               text-align: right;
@@ -357,9 +366,9 @@ export const Fees: React.FC = () => {
               color: #15803d;
             }
             .stamp-section {
-              margin-top: 50px;
+              margin-top: 15px;
               border-top: 1px solid #e2e8f0;
-              padding-top: 30px;
+              padding-top: 12px;
               display: flex;
               justify-content: space-between;
               align-items: center;
@@ -368,23 +377,26 @@ export const Fees: React.FC = () => {
             .stamp-container { 
               position: absolute; 
               right: 40px;
-              bottom: 20px;
+              bottom: 10px;
               opacity: 0.85; 
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { width: 110px; height: 110px; object-fit: contain; transform: rotate(-5deg); }
+            .stamp { width: 80px; height: 80px; object-fit: contain; transform: rotate(-5deg); }
             .statement-footer {
               text-align: center;
-              font-size: 11px;
+              font-size: 9px;
               color: #94a3b8;
-              margin-top: 60px;
+              margin-top: 20px;
               font-weight: 500;
             }
             @media print {
               .no-print { display: none; }
-              body { padding: 20px; background-color: #ffffff; }
+              body { padding: 10px 15px; background-color: #ffffff; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              tr { page-break-inside: avoid; }
+              h3, h2, h1 { page-break-after: avoid; }
+              @page { size: portrait; margin: 0.4in; }
             }
           </style>
         </head>
@@ -439,7 +451,7 @@ export const Fees: React.FC = () => {
               </div>
             </div>
 
-            <h3>Detailed Ledger Transactions</h3>
+            <h3 class="section-title">Detailed Ledger Transactions</h3>
             <table class="ledger-table">
               <thead>
                 <tr>
@@ -800,36 +812,37 @@ export const Fees: React.FC = () => {
         <head>
           <title>Fee Receipt - ${student.name}</title>
           <style>
-            body { font-family: 'Inter', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-            .receipt-container { max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 30px; border-radius: 10px; }
-            .header { text-align: center; border-bottom: 2px solid #2563EB; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { font-size: 24px; color: #2563EB; margin: 0; }
-            .header p { color: #6b7280; font-size: 14px; margin: 5px 0 0 0; }
-            .receipt-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 14px; }
-            .student-details { margin-bottom: 30px; }
-            .student-details h3 { font-size: 16px; margin-bottom: 10px; color: #111827; }
-            .student-details p { margin: 2px 0; color: #4b5563; }
-            .payment-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .payment-table th { text-align: left; background: #f9fafb; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
-            .payment-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
-            .summary { margin-left: auto; max-width: 250px; }
-            .summary-item { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
-            .summary-item.total { border-top: 2px solid #eee; margin-top: 10px; padding-top: 10px; font-weight: bold; color: #111827; }
-            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 20px; position: relative; }
+            body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; line-height: 1.4; font-size: 12px; }
+            .receipt-container { max-width: 500px; margin: 0 auto; border: 1px solid #eee; padding: 15px; border-radius: 10px; }
+            .header { text-align: center; border-bottom: 2px solid #2563EB; padding-bottom: 10px; margin-bottom: 15px; }
+            .header h1 { font-size: 18px; color: #2563EB; margin: 0; }
+            .header p { color: #6b7280; font-size: 11px; margin: 3px 0 0 0; }
+            .receipt-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 11px; }
+            .student-details { margin-bottom: 15px; }
+            .student-details h3 { font-size: 12px; margin-bottom: 4px; color: #111827; }
+            .student-details p { margin: 2px 0; color: #4b5563; font-size: 11px; }
+            .payment-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+            .payment-table th { text-align: left; background: #f9fafb; padding: 6px; font-size: 10px; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+            .payment-table td { padding: 6px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+            .summary { margin-left: auto; max-width: 200px; }
+            .summary-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+            .summary-item.total { border-top: 2px solid #eee; margin-top: 6px; padding-top: 6px; font-weight: bold; color: #111827; }
+            .footer { margin-top: 20px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 10px; position: relative; }
             .stamp-container { 
               position: absolute; 
-              bottom: 60px; 
+              bottom: 40px; 
               ${settings?.stampPosition === 'left' ? 'left: 20px;' : settings?.stampPosition === 'center' ? 'left: 50%; transform: translateX(-50%);' : 'right: 20px;'}
               opacity: 1; 
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { width: 100px; height: 100px; object-fit: contain; transform: rotate(-6deg); }
+            .stamp { width: 75px; height: 75px; object-fit: contain; transform: rotate(-6deg); }
             @media print {
               .no-print { display: none; }
               body { padding: 0; }
               .receipt-container { border: none; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              @page { size: portrait; margin: 0.4in; }
             }
           </style>
         </head>
