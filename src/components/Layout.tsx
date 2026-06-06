@@ -43,7 +43,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     activeStudent,
     activeStudentUid,
     studentContext,
-    setActiveStudentByUid 
+    setActiveStudentByUid,
+    schools,
+    activeSchoolId,
+    setActiveSchoolId
   } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -565,6 +568,32 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {/* School Switcher / Selector */}
+              {schools && schools.length > 0 && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${isStudent ? 'bg-white/5 border-white/10 text-white' : 'bg-bg-card border-gray-100 text-gray-800'} hover:shadow-sm`}>
+                  <Home size={14} className={isStudent ? "text-blue-400" : "text-primary"} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isStudent ? 'text-gray-400' : 'text-gray-500'} hidden sm:inline`}>School:</span>
+                  {userData?.role === 'admin' ? (
+                    <select
+                      value={activeSchoolId}
+                      onChange={(e) => setActiveSchoolId(e.target.value)}
+                      className={`bg-transparent font-bold text-xs border-none outline-none cursor-pointer focus:ring-0 py-0 pl-1 pr-6 ${isStudent ? 'text-white' : 'text-gray-800'}`}
+                      style={{ colorScheme: isStudent ? 'dark' : 'light' }}
+                    >
+                      {schools.map((school) => (
+                        <option key={school.id} value={school.id} className={isStudent ? "bg-[#1A1F2E] text-white" : "bg-white text-gray-800"}>
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="font-bold text-xs truncate max-w-[120px]">
+                      {schools.find(s => s.id === activeSchoolId)?.name || settings?.appTitle || 'BITC'}
+                    </span>
+                  )}
                 </div>
               )}
 

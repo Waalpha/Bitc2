@@ -1,15 +1,133 @@
 {
   "is5B5zbkEbUNlwYGQGlXJiAt66A2": {
-    "name": "David",
-    "email": "davmuchiri48@gmail.com",
+    "name": "Daud",
+    "email": "daudimuchiri4@gmail.com",
     "role": "admin",
-    "createdAt": "2026-05-28T17:42:46.271Z",
-    "lastActive": "2026-05-28T17:43:46.273Z"
+    "createdAt": "2026-06-04T15:59:47.015Z",
+    "lastActive": "2026-06-06T07:27:07.714Z",
+    "disabled": false,
+    "admissionNumber": "",
+    "address": "",
+    "guardianPhone": "",
+    "emergencyPhone": "",
+    "gender": "male",
+    "fatherName": "",
+    "biometricId": "",
+    "dateOfBirth": "",
+    "specialization": "",
+    "phone": "",
+    "motherName": "",
+    "fcmTokens": [
+      "eEePfJzqm199QC84Imrq9v:APA91bGxC-LOa2EW11ks6YMNEG3RDKqCpUhxCUwm__KPEKG7ShJALtCT2k71a9kj7tAcdl2IGmK2y_kuTVSPzUS0LlYX5su_JR6bWGXk82hvHHsYaoQlPi0",
+      "eEePfJzqm199QC84Imrq9v:APA91bEBzwFphehxKr3RFpXbeC2oseYJl5LxuIhzNMaqeAA2eIUdTIGu2Sx0MxrABjG2pNyu3qqxsHHBdy-DAhe0rM6DZhS4AsKJbrCiTOssBhxGvMzniVU",
+      "fc9CrbqKobsVx9S_YI4cbT:APA91bGOu-nv4MR2UXRL6uFmyDJ2Aj9W1FYFOLIkD2TWbTEyXTqGvfqzrpmFn37bck4KHz49HTE5ZRwJC7a7KNuHxeq7c2rHxvZje6AB0DGHpBXl9hKjU0A",
+      "eSZ2b-c_y_g0hzntbNRwUK:APA91bE6tPsYl004cqq_-eh2gMRiQ1MPRiONL7d0H3M7bom4nhXdBLacba2QHVgxAR8VZHIBwki9FZPol00kYicpJC8czJ3QN11Okl_sqdx-oRs3JP-GNlc",
+      "eEePfJzqm199QC84Imrq9v:APA91bE4DnKWaH1bv885aNO_1hTIXKy5a0ZnEDmq1GpwoeW2Q1owi7jey8VkWAM1rK-RN3J_ZC778tEutrNcklGFXaPhzskAkMZmUZDtdX3z-6K7ob2stFw",
+      "cJjJ2yBjLn2qg_VzA0hCVQ:APA91bHv0YeItbyBSM1TRowFWoMM_mcVG-iGTLXMfoczJ2txAS40EAH59JOAgcWMKMqMaAZiRLOmyP8bLGcG8v5GXE0mibFmtefhjMu3EYqDI7686RRt0DE",
+      "cJjJ2yBjLn2qg_VzA0hCVQ:APA91bFSIIx3Pl_apcvbtObrMTcBbfM_QLW8GMVZ0LHHq8ZfAj4JEYpjjqbyzUUNSBgr7Gy1gfwAMUBoOq_HnUV83k9qgBmvIa_8ziv8i2WeDMYSg3orfCo",
+      "cJjJ2yBjLn2qg_VzA0hCVQ:APA91bGIKsRFsXceZWw0cEY7eFh0jKBko5KYKHBvk5JahTlVEkyhxtikbRPwFY7XYzT714iPEPf6Xh2n-4RYex8ljbjOdr2YL-D6MSxf59Jqizd4ja4H_2c",
+      "cJjJ2yBjLn2qg_VzA0hCVQ:APA91bHHrahpc863Vdh-oH2QfWcHYavGZN69O-RS4mH2_l24Ss4zN2VMNGv2hDxSKV3yuNIVxBER_fjemfqNyud9R6TXuxDL_Kl9Zz7lJsBIi9HgUbMLfkQ",
+      "fKHN61oDxafhDIbNcLecgH:APA91bHnvnzjejwTpSlumVL8oZ_c_oOFpA0p3PXgmab5fjP-TKkFnqVauyCavBBePbFQRXmohumSW-c797ZlexsTMd8CdZFgmbAsq0rxlGW5HdkAm5asxZk",
+      "d766yCzQlWvjjlzCo708WF:APA91bHuwItNVjNr7uTpOahcyXYF51QOVHdskBuO2TX5rRTUijonjVAR8MwUMqojxmZi0XLU0oS9s8SrkuInDsYM9I69J6IpXEuAD-_38es_tvGOA21eN1A",
+      "cJjJ2yBjLn2qg_VzA0hCVQ:APA91bHFwrq1raTw14crSQR4rH6vCNZSVfiJ1hmMj0Wa0PNiwMm3nCVyDPZ9bgcjXDTnKSmTY6qUaZyyVHGFnig1zN8-Q1b15HB7-I-u5AjyjHRshV08-9Q",
+      "fQPV3ObRJtJiBZKd4euZa2:APA91bH1y8hdoPdm1I1f5-itj_BaIknCx_4Au1-0AH2V3O6KQDf06XF6wIZFiPU6H6dQGMMW3oLK4cbPzV6Zr1EiNY2r2w_kK1fmw8-RvZwB3ziZbJkYtFM",
+      "cEi7E2zWaE3pHvAu9gZtt0:APA91bG1mCcrC3a4G1EA92g28_mcNG4e26-QTivfbLy_sTmw7RPtm56doxH6fIuRvltL1WV-8RmhSDLK2DL9NEc5Exe_dW1METb5HgIKx3ne7aNRPA56Jeo",
+      "d766yCzQlWvjjlzCo708WF:APA91bFMS_Ff2uF8u_HAVujeivjNu2xBRfoJdDayR7yXJ2YisSdS0BVmyvGN_hiBJ7pdoriujNFuhfgSIj05kHrxeE5KbdIuv3_qFAMRDPRnCr03N0CmaNQ"
+    ],
+    "year": "1",
+    "idNumber": "",
+    "nationality": "",
+    "bloodGroup": "O+",
+    "religion": "",
+    "emergencyContact": "",
+    "residence": "",
+    "guardianName": "",
+    "admissionDate": "",
+    "fatherPhone": "",
+    "classIds": [],
+    "motherPhone": ""
   },
   "zCv5G48iPIeO2DnwCSYpx7cJPOl2": {
     "name": "David",
     "email": "davmuchiri48@gmail.com",
     "role": "admin",
     "createdAt": "2026-05-28T17:40:57.363Z"
+  },
+  "tech_prof_jones": {
+    "name": "Prof. Alan Jones",
+    "email": "teacher1@school.com",
+    "role": "teacher",
+    "classIds": [
+      "class_cs101"
+    ],
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "tech_dr_smith": {
+    "name": "Dr. Sarah Smith",
+    "email": "teacher2@school.com",
+    "role": "teacher",
+    "classIds": [
+      "class_ee201",
+      "class_it302"
+    ],
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "std_john_doe": {
+    "name": "John Doe",
+    "email": "student1@school.com",
+    "role": "student",
+    "classIds": [
+      "class_cs101"
+    ],
+    "admissionNumber": "ADM/2026/001",
+    "course": "Computer Science",
+    "academicYear": "2026",
+    "gender": "Male",
+    "phone": "+254 700 111222",
+    "address": "Nairobi, Westlands",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "std_jane_smith": {
+    "name": "Jane Smith",
+    "email": "student2@school.com",
+    "role": "student",
+    "classIds": [
+      "class_cs101"
+    ],
+    "admissionNumber": "ADM/2026/002",
+    "course": "Computer Science",
+    "academicYear": "2026",
+    "gender": "Female",
+    "phone": "+254 700 333444",
+    "address": "Nairobi, Thika",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "std_alice_williams": {
+    "name": "Alice Williams",
+    "email": "student3@school.com",
+    "role": "student",
+    "classIds": [
+      "class_ee201"
+    ],
+    "admissionNumber": "ADM/2026/003",
+    "course": "Electrical Engineering",
+    "academicYear": "2026",
+    "gender": "Female",
+    "phone": "+254 700 555666",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "std_bob_brown": {
+    "name": "Bob Brown",
+    "email": "student4@school.com",
+    "role": "student",
+    "classIds": [
+      "class_it302"
+    ],
+    "admissionNumber": "ADM/2026/004",
+    "course": "Information Technology",
+    "academicYear": "2026",
+    "gender": "Male",
+    "phone": "+254 700 777888",
+    "createdAt": "2026-05-28T12:00:00.000Z"
   }
 }

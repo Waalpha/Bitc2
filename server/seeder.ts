@@ -167,8 +167,8 @@ export function seedDatabase() {
   // 4. Settings
   writeIfEmpty('settings', {
     "global": {
-      "appTitle": "BITC Academy",
-      "schoolName": "Buruburu Institute of Fine Arts & Technology",
+      "appTitle": "BITC",
+      "schoolName": "Breakthrough International Training College",
       "activeSession": "2025/2026 Semester 1",
       "fontFamily": "Inter",
       "fontSize": "16px",
@@ -177,9 +177,9 @@ export function seedDatabase() {
       "schoolClosedReason": "",
       "denyAccessOnBalance": false,
       "sessionTimeoutSeconds": 3600,
-      "publicAddress": "Buruburu, Mumias Road, Nairobi",
-      "publicPhone": "+254 712 345678",
-      "publicEmail": "info@bitc.ac.ke",
+      "publicAddress": "P O BOX 5110 – 01002 Madaraka Thika",
+      "publicPhone": "+254 727 114 355 /+254 707 760 239",
+      "publicEmail": "info@breakthrough.ac.ke",
       "publicHeroTitle": "Transforming Education with Technology",
       "publicHeroDescription": "Welcome to BITC's modern digital learning experience portal.",
       "publicHeroImageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200"
@@ -249,7 +249,7 @@ export function seedDatabase() {
       "academicYear": "2026",
       "gender": "Female",
       "phone": "+254 700 333444",
-      "address": "Nairobi, Buruburu",
+      "address": "Nairobi, Thika",
       "createdAt": "2026-05-28T12:00:00.000Z"
     },
     "std_alice_williams": {

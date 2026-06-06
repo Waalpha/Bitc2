@@ -3,6 +3,7 @@ import { db as realDb } from '../firebase';
 
 // Smart Hybrid Caching and Redundant Offline Database Mode Manager
 let activeDbMode = typeof window !== 'undefined' ? (localStorage.getItem('school_db_mode') || 'real') : 'real';
+let lastProbeTime = 0;
 
 export function getDbMode(): 'real' | 'local_cached' {
   return activeDbMode as any;
@@ -14,6 +15,28 @@ export function setDbMode(mode: 'real' | 'local_cached') {
     localStorage.setItem('school_db_mode', mode);
     console.log(`[Database Engine Mode] Switch trigger to: ${mode}`);
     window.dispatchEvent(new Event('db-mode-changed'));
+  }
+}
+
+// Background self-healing prober to check if Firestore quota has reset
+export async function attemptRecovery() {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  if (now - lastProbeTime < 30000) return; // limit probes to once every 30 seconds
+  lastProbeTime = now;
+
+  try {
+    const docRef = realFS.doc(realDb, 'test', 'connection');
+    await realFS.getDoc(docRef);
+    console.log("[Database Engine Mode] Remote Firestore recovered successfully. Auto restoring real mode!");
+    setDbMode('real');
+  } catch (err: any) {
+    if (err && !isQuotaOrPermissionError(err)) {
+      console.log("[Database Engine Mode] Firestore online but returned non-quota response. Auto-healing to real mode.");
+      setDbMode('real');
+    } else {
+      console.log("[Database Engine Mode] Firestore probe attempt: connectivity remains limited or quota exhausted.");
+    }
   }
 }
 
@@ -269,6 +292,7 @@ export async function getDoc(docRef: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return fetchDocFromCache(docRef);
   }
 }
@@ -344,6 +368,7 @@ export async function getDocs(queryOrRef: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return fetchDocsFromCache(queryOrRef);
   }
 }
@@ -403,6 +428,7 @@ export async function addDoc(collectionRef: any, data: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return addDocToCache(collectionRef, data);
   }
 }
@@ -439,6 +465,7 @@ export async function updateDoc(docRef: any, data: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return updateDocInCache(docRef, data);
   }
 }
@@ -475,6 +502,7 @@ export async function setDoc(docRef: any, data: any, options?: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return setDocInCache(docRef, data, options);
   }
 }
@@ -511,6 +539,7 @@ export async function deleteDoc(docRef: any) {
       throw err;
     }
   } else {
+    attemptRecovery().catch(() => {});
     return deleteDocInCache(docRef);
   }
 }

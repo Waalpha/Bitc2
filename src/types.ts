@@ -9,6 +9,7 @@ export interface User {
   biometricRawId?: string;
   biometricLinkedAt?: string;
   createdAt: string;
+  schoolId?: string; // Multi-tenant school ID reference
   // Admission Fields
   firstName?: string;
   lastName?: string;
@@ -371,4 +372,12 @@ export interface AdmissionApplication {
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
   notes?: string;
+}
+
+export interface School {
+  id: string; // Document ID: e.g. "bitc", "greenwood"
+  name: string;
+  appTitle: string;
+  logoUrl?: string;
+  createdAt: string;
 }

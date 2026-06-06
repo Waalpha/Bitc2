@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { auth, db, handleFirestoreError, OperationType, isFirebaseReady } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc, serverTimestamp, query, collection, where } from 'firebase/firestore';
-import { AppSettings, FeeBalance } from '../types';
+import { AppSettings, FeeBalance, School } from '../types';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -19,6 +19,9 @@ interface AuthContextType {
   activeStudentUid: string | null;
   studentContext: any | null;
   setActiveStudentByUid: (uid: string) => void;
+  schools: School[];
+  activeSchoolId: string;
+  setActiveSchoolId: (schoolId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +39,9 @@ const AuthContext = createContext<AuthContextType>({
   activeStudentUid: null,
   studentContext: null,
   setActiveStudentByUid: () => {},
+  schools: [],
+  activeSchoolId: 'bitc',
+  setActiveSchoolId: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -46,6 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [activeStudentUid, setActiveStudentUid] = useState<string | null>(null);
   const [activeStudent, setActiveStudent] = useState<any | null>(null);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [activeSchoolId, setActiveSchoolIdState] = useState<string>(() => localStorage.getItem('active_school_id') || 'bitc');
   const [settings, setSettings] = useState<AppSettings | null>({
     appTitle: 'BITC',
     fontFamily: 'Inter',
@@ -59,6 +67,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [feeBalance, setFeeBalance] = useState<FeeBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
+
+  const setActiveSchoolId = useCallback((id: string) => {
+    setActiveSchoolIdState(id);
+    localStorage.setItem('active_school_id', id);
+  }, []);
+
+  // Sync / Subscribe to Schools list
+  useEffect(() => {
+    if (!isFirebaseReady) return;
+
+    // Standard school bootstrap if firestore empty
+    const initDefaultSchool = async () => {
+      try {
+        const { getDocs, setDoc, doc, collection } = await import('firebase/firestore');
+        const snap = await getDocs(collection(db, 'schools'));
+        if (snap.empty) {
+          await setDoc(doc(db, 'schools', 'bitc'), {
+            id: 'bitc',
+            name: 'Breakthrough International Training College (BITC)',
+            appTitle: 'BITC',
+            createdAt: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.error("Error bootstrapping default school:", err);
+      }
+    };
+    initDefaultSchool();
+
+    const unsubSchools = onSnapshot(collection(db, 'schools'), (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as School));
+      setSchools(list);
+    }, (err) => {
+      console.error("Error syncing schools list:", err);
+    });
+
+    return () => unsubSchools();
+  }, []);
 
   // Heartbeat for presence
   useEffect(() => {
@@ -81,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user]);
 
+  // Handle active school settings subscription
   useEffect(() => {
     if (!isFirebaseReady) {
       setLoading(false);
@@ -95,29 +142,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Fetch split global settings
-    const globalRef = doc(db, 'settings', 'global');
-    const heroLegacyRef = doc(db, 'settings', 'hero_legacy');
-    const galleryRef = doc(db, 'settings', 'gallery');
+    const isDefault = activeSchoolId === 'bitc';
+    const activeSettingsKey = isDefault ? 'global' : activeSchoolId;
+    const globalRef = doc(db, 'settings', activeSettingsKey);
+    const heroLegacyRef = doc(db, 'settings', isDefault ? 'hero_legacy' : `${activeSchoolId}_hero_legacy`);
+    const galleryRef = doc(db, 'settings', isDefault ? 'gallery' : `${activeSchoolId}_gallery`);
 
     const subs = [
       onSnapshot(globalRef, (snap) => {
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, ...snap.data() } as AppSettings));
+        } else {
+          // Standard defaults fallback
+          setSettings({
+            appTitle: activeSchoolId.toUpperCase() === 'BITC' ? 'BITC' : activeSchoolId.charAt(0).toUpperCase() + activeSchoolId.slice(1).toLowerCase(),
+            fontFamily: 'Inter',
+            fontSize: '16px',
+            textAlign: 'left',
+            activeSession: '2024/2025 Semester 1',
+            publicHeroImages: [],
+            portalGallery: []
+          });
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/global')),
+      }, (err) => handleFirestoreError(err, OperationType.GET, `settings/${activeSettingsKey}`)),
       
       onSnapshot(heroLegacyRef, (snap) => {
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, publicHeroImages: snap.data().images || [] } as AppSettings));
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/hero_legacy')),
+      }, (err) => console.log(`No custom hero legacy for school ${activeSchoolId}`)),
 
       onSnapshot(galleryRef, (snap) => {
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, portalGallery: snap.data().images || [] } as AppSettings));
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/gallery'))
+      }, (err) => console.log(`No custom gallery for school ${activeSchoolId}`))
     ];
 
     const unsubscribeAuth = auth?.onAuthStateChanged ? onAuthStateChanged(auth, (user) => {
@@ -133,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subs.forEach(unsub => unsub());
       unsubscribeAuth();
     };
-  }, []);
+  }, [activeSchoolId]);
 
   // Synchronize user settings and roles
   useEffect(() => {
@@ -147,6 +206,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = docSnap.data();
         if (data.role) data.role = data.role.toLowerCase();
         setUserData(data);
+        
+        // Lock activeSchoolId for non-admins to their assigned school
+        if (data.role !== 'admin' && data.schoolId) {
+          setActiveSchoolIdState(data.schoolId);
+          localStorage.setItem('active_school_id', data.schoolId);
+        }
         
         // Fetch permissions for the user's role
         if (data.role) {
@@ -316,7 +381,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeStudent,
       activeStudentUid,
       studentContext,
-      setActiveStudentByUid
+      setActiveStudentByUid,
+      schools,
+      activeSchoolId,
+      setActiveSchoolId
     }}>
       {children}
     </AuthContext.Provider>

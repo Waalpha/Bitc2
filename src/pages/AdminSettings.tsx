@@ -13,8 +13,10 @@ import { isBiometricSupported, registerBiometric } from '../services/biometricSe
 import { uploadFile, getCloudinaryConfig } from '../services/uploadService';
 
 export const AdminSettings: React.FC = () => {
-  const { userData, settings: globalSettings } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance' | 'portal'>('users');
+  const { userData, settings: globalSettings, schools, activeSchoolId, setActiveSchoolId } = useAuth();
+  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance' | 'portal' | 'schools'>('users');
+  const [isAddingSchool, setIsAddingSchool] = useState(false);
+  const [schoolForm, setSchoolForm] = useState({ id: '', name: '', appTitle: '', logoUrl: '' });
   const [users, setUsers] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -85,6 +87,15 @@ export const AdminSettings: React.FC = () => {
     ...DEFAULT_APP_SETTINGS,
     ...(globalSettings || {})
   });
+
+  useEffect(() => {
+    if (globalSettings) {
+      setAppSettings({
+        ...DEFAULT_APP_SETTINGS,
+        ...globalSettings
+      });
+    }
+  }, [globalSettings]);
 
   // Class Management State
   const [newClassName, setNewClassName] = useState('');
@@ -358,15 +369,20 @@ export const AdminSettings: React.FC = () => {
       // Split settings to avoid 1MB limit per document
       const { publicHeroImages, portalGallery, ...coreSettings } = appSettings;
 
+      const isDefault = activeSchoolId === 'bitc';
+      const activeSettingsKey = isDefault ? 'global' : activeSchoolId;
+      const heroKey = isDefault ? 'hero_legacy' : `${activeSchoolId}_hero_legacy`;
+      const galleryKey = isDefault ? 'gallery' : `${activeSchoolId}_gallery`;
+
       await Promise.all([
-        setDoc(doc(db, 'settings', 'global'), coreSettings),
-        setDoc(doc(db, 'settings', 'hero_legacy'), { images: publicHeroImages || [] }),
-        setDoc(doc(db, 'settings', 'gallery'), { images: portalGallery || [] })
+        setDoc(doc(db, 'settings', activeSettingsKey), coreSettings),
+        setDoc(doc(db, 'settings', heroKey), { images: publicHeroImages || [] }),
+        setDoc(doc(db, 'settings', galleryKey), { images: portalGallery || [] })
       ]);
 
       addToast("System settings updated successfully!");
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'settings/global-save');
+      handleFirestoreError(error, OperationType.WRITE, `settings/save-${activeSchoolId}`);
       addToast("Failed to update settings. Data may be too large.", "error");
     } finally {
       setIsSaving(false);
@@ -761,6 +777,14 @@ export const AdminSettings: React.FC = () => {
           }`}
         >
           Public Portal Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('schools')}
+          className={`flex-none px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'schools' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          🏫 Schools Management
         </button>
       </div>
 

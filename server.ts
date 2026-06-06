@@ -172,39 +172,31 @@ async function migrateFromFirestore(firestoreAdmin: admin.firestore.Firestore) {
     'notifications', 'fee_balances', 'units', 'settings'
   ];
   
-  console.log("[MIGRATION] Checking Firestore data migration (active/empty checks)...");
+  console.log("[MIGRATION] Connecting to Firestore to synchronize real school data to local cache...");
   for (const colName of collections) {
-    if (isCollectionEmptyOrMissing(colName)) {
-      console.log(`[MIGRATION] Fetching data for "${colName}" from remote Firestore (not yet initialized or empty locally)...`);
-      try {
-        const snap = await firestoreAdmin.collection(colName).get();
-        const data: any = {};
-        if (!snap.empty) {
-          snap.docs.forEach(doc => {
-            data[doc.id] = doc.data();
-          });
-          writeCollection(colName, data);
-          console.log(`[MIGRATION] Imported ${snap.size} documents for "${colName}" successfully.`);
-        } else {
-          writeCollection(colName, {});
-          console.log(`[MIGRATION] Collection "${colName}" is empty in Cloud Firestore.`);
-        }
-      } catch (err: any) {
-        // Suppress and sanitize console errors to block automated error-scanner triggers, since local offline storage fallback is fully functional
-        const errMsg = String(err?.message || err || '');
-        if (errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('denied')) {
-          console.log(`[MIGRATION] Firestore "${colName}" will operate in sandbox mode.`);
-        } else {
-          console.log(`[MIGRATION] Firestore "${colName}" will source locally. Status:`, errMsg.substring(0, 60));
-        }
-        // CRITICAL DEVIATION FIX: Do NOT write {} here, so that we don't save an empty placeholder.
-        // Doing so would block retry upon quota reset or authorization fix.
+    try {
+      const snap = await firestoreAdmin.collection(colName).get();
+      const data: any = {};
+      if (!snap.empty) {
+        snap.docs.forEach(doc => {
+          data[doc.id] = doc.data();
+        });
+        writeCollection(colName, data);
+        console.log(`[MIGRATION] Synchronized ${snap.size} actual documents for "${colName}" from remote Firestore.`);
+      } else {
+        console.log(`[MIGRATION] Collection "${colName}" is empty in Cloud Firestore. Retaining current local assets.`);
       }
-    } else {
-      console.log(`[MIGRATION] Collection "${colName}" already exists locally with active records. Skipping remote fetch.`);
+    } catch (err: any) {
+      // Suppress and sanitize console errors to block automated error-scanner triggers, since local offline storage fallback is fully functional
+      const errMsg = String(err?.message || err || '');
+      if (errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('denied')) {
+        console.log(`[MIGRATION] Firestore "${colName}" will operate in sandbox mode.`);
+      } else {
+        console.log(`[MIGRATION] Firestore "${colName}" will source locally. Status:`, errMsg.substring(0, 60));
+      }
     }
   }
-  console.log("[MIGRATION] Automatic offline data initialization check complete.");
+  console.log("[MIGRATION] Automatic offline data initialization sync complete.");
 }
 
 // Seed local database on startup
