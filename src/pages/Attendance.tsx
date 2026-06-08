@@ -118,14 +118,64 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.95;
+    
+    // Primary local African English dialect settings
+    utterance.lang = 'en-ZA'; 
+    utterance.rate = 0.88; // Slower cadence ensures clear syllabic parsing for local accents
     utterance.pitch = 1.0;
     
     const voices = window.speechSynthesis.getVoices();
-    const englishVoice = voices.find(v => v.lang.startsWith('en'));
-    if (englishVoice) {
-      utterance.voice = englishVoice;
+    
+    // High-priority African English localizations (South Africa, Kenya, Nigeria, etc.)
+    const africanLocales = ['en-ZA', 'en-KE', 'en-NG', 'en-GH', 'en-TZ'];
+    let selectedVoice = null;
+    
+    // 1. Try explicitly matching the preferred African codes
+    for (const locCode of africanLocales) {
+      const v = voices.find(voice => {
+        const langLower = voice.lang.toLowerCase();
+        return langLower === locCode.toLowerCase() || langLower.startsWith(locCode.toLowerCase() + '-');
+      });
+      if (v) {
+        selectedVoice = v;
+        break;
+      }
+    }
+    
+    // 2. Fallback search for voices with name properties matching African regions
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => {
+        const langLower = v.lang.toLowerCase();
+        const nameLower = v.name.toLowerCase();
+        return langLower.startsWith('en') && (
+          langLower.includes('za') ||
+          langLower.includes('ke') ||
+          langLower.includes('ng') ||
+          langLower.includes('gh') ||
+          nameLower.includes('africa') ||
+          nameLower.includes('kenya') ||
+          nameLower.includes('nigeria')
+        );
+      });
+    }
+    
+    // 3. Match English British dialect en-GB as secondary tier fallback (non-rhotic cadences align best)
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => {
+        const langLower = v.lang.toLowerCase();
+        return langLower === 'en-gb' || langLower.startsWith('en-gb-');
+      });
+    }
+    
+    // 4. Default standard English voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => v.lang.startsWith('en'));
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+      console.log(`[TTS Speech Synthesis] Selected Localized Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
     }
     
     window.speechSynthesis.speak(utterance);
