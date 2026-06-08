@@ -202,6 +202,51 @@ async function migrateFromFirestore(firestoreAdmin: admin.firestore.Firestore) {
 // Seed local database on startup
 seedDatabase();
 
+async function reactivateAllAccounts(firestoreAdmin?: admin.firestore.Firestore) {
+  try {
+    console.log("[REACTIVATION] Starting automatic reactivation of all accounts...");
+    // 1. Local Database Reactivation
+    const localUsers = readCollection('users');
+    let localUpdatedCount = 0;
+    for (const [userId, userData] of Object.entries(localUsers)) {
+      if (userData && userData.disabled) {
+        localUsers[userId].disabled = false;
+        localUpdatedCount++;
+      }
+    }
+    if (localUpdatedCount > 0) {
+      writeCollection('users', localUsers);
+      console.log(`[REACTIVATION] Reactivated ${localUpdatedCount} local users.`);
+    } else {
+      console.log("[REACTIVATION] No disabled users found in local cache.");
+    }
+
+    // 2. Remote Firestore Reactivation (if admin is available and active)
+    if (firestoreAdmin) {
+      const usersSnap = await firestoreAdmin.collection('users').get();
+      if (!usersSnap.empty) {
+        let remoteUpdatedCount = 0;
+        const batch = firestoreAdmin.batch();
+        for (const doc of usersSnap.docs) {
+          const uData = doc.data();
+          if (uData && uData.disabled) {
+            batch.update(doc.ref, { disabled: false });
+            remoteUpdatedCount++;
+          }
+        }
+        if (remoteUpdatedCount > 0) {
+          await batch.commit();
+          console.log(`[REACTIVATION] Reactivated ${remoteUpdatedCount} remote users in Firestore.`);
+        } else {
+          console.log("[REACTIVATION] No disabled users found in Cloud Firestore.");
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[REACTIVATION] Failed during reactivation script:", err);
+  }
+}
+
 // Initialize Firebase Admin
 let db: any = localDbFirestore;
 try {
@@ -222,11 +267,19 @@ try {
   // Trigger automatic migration once in the background
   const remoteDb = admin.firestore();
   console.log("Firebase Admin initialized, launching one-time background migration check.");
-  migrateFromFirestore(remoteDb).catch(err => {
-    console.error("Migration task failed:", err);
-  });
+  migrateFromFirestore(remoteDb)
+    .then(() => {
+      return reactivateAllAccounts(remoteDb);
+    })
+    .catch(err => {
+      console.error("Migration task failed:", err);
+    });
 } catch (error) {
   console.log("Firebase Admin initialization warning:", error);
+  // Perform local reactivation even if Firebase initialization failed/warned
+  reactivateAllAccounts().catch(err => {
+    console.error("Local reactivation failed:", err);
+  });
 }
 
 async function startServer() {
