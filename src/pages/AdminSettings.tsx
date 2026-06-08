@@ -35,6 +35,7 @@ export const AdminSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLinkingDevice, setIsLinkingDevice] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isReactivatingAll, setIsReactivatingAll] = useState(false);
   const [cloudinaryStatus, setCloudinaryStatus] = useState<{ enabled: boolean, cloudName?: string, folder?: string }>({ enabled: false });
 
   // Backup & Restore state
@@ -695,6 +696,66 @@ export const AdminSettings: React.FC = () => {
     } catch (error) {
       console.error("Clear storage error:", error);
       addToast("Partial failure clearing storage.", "error");
+    }
+  };
+
+  const handleReactivateAllAccounts = async () => {
+    if (!window.confirm("Are you sure you want to reactivate all locked/deactivated student and teacher profiles globally across the institution? This will grant them immediate system dashboard access.")) {
+      return;
+    }
+
+    setIsReactivatingAll(true);
+    addToast("Initializing bulk account reactivation...", "success");
+
+    try {
+      // 1. Trigger the server POST endpoint which handles both remote Firestore admin updates and local persistence files
+      const response = await fetch('/api/admin/reactivate-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP code ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        addToast(
+          `Success: Unlocked ${data.localCount} local cache accounts & ${data.remoteCount} remote Firestore profiles!`,
+          "success"
+        );
+        // Force refresh user list in the UI
+        await fetchAdminData();
+      } else {
+        throw new Error(data.error || "Server activation operation failed.");
+      }
+    } catch (error: any) {
+      console.error("[Front-end Reactivation Error]", error);
+      
+      // Fallback: Attempt manual client-side updates through proxy if the node API is unreachable
+      try {
+        addToast("Endpoint unreachable. Shifting to client-side batch sweep...");
+        const usersCol = collection(db, 'users');
+        const snap = await getDocs(usersCol);
+        let count = 0;
+        
+        for (const userDoc of snap.docs) {
+          const u = userDoc.data();
+          if (u && u.disabled) {
+            await updateDoc(doc(db, 'users', userDoc.id), { disabled: false });
+            count++;
+          }
+        }
+        
+        addToast(`Client-side Sweep: Successfully restored ${count} student profiles directly!`, "success");
+        await fetchAdminData();
+      } catch (clientErr: any) {
+        addToast(`Reactivation failed: ${clientErr.message || clientErr}`, "error");
+      }
+    } finally {
+      setIsReactivatingAll(false);
     }
   };
 
@@ -1382,6 +1443,40 @@ export const AdminSettings: React.FC = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100/80 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-100 p-2 rounded-lg text-purple-700">
+                      <Lock size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 leading-tight">Account Protection & Access Unlock</h3>
+                      <p className="text-[10px] text-purple-600 font-semibold uppercase tracking-wider mt-px">System Recovery Tool</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-slate-605 leading-relaxed font-medium">
+                    This utility searches for all disabled or locked student and teacher user profiles across the local cache storage and remote Cloud Firestore database, and overrides their state to <b>Active</b> with a single action.
+                  </p>
+
+                  <button
+                    onClick={handleReactivateAllAccounts}
+                    disabled={isReactivatingAll}
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-md shadow-purple-200 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                  >
+                    {isReactivatingAll ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Reactivating...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={16} />
+                        Reactivate All Accounts
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">

@@ -436,6 +436,58 @@ async function startServer() {
     res.json({ success: true, syncedCount: count });
   });
 
+  // Admin-initiated complete reactivation of all deactivated users
+  apiRouter.post("/admin/reactivate-all", async (req, res) => {
+    try {
+      console.log("[ENDPOINT /admin/reactivate-all] Manually triggered reactivation of all deactivated accounts.");
+      
+      // 1. Reactivate in local cache file matching the structure
+      const localUsers = readCollection('users');
+      let localUpdatedCount = 0;
+      for (const [userId, userData] of Object.entries(localUsers)) {
+        if (userData && userData.disabled) {
+          localUsers[userId].disabled = false;
+          localUpdatedCount++;
+        }
+      }
+      if (localUpdatedCount > 0) {
+        writeCollection('users', localUsers);
+        console.log(`[ENDPOINT /admin/reactivate-all] Reactivated ${localUpdatedCount} local users.`);
+      }
+      
+      // 2. Reactivate in remote Cloud Firestore (if available via initialized Admin SDK)
+      let remoteUpdatedCount = 0;
+      const remoteDb = admin.apps.length > 0 ? admin.firestore() : null;
+      if (remoteDb) {
+        const usersSnap = await remoteDb.collection('users').get();
+        if (!usersSnap.empty) {
+          const batch = remoteDb.batch();
+          for (const doc of usersSnap.docs) {
+            const uData = doc.data();
+            if (uData && uData.disabled) {
+              batch.update(doc.ref, { disabled: false });
+              remoteUpdatedCount++;
+            }
+          }
+          if (remoteUpdatedCount > 0) {
+            await batch.commit();
+            console.log(`[ENDPOINT /admin/reactivate-all] Reactivated ${remoteUpdatedCount} remote users in Cloud Firestore.`);
+          }
+        }
+      }
+      
+      res.json({
+        success: true,
+        localCount: localUpdatedCount,
+        remoteCount: remoteUpdatedCount,
+        message: `Successfully reactivated ${localUpdatedCount} local users and ${remoteUpdatedCount} remote Firestore profiles.`
+      });
+    } catch (err: any) {
+      console.error("[ENDPOINT /admin/reactivate-all] Failure during administration activation script:", err);
+      res.status(500).json({ success: false, error: err.message || "Failed to complete bulk reactivation." });
+    }
+  });
+
   // --- BACKUP & RESTORE API ROUTES ---
   const BACKUP_DIR = path.join(process.cwd(), 'data_backups');
   if (!fs.existsSync(BACKUP_DIR)) {
