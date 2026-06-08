@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup, Expense } from '../types';
-import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar } from 'lucide-react';
+import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -49,6 +49,9 @@ export const Fees: React.FC = () => {
   const [editingFeeTypeId, setEditingFeeTypeId] = useState<string | null>(null);
   const [editingFeeGroupId, setEditingFeeGroupId] = useState<string | null>(null);
   const [editingHistoryIndex, setEditingHistoryIndex] = useState<number | null>(null);
+  const [auditSelectedClassId, setAuditSelectedClassId] = useState<string | null>(null);
+  const [auditStatusFilter, setAuditStatusFilter] = useState<'all' | 'paid' | 'unpaid' | 'overpaid'>('all');
+  const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [printConfirm, setPrintConfirm] = useState<{ student: User, item: any, balance: any } | null>(null);
 
@@ -1091,6 +1094,216 @@ export const Fees: React.FC = () => {
               window.print();
               setTimeout(() => { window.close(); }, 500);
             };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const getClassStats = (classId: string) => {
+    const classStudents = students.filter(s => (s.classIds || []).includes(classId));
+    const activeFeeBalances = feeBalances.filter(fb => classStudents.some(s => s.uid === fb.studentId));
+
+    let paidCount = 0;
+    let unpaidCount = 0;
+    let overpaidCount = 0;
+
+    let totalOutstanding = 0;
+    let totalPrepaid = 0;
+    let totalInvoiced = 0;
+    let totalPaid = 0;
+
+    const studentsDetails = classStudents.map(student => {
+      const balObj = feeBalances.find(fb => fb.studentId === student.uid);
+      const balance = balObj ? Number(balObj.balance) || 0 : 0;
+      const totalAmount = balObj ? Number(balObj.totalAmount) || 0 : 0;
+      const paidAmount = balObj ? Number(balObj.paidAmount) || 0 : 0;
+
+      totalInvoiced += totalAmount;
+      totalPaid += paidAmount;
+
+      let status: 'paid' | 'unpaid' | 'overpaid' = 'paid';
+      if (balance > 0) {
+        status = 'unpaid';
+        unpaidCount++;
+        totalOutstanding += balance;
+      } else if (balance < 0) {
+        status = 'overpaid';
+        overpaidCount++;
+        totalPrepaid += Math.abs(balance);
+      } else {
+        status = 'paid';
+        paidCount++;
+      }
+
+      return {
+        uid: student.uid,
+        name: student.name,
+        email: student.email,
+        admNo: student.admissionNumber || student.email.split('@')[0].toUpperCase(),
+        totalAmount,
+        paidAmount,
+        balance,
+        status
+      };
+    });
+
+    return {
+      totalStudents: classStudents.length,
+      paidCount,
+      unpaidCount,
+      overpaidCount,
+      totalOutstanding,
+      totalPrepaid,
+      totalInvoiced,
+      totalPaid,
+      studentsDetails
+    };
+  };
+
+  const handlePrintClassReport = (cls: any, stats: any, currentFilter: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const reportTitle = cls.name + " - Class Fees Report";
+    const dateStr = format(new Date(), 'MMMM dd, yyyy');
+
+    const filteredStudents = stats.studentsDetails.filter((s: any) => {
+      if (currentFilter === 'paid') return s.status === 'paid';
+      if (currentFilter === 'unpaid') return s.status === 'unpaid';
+      if (currentFilter === 'overpaid') return s.status === 'overpaid';
+      return true;
+    });
+
+    const paidPct = stats.totalStudents > 0 ? ((stats.paidCount / stats.totalStudents) * 100).toFixed(0) : '0';
+    const unpaidPct = stats.totalStudents > 0 ? ((stats.unpaidCount / stats.totalStudents) * 100).toFixed(0) : '0';
+    const overpaidPct = stats.totalStudents > 0 ? ((stats.overpaidCount / stats.totalStudents) * 100).toFixed(0) : '0';
+
+    let studentRowsHtml = '';
+    for (let i = 0; i < filteredStudents.length; i++) {
+      const s = filteredStudents[i];
+      const balColor = s.balance > 0 ? '#991b1b' : s.balance < 0 ? '#0284c7' : '#475569';
+      const badgeCls = s.status === 'paid' ? 'badge-paid' : s.status === 'unpaid' ? 'badge-unpaid' : 'badge-overpaid';
+      const badgeLbl = s.status === 'paid' ? 'Cleared' : s.status === 'unpaid' ? 'Outstanding' : 'Prepaid Credit';
+
+      studentRowsHtml += '<tr>' +
+        '<td style="font-family: monospace; font-weight: bold; color: #475569;">' + s.admNo + '</td>' +
+        '<td style="font-weight: 600;">' + s.name + '</td>' +
+        '<td style="text-align: right;">Ksh ' + s.totalAmount.toLocaleString() + '</td>' +
+        '<td style="text-align: right; color: #166534; font-weight: 600;">Ksh ' + s.paidAmount.toLocaleString() + '</td>' +
+        '<td style="text-align: right; font-weight: 700; color: ' + balColor + ';">Ksh ' + s.balance.toLocaleString() + '</td>' +
+        '<td><span class="badge ' + badgeCls + '">' + badgeLbl + '</span></td>' +
+      '</tr>';
+    }
+
+    if (filteredStudents.length === 0) {
+      studentRowsHtml = '<tr><td colspan="6" style="text-align: center; color: #64748b; font-style: italic; padding: 24px;">No student records found matching the active filter.</td></tr>';
+    }
+
+    const html = `
+      <html>
+        <head>
+          <title>${reportTitle}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #7c3aed; padding-bottom: 20px; }
+            .header h1 { margin: 0; font-size: 26px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: -0.02em; }
+            .header p { margin: 5px 0 0; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; }
+            
+            .summary-title { font-size: 14px; font-weight: 900; text-transform: uppercase; color: #1e293b; letter-spacing: 0.05em; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+            
+            .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 35px; }
+            .stat-card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; background: #fff; text-align: center; }
+            .stat-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.05em; }
+            .stat-value { font-size: 18px; font-weight: 800; color: #0f172a; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; background: #f8fafc; padding: 10px 12px; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; border-top: 1px solid #e2e8f0; }
+            td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 11px; color: #334155; }
+            .badge { display: inline-block; padding: 2px 6px; font-size: 9px; font-weight: 800; border-radius: 6px; text-transform: uppercase; }
+            .badge-paid { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+            .badge-unpaid { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+            .badge-overpaid { background: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
+
+            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+            @media print {
+              body { padding: 10px; }
+              @page { margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${reportTitle}</h1>
+            <p>Generated on ${dateStr} • Filter: ${currentFilter.toUpperCase()}</p>
+          </div>
+
+          <div class="summary-title">Class Performance Summary</div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Students</div>
+              <div class="stat-value">${stats.totalStudents}</div>
+            </div>
+            <div class="stat-card" style="border-top: 3px solid #166534;">
+              <div class="stat-label" style="color: #166534;">Paid (Cleared)</div>
+              <div class="stat-value" style="color: #166534;">${stats.paidCount} <span style="font-size: 11px; font-weight: normal; color: #64748b;">(${paidPct}%)</span></div>
+            </div>
+            <div class="stat-card" style="border-top: 3px solid #991b1b;">
+              <div class="stat-label" style="color: #991b1b;">Unpaid (Outstanding)</div>
+              <div class="stat-value" style="color: #991b1b;">${stats.unpaidCount} <span style="font-size: 11px; font-weight: normal; color: #64748b;">(${unpaidPct}%)</span></div>
+            </div>
+            <div class="stat-card" style="border-top: 3px solid #075985;">
+              <div class="stat-label" style="color: #075985;">Overpaid (Credits)</div>
+              <div class="stat-value" style="color: #075985;">${stats.overpaidCount} <span style="font-size: 11px; font-weight: normal; color: #64748b;">(${overpaidPct}%)</span></div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Invoiced Dues</div>
+              <div class="stat-value">Ksh ${stats.totalInvoiced.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Amount Paid</div>
+              <div class="stat-value" style="color: #166534;">Ksh ${stats.totalPaid.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Outstanding Arrears</div>
+              <div class="stat-value" style="color: #991b1b;">Ksh ${stats.totalOutstanding.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Prepaid Credits</div>
+              <div class="stat-value" style="color: #075985;">Ksh ${stats.totalPrepaid.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div class="summary-title">Class Student Roster</div>
+          <table>
+            <thead>
+              <tr>
+                <th>ADM No</th>
+                <th>Student Name</th>
+                <th style="text-align: right;">Total Billed</th>
+                <th style="text-align: right;">Total Paid</th>
+                <th style="text-align: right;">Running Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentRowsHtml}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>Breakthrough International - Comprehensive Class Financial System Report</p>
+          </div>
+
+          <script>
+            window.onload = function() { window.print(); }
           </script>
         </body>
       </html>
@@ -2817,6 +3030,294 @@ export const Fees: React.FC = () => {
                     <span className="text-xs font-bold">Net Cash Flow (Paid - Expenses)</span>
                   </div>
                 </div>
+              </div>
+
+              {/* BRAND NEW CLASS FEES REPORT SECTION (REQUESTED BY USER) */}
+              <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+                  <div>
+                    <span className="text-[10px] bg-purple-50 text-purple-600 font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wider">
+                      Dynamic Class-by-Class Fees Ledger
+                    </span>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight mt-1.5">
+                      Class Fees Audit Reports
+                    </h2>
+                    <p className="text-xs text-gray-400 font-medium">
+                      Select or search for any of our {classes.length} classes, such as <b>Cosmetology</b>, to immediately audit current overall paid, unpaid, and overpaid statistics with detailed student records.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                      <Search size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search classes..."
+                        value={auditSearchQuery}
+                        onChange={(e) => setAuditSearchQuery(e.target.value)}
+                        className="pl-9 pr-4 py-2.5 w-60 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none transition-all placeholder-gray-400 bg-gray-50/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {classes
+                    .filter(cls => !auditSearchQuery ? true : cls.name.toLowerCase().includes(auditSearchQuery.toLowerCase()))
+                    .map(cls => {
+                      const stats = getClassStats(cls.id);
+                      const isExpanded = auditSelectedClassId === cls.id;
+                      
+                      // Percentages
+                      const paidPct = stats.totalStudents > 0 ? (stats.paidCount / stats.totalStudents) * 100 : 0;
+                      const unpaidPct = stats.totalStudents > 0 ? (stats.unpaidCount / stats.totalStudents) * 100 : 0;
+                      const overpaidPct = stats.totalStudents > 0 ? (stats.overpaidCount / stats.totalStudents) * 100 : 0;
+
+                      return (
+                        <div 
+                          key={cls.id}
+                          className={`group rounded-2xl border transition-all duration-300 ${
+                            isExpanded 
+                              ? 'border-purple-200 bg-purple-50/10 shadow-md ring-1 ring-purple-100' 
+                              : 'border-slate-100 hover:border-purple-200 hover:shadow-md hover:bg-slate-50/30'
+                          }`}
+                        >
+                          {/* Card Front details */}
+                          <div className="p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-bold text-slate-800 text-xs sm:text-sm group-hover:text-purple-600 transition-colors uppercase tracking-tight">
+                                  {cls.name}
+                                </h3>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{stats.totalStudents} Registered Students</p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setAuditSelectedClassId(isExpanded ? null : cls.id);
+                                }}
+                                className={`p-2 rounded-xl transition-all ${
+                                  isExpanded 
+                                    ? 'bg-purple-600 text-white' 
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                                }`}
+                                title="Expand Details"
+                              >
+                                {isExpanded ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                            </div>
+
+                            {/* 3 Status mini counters */}
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div className="bg-emerald-50 rounded-xl p-2 border border-emerald-100">
+                                <p className="text-[9px] font-black text-emerald-800 uppercase tracking-widest leading-none">Paid</p>
+                                <p className="text-sm font-extrabold text-emerald-600 mt-1">{stats.paidCount}</p>
+                                <p className="text-[9px] text-emerald-700/80 font-bold mt-0.5">{paidPct.toFixed(0)}%</p>
+                              </div>
+                              <div className="bg-rose-50 rounded-xl p-2 border border-rose-100">
+                                <p className="text-[9px] font-black text-rose-800 uppercase tracking-widest leading-none">Unpaid</p>
+                                <p className="text-sm font-extrabold text-rose-500 mt-1">{stats.unpaidCount}</p>
+                                <p className="text-[9px] text-rose-700/80 font-bold mt-0.5">{unpaidPct.toFixed(0)}%</p>
+                              </div>
+                              <div className="bg-sky-50 rounded-xl p-2 border border-sky-100">
+                                <p className="text-[9px] font-black text-sky-800 uppercase tracking-widest leading-none">Overpaid</p>
+                                <p className="text-sm font-extrabold text-sky-600 mt-1">{stats.overpaidCount}</p>
+                                <p className="text-[9px] text-sky-700/80 font-bold mt-0.5">{overpaidPct.toFixed(0)}%</p>
+                              </div>
+                            </div>
+
+                            {/* Dynamic visual progress strip */}
+                            <div className="h-2 rounded-full bg-slate-100 flex overflow-hidden">
+                              <div className="bg-emerald-500" style={{ width: `${paidPct}%` }} title={`Paid: ${paidPct.toFixed(0)}%`} />
+                              <div className="bg-rose-500" style={{ width: `${unpaidPct}%` }} title={`Unpaid: ${unpaidPct.toFixed(0)}%`} />
+                              <div className="bg-sky-500" style={{ width: `${overpaidPct}%` }} title={`Overpaid: ${overpaidPct.toFixed(0)}%`} />
+                            </div>
+
+                            {/* Summaries of money volumes */}
+                            <div className="space-y-1.5 pt-1 text-xs font-semibold text-slate-500">
+                              <div className="flex justify-between">
+                                <span>Unpaid Arrears:</span>
+                                <span className="text-rose-500 font-extrabold">Ksh {stats.totalOutstanding.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Prepaid Credits:</span>
+                                <span className="text-sky-600 font-extrabold">Ksh {stats.totalPrepaid.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action footer */}
+                          <div className="bg-slate-50/80 px-6 py-3.5 border-t border-slate-100 rounded-b-2xl flex items-center justify-between">
+                            <button
+                              onClick={() => handlePrintClassReport(cls, stats, 'all')}
+                              className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider flex items-center gap-1 hover:text-purple-700 hover:underline cursor-pointer"
+                            >
+                              <Printer size={13} /> Print Class Summary
+                            </button>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Ksh {stats.totalPaid.toLocaleString()} collected
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {classes.filter(cls => !auditSearchQuery ? true : cls.name.toLowerCase().includes(auditSearchQuery.toLowerCase())).length === 0 && (
+                    <div className="col-span-full py-12 text-center bg-gray-50 rounded-2xl border border-gray-150 border-dashed">
+                      <p className="text-sm font-bold text-gray-400">No classes found matching the query.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Expanded class details table */}
+                {auditSelectedClassId && (() => {
+                  const targetClass = classes.find(c => c.id === auditSelectedClassId);
+                  if (!targetClass) return null;
+                  
+                  const stats = getClassStats(targetClass.id);
+                  const filteredStudents = stats.studentsDetails.filter((s: any) => {
+                    if (auditStatusFilter === 'paid') return s.status === 'paid';
+                    if (auditStatusFilter === 'unpaid') return s.status === 'unpaid';
+                    if (auditStatusFilter === 'overpaid') return s.status === 'overpaid';
+                    return true;
+                  });
+
+                  return (
+                    <div className="bg-slate-50/50 rounded-3xl p-6 sm:p-8 space-y-6 border border-purple-100 animate-in fade-in duration-300">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs bg-purple-600 font-extrabold text-white uppercase px-2.5 py-0.5 rounded-full">
+                              Active Audit focus
+                            </span>
+                            <span className="text-xs text-gray-400 font-bold">
+                              {stats.totalStudents} total students
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-black text-slate-800 uppercase mt-1 tracking-tight">
+                            {targetClass.name} Ledger Details
+                          </h3>
+                        </div>
+
+                        {/* Filter toolbar inside expander */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            onClick={() => setAuditStatusFilter('all')}
+                            className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-slate-800 text-white border-slate-800 shadow-sm"
+                          >
+                            All ({stats.totalStudents})
+                          </button>
+                          <button
+                            onClick={() => setAuditStatusFilter('paid')}
+                            className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                          >
+                            Paid / Cleared ({stats.paidCount})
+                          </button>
+                          <button
+                            onClick={() => setAuditStatusFilter('unpaid')}
+                            className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-rose-500 text-white border-rose-500 shadow-sm"
+                          >
+                            Unpaid ({stats.unpaidCount})
+                          </button>
+                          <button
+                            onClick={() => setAuditStatusFilter('overpaid')}
+                            className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-sky-500 text-white border-sky-500 shadow-sm"
+                          >
+                            Overpaid ({stats.overpaidCount})
+                          </button>
+                          
+                          <button
+                            onClick={() => handlePrintClassReport(targetClass, stats, auditStatusFilter)}
+                            className="bg-white hover:bg-purple-50 text-purple-600 border border-purple-200 px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm ml-auto cursor-pointer"
+                          >
+                            <Printer size={14} /> Print Detailed PDF
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Actual Table */}
+                      <div className="overflow-hidden border border-slate-100 bg-white shadow-xs rounded-2xl">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left">
+                            <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                              <tr>
+                                <th className="px-6 py-4">Student Info</th>
+                                <th className="px-6 py-4 text-right">Lifetime Billed</th>
+                                <th className="px-6 py-4 text-right">Total Payments Made</th>
+                                <th className="px-6 py-4 text-right">Account Balance</th>
+                                <th className="px-8 py-4 text-right">Status & Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {filteredStudents.map((s) => (
+                                <tr key={s.uid} className="hover:bg-slate-50/40 transition-colors">
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+                                        {s.name.charAt(0)}
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-bold text-slate-800 leading-tight">{s.name}</p>
+                                        <p className="text-[10px] text-gray-400 font-bold mt-0.5">ADM: <span className="font-mono text-slate-600">{s.admNo}</span></p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right text-xs font-bold text-slate-700">
+                                    Ksh {s.totalAmount.toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-4 text-right text-xs font-bold text-emerald-600">
+                                    Ksh {s.paidAmount.toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-4 text-right text-xs font-extrabold">
+                                    <span className={
+                                      s.balance > 0 
+                                        ? 'text-rose-500' 
+                                        : s.balance < 0 
+                                          ? 'text-sky-600' 
+                                          : 'text-slate-500'
+                                    }>
+                                      Ksh {s.balance.toLocaleString()}
+                                    </span>
+                                  </td>
+                                  <td className="px-8 py-4 text-right">
+                                    <div className="flex items-center justify-end gap-4">
+                                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${
+                                        s.status === 'paid' 
+                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                          : s.status === 'unpaid' 
+                                            ? 'bg-rose-50 text-rose-700 border border-rose-100' 
+                                            : 'bg-sky-50 text-sky-700 border border-sky-100'
+                                      }`}>
+                                        {s.status === 'paid' ? 'Cleared' : s.status === 'unpaid' ? 'Outstanding' : 'Prepaid Credit'}
+                                      </span>
+                                      <button 
+                                        onClick={() => {
+                                          const userObj = students.find(stud => stud.uid === s.uid);
+                                          if (userObj) {
+                                            setSelectedStudent(userObj);
+                                            // Select Individual tab to manage their statement
+                                            setActiveTab('individual');
+                                          }
+                                        }}
+                                        className="text-[10px] font-black text-purple-600 uppercase tracking-widest hover:text-purple-700 hover:underline cursor-pointer"
+                                      >
+                                        Inspect
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredStudents.length === 0 && (
+                                <tr>
+                                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
+                                    No student records found matching the active filter.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
