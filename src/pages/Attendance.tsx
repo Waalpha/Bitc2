@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, addDoc, doc, updateDoc, getDocs, orderBy, limit, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, AttendanceRecord, User, SchoolCalendar } from '../types';
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin, Printer, Volume2 } from 'lucide-react';
+import { Calendar, Check, X, Save, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, AlertCircle, BarChart2, List, User as UserIcon, Lock, Unlock, Info, Fingerprint, RefreshCw, Smartphone, QrCode, Camera, History as HistoryIcon, Cpu, Wifi, MapPin, Printer, Volume2, UserX } from 'lucide-react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -443,10 +443,12 @@ void loop() {
     return map;
   }, [students, allAttendance, attendance, selectedDate]);
 
+  const [absenceThreshold, setAbsenceThreshold] = useState<number>(7);
+
   const criticalAbsentStudents = useMemo(() => {
     return students
       .map(s => ({ student: s, count: consecutiveAbsencesMap[s.uid] || 0 }))
-      .filter(item => item.count >= 3)
+      .filter(item => item.count >= 3 && !item.student.disabled)
       .sort((a, b) => b.count - a.count);
   }, [students, consecutiveAbsencesMap]);
 
@@ -466,6 +468,54 @@ void loop() {
 
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [holidayReason, setHolidayReason] = useState('Public Holiday');
+
+  const handleDeactivateStudent = async (studentId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to deactivate ${name}'s account due to excessive absence?`)) {
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'users', studentId), {
+        disabled: true
+      });
+      setStudents(prev => prev.map(s => s.uid === studentId ? { ...s, disabled: true } : s));
+      addToast(`Deactivated account for ${name} due to absence.`, "success");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${studentId}`);
+    }
+  };
+
+  const handleDeactivateAllAbsentStudents = async () => {
+    const listToDeactivate = students.filter(s => !s.disabled && (consecutiveAbsencesMap[s.uid] || 0) >= absenceThreshold);
+    if (listToDeactivate.length === 0) {
+      addToast(`No active students found with ${absenceThreshold} or more consecutive absences`, "error");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to deactivate ${listToDeactivate.length} students with ${absenceThreshold}+ days of consecutive absences?`)) {
+      return;
+    }
+
+    let count = 0;
+    try {
+      const batch = writeBatch(db);
+      listToDeactivate.forEach(student => {
+        batch.update(doc(db, 'users', student.uid), { disabled: true });
+        count++;
+      });
+      await batch.commit();
+      
+      setStudents(prev => prev.map(s => {
+        const found = listToDeactivate.some(ld => ld.uid === s.uid);
+        if (found) {
+          return { ...s, disabled: true };
+        }
+        return s;
+      }));
+      addToast(`Successfully deactivated ${count} students with ${absenceThreshold}+ consecutive absences`, 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `users (batch)`);
+    }
+  };
 
   const checkAllStudentsAbsencesAndDeactivate = async (studentList?: User[]) => {
     // Automatic background deactivation of student profiles has been disabled.
@@ -2549,37 +2599,106 @@ void loop() {
                   </div>
                 ) : (
                   <>
-                    {/* Real-time Consecutive Absence Warning Panel */}
-                    {criticalAbsentStudents.length > 0 && (
+                    {/* Always visible Absentee Monitoring & Account Deactivation Panel for Supervisors */}
+                    {(isTeacher || isAdmin) && (
                       <motion.div 
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="p-5 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col gap-3 shadow-sm mb-4"
+                        className="p-5 bg-gradient-to-r from-red-50/50 via-rose-50 to-amber-50/30 border border-rose-200 rounded-3xl flex flex-col gap-4 shadow-sm mb-6"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 bg-rose-100 rounded-lg text-rose-600 animate-pulse">
-                            <AlertCircle size={20} />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-rose-950 uppercase tracking-wider">Critical Real-time Absence Watch</h4>
-                            <p className="text-[11px] text-rose-600 font-semibold leading-tight">Students with 3 or more consecutive absent sessions</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
-                          {criticalAbsentStudents.map(({ student, count }, idx) => (
-                            <div key={`crit_${student.uid || 'stub'}_${idx}`} className="flex items-center justify-between bg-white/70 backdrop-blur-sm border border-rose-100/50 rounded-xl p-3 shadow-xs">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-extrabold text-slate-800">{student.name}</span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{student.admissionNumber || 'No ADM'}</span>
-                              </div>
-                              <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2 py-1 rounded-lg ${
-                                count > 3 ? 'bg-red-500 text-white animate-bounce' : 'bg-amber-500 text-white'
-                              }`}>
-                                {count} Days Abs.
-                              </span>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2.5 bg-rose-105 rounded-xl text-rose-650 shrink-0 shadow-sm">
+                              <UserX size={22} className="animate-pulse" />
                             </div>
-                          ))}
+                            <div>
+                              <h4 className="text-base font-extrabold text-rose-950 tracking-tight uppercase">Absentee Monitoring & Account Deactivation</h4>
+                              <p className="text-xs text-slate-700 font-medium leading-tight">
+                                Identify and deactivate student accounts with extended continuous absences automatically or with a single click.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Dynamic Threshold Selector Control */}
+                          <div className="flex flex-wrap items-center gap-3 bg-white/80 p-3 rounded-2xl border border-rose-100 shadow-xs">
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Deactivate After:</span>
+                            <select
+                              value={absenceThreshold}
+                              onChange={(e) => {
+                                setAbsenceThreshold(Number(e.target.value));
+                                addToast(`Threshold set to ${e.target.value} days absent`, "success");
+                              }}
+                              className="bg-gray-50 border border-gray-200 text-gray-950 text-xs font-black rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 block transition-all cursor-pointer"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14].map(num => (
+                                <option key={num} value={num}>{num} {num === 1 ? 'Day' : 'Days'} Absent</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
+
+                        {/* List/Grid of Students meeting criteria */}
+                        {(() => {
+                          const qualifyingStudents = students
+                            .map(s => ({ student: s, count: consecutiveAbsencesMap[s.uid] || 0 }))
+                            .filter(item => item.count >= absenceThreshold && !item.student.disabled)
+                            .sort((a, b) => b.count - a.count);
+
+                          return (
+                            <div className="space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-rose-150 pt-3">
+                                <span className="text-xs font-bold text-rose-900 uppercase tracking-widest flex items-center gap-1.5 label-badge">
+                                  Qualifying Students ({qualifyingStudents.length} active)
+                                </span>
+                                {qualifyingStudents.length > 0 && (
+                                  <button
+                                    onClick={handleDeactivateAllAbsentStudents}
+                                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
+                                  >
+                                    <UserX size={14} />
+                                    <span>Deactivate All {qualifyingStudents.length} Students</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {qualifyingStudents.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {qualifyingStudents.map(({ student, count }) => (
+                                    <div 
+                                      key={`panel_crit_${student.uid}`} 
+                                      className="flex items-center justify-between bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all"
+                                    >
+                                      <div className="flex flex-col gap-1 min-w-[65%]">
+                                        <span className="text-xs font-black text-slate-800 truncate block">{student.name}</span>
+                                        <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-tight">{student.admissionNumber || 'No ADM'}</span>
+                                        <button
+                                          onClick={() => handleDeactivateStudent(student.uid, student.name)}
+                                          className="mt-2 py-1.5 px-2.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[9px] font-black uppercase tracking-widest transition-all self-start shadow-sm flex items-center gap-1"
+                                          title={`Deactivate account immediately for ${student.name}`}
+                                        >
+                                          <UserX size={11} />
+                                          <span>Deactivate</span>
+                                        </button>
+                                      </div>
+                                      <span className="text-xs font-black uppercase tracking-wider px-2.5 py-1.5 rounded-xl shrink-0 bg-red-50 border border-red-200 text-red-650 animate-pulse">
+                                        {count} Days Abs.
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-6 px-4 bg-white/40 border border-dashed border-rose-200 rounded-2xl">
+                                  <p className="text-xs font-bold text-slate-500 uppercase">
+                                    No active students have reached {absenceThreshold} consecutive days of absence in this class list.
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                                    💡 Tip: Change the "Deactivate After" threshold dropdown above to <span className="font-bold text-rose-500">1 Day</span> or <span className="font-bold text-rose-500">2 Days</span> to find students and show the Deactivate action buttons immediately.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </motion.div>
                     )}
 
@@ -2606,12 +2725,18 @@ void loop() {
                                       {student.name.charAt(0)}
                                     </div>
                                     <div>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-sm font-bold text-gray-900">{student.name}</p>
                                         {student.admissionNumber && (
                                           <p className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-fit uppercase tracking-tight">
                                             {student.admissionNumber}
                                           </p>
+                                        )}
+                                        {student.disabled && (
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 border border-red-200 text-[10px] font-bold uppercase text-red-600">
+                                            <UserX size={10} />
+                                            Deactivated
+                                          </div>
                                         )}
                                         {consecutiveAbsencesMap[student.uid] >= 3 && (
                                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-xs font-bold uppercase animate-pulse ${
@@ -2622,6 +2747,16 @@ void loop() {
                                             <AlertCircle size={10} />
                                             {consecutiveAbsencesMap[student.uid]} absences
                                           </div>
+                                        )}
+                                        {consecutiveAbsencesMap[student.uid] >= absenceThreshold && !student.disabled && (isTeacher || isAdmin) && (
+                                          <button
+                                            onClick={() => handleDeactivateStudent(student.uid, student.name)}
+                                            className="flex items-center justify-center gap-1 px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[10px] font-extrabold uppercase tracking-wider transition-all shadow-xs"
+                                            title={`Deactivate Account due to ${absenceThreshold}+ Days consecutive absence`}
+                                          >
+                                            <UserX size={10} />
+                                            Deactivate ({absenceThreshold}+ Absent)
+                                          </button>
                                         )}
                                         {feeBalances[student.uid] > 0 && (
                                           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50 border border-red-100 text-xs font-bold uppercase text-red-600 animate-pulse">
