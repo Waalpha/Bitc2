@@ -139,9 +139,9 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
         // Standard high-quality English pronunciation parameters.
         // Rates around 0.98 - 1.0 sound continuous, pleasant, and natural.
         // Choppy speeds below 0.9 (like 0.88) feel synthetic and "hang" word-to-word.
-        utterance.lang = 'en-ZA'; 
-        utterance.rate = 1.0; 
-        utterance.pitch = 1.0;
+        utterance.lang = 'en-KE'; 
+        utterance.rate = 1.5; 
+        utterance.pitch = 1.5;
         
         const voices = window.speechSynthesis.getVoices();
         

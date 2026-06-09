@@ -22,6 +22,7 @@ interface AuthContextType {
   schools: School[];
   activeSchoolId: string;
   setActiveSchoolId: (schoolId: string) => void;
+  loginAsDemoUser?: (uid: string, profile: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -42,12 +43,14 @@ const AuthContext = createContext<AuthContextType>({
   schools: [],
   activeSchoolId: 'bitc',
   setActiveSchoolId: () => {},
+  loginAsDemoUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [demoUserUid, setDemoUserUid] = useState<string | null>(() => localStorage.getItem('demo_user_uid'));
   const [userData, setUserData] = useState<any | null>(null);
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [activeStudentUid, setActiveStudentUid] = useState<string | null>(null);
@@ -179,6 +182,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, (err) => console.log(`No custom gallery for school ${activeSchoolId}`))
     ];
 
+    if (demoUserUid) {
+      const cachedProfile = localStorage.getItem('demo_user_profile');
+      let displayName = 'Demo User';
+      let email = 'demo@school.com';
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile);
+          displayName = parsed.name || displayName;
+          email = parsed.email || email;
+        } catch (_) {}
+      }
+
+      setUser({
+        uid: demoUserUid,
+        email: email,
+        displayName: displayName,
+        photoURL: null,
+      } as any);
+      setLoading(false);
+      setIsAuthReady(true);
+
+      return () => {
+        subs.forEach(unsub => unsub());
+      };
+    }
+
     const unsubscribeAuth = auth?.onAuthStateChanged ? onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (!user) {
@@ -192,7 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subs.forEach(unsub => unsub());
       unsubscribeAuth();
     };
-  }, [activeSchoolId]);
+  }, [activeSchoolId, demoUserUid]);
 
   // Synchronize user settings and roles
   useEffect(() => {
@@ -360,10 +389,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return permissions.includes(permission);
   }, [userData?.role, permissions]);
 
+  const loginAsDemoUser = useCallback((uid: string, profile: any) => {
+    localStorage.setItem('demo_user_uid', uid);
+    localStorage.setItem('demo_user_profile', JSON.stringify(profile));
+    setDemoUserUid(uid);
+    setUser({
+      uid,
+      email: profile.email || 'demo@school.com',
+      displayName: profile.name || 'Demo User',
+      photoURL: profile.photoUrl || null,
+    } as any);
+  }, []);
+
   const logout = async () => {
+    localStorage.removeItem('demo_user_uid');
+    localStorage.removeItem('demo_user_profile');
+    setDemoUserUid(null);
     if (auth) {
       await auth.signOut();
     }
+    setUser(null);
+    setUserData(null);
   };
 
   return (
@@ -384,7 +430,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setActiveStudentByUid,
       schools,
       activeSchoolId,
-      setActiveSchoolId
+      setActiveSchoolId,
+      loginAsDemoUser
     }}>
       {children}
     </AuthContext.Provider>
