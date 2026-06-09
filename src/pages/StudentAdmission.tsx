@@ -170,6 +170,16 @@ export const StudentAdmission: React.FC = () => {
     setIsUploading(true);
 
     try {
+      // Validate unique email first before starting uploads/admitting to prevent duplication
+      const emailQuery = query(collection(db, 'users'), where('email', '==', formData.email.trim().toLowerCase()));
+      const emailSnap = await getDocs(emailQuery);
+      if (!emailSnap.empty) {
+        addToast(`A user with the email address "${formData.email.trim()}" is already registered.`, "error");
+        setLoading(false);
+        setIsUploading(false);
+        return;
+      }
+
       let photoUrl = '';
       if (studentPhoto) {
         const photoUpload = await uploadFile(studentPhoto);
@@ -280,12 +290,17 @@ export const StudentAdmission: React.FC = () => {
           let successCount = 0;
           let failCount = 0;
 
-          // Get latest admission number to continue sequence if needed
+          // Get latest admission number and existing emails to continue sequence and prevent user duplication
           const usersSnapshot = await getDocs(query(collection(db, 'users')));
           let maxAdm = 341;
+          const existingEmails = new Set<string>();
           usersSnapshot.docs.forEach(d => {
-            const adm = parseInt(d.data().admissionNumber);
+            const data = d.data();
+            const adm = parseInt(data.admissionNumber);
             if (!isNaN(adm) && adm > maxAdm) maxAdm = adm;
+            if (data.email) {
+              existingEmails.add(data.email.toLowerCase().trim());
+            }
           });
 
           for (const rawRow of results.data as any[]) {
@@ -295,11 +310,18 @@ export const StudentAdmission: React.FC = () => {
               row[key] = typeof rawRow[key] === 'string' ? rawRow[key].trim() : rawRow[key];
             });
 
-            // Basic validation
+            // Basic validation and duplicate prevention
             if (!row.firstName || !row.lastName || !row.email) {
               failCount++;
               continue;
             }
+
+            const rowEmail = row.email.toLowerCase().trim();
+            if (existingEmails.has(rowEmail)) {
+              failCount++;
+              continue;
+            }
+            existingEmails.add(rowEmail);
 
             // Resolve Class IDs if Class Names are provided
             let classIds: string[] = [];

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db, isFirebaseReady } from '../firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { LogOut, Loader2, ShieldCheck, GraduationCap, Briefcase } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
@@ -44,7 +44,128 @@ export const Auth: React.FC = () => {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      const existingData = userDoc.exists() ? userDoc.data() : null;
+      let existingData = userDoc.exists() ? userDoc.data() : null;
+
+      // Migrate existing registration profiles with a randomized admission UID to their final Google Auth UID
+      if (!existingData || !existingData.role) {
+        const userEmail = user.email?.toLowerCase().trim() || '';
+        const q = query(collection(db, 'users'), where('email', '==', userEmail));
+        const qSnap = await getDocs(q);
+
+        let matchedData: any = null;
+        let oldDocId: string | null = null;
+
+        for (const d of qSnap.docs) {
+          if (d.id !== user.uid) {
+            if (!matchedData) {
+              matchedData = d.data();
+              oldDocId = d.id;
+            } else {
+              // Delete additional redundant duplicates if the database is in a dirty state
+              try {
+                await deleteDoc(doc(db, 'users', d.id));
+              } catch (delErr) {
+                console.error("Error cleaning redundant user record:", delErr);
+              }
+            }
+          }
+        }
+
+        if (oldDocId && matchedData) {
+          existingData = {
+            ...matchedData,
+            name: matchedData.name || user.displayName || 'Anonymous',
+            email: user.email,
+            uid: user.uid,
+            updatedAt: new Date().toISOString()
+          };
+
+          // Synchronize registration document to Auth user document location
+          await setDoc(userDocRef, existingData, { merge: true });
+
+          // Purge the old, temporary, auto-generated registration document
+          try {
+            await deleteDoc(doc(db, 'users', oldDocId));
+          } catch (delOldErr) {
+            console.error("Error removing old pre-registration account:", delOldErr);
+          }
+
+          // Cascade-update all relational entities referencing the outdated auto-generated ID
+          try {
+            const batch = writeBatch(db);
+            let docsChanged = 0;
+
+            // 1. Migrate custom fees objects
+            const feesSnap = await getDocs(query(collection(db, 'fees'), where('studentId', '==', oldDocId)));
+            feesSnap.docs.forEach(fd => {
+              batch.update(doc(db, 'fees', fd.id), { studentId: user.uid });
+              docsChanged++;
+            });
+
+            // 2. Migrate outstanding fee balances
+            const feeBalancesSnap = await getDocs(query(collection(db, 'fee_balances'), where('studentId', '==', oldDocId)));
+            feeBalancesSnap.docs.forEach(fbd => {
+              batch.update(doc(db, 'fee_balances', fbd.id), { studentId: user.uid });
+              docsChanged++;
+            });
+
+            // 3. Migrate homework and assignment submissions
+            const submissionsSnap = await getDocs(query(collection(db, 'submissions'), where('studentId', '==', oldDocId)));
+            submissionsSnap.docs.forEach(sd => {
+              batch.update(doc(db, 'submissions', sd.id), { studentId: user.uid });
+              docsChanged++;
+            });
+
+            // 4. Migrate exam attendance logs
+            const examAttendSnap = await getDocs(query(collection(db, 'exam_attendance'), where('studentId', '==', oldDocId)));
+            examAttendSnap.docs.forEach(ead => {
+              batch.update(doc(db, 'exam_attendance', ead.id), { studentId: user.uid });
+              docsChanged++;
+            });
+
+            // 5. Migrate target notifications
+            const notificationsSnap = await getDocs(query(collection(db, 'notifications'), where('userId', '==', oldDocId)));
+            notificationsSnap.docs.forEach(nd => {
+              batch.update(doc(db, 'notifications', nd.id), { userId: user.uid });
+              docsChanged++;
+            });
+
+            // 6. Migrate daily classroom attendance records (embedded keys in maps)
+            const attendanceSnap = await getDocs(collection(db, 'attendance'));
+            attendanceSnap.docs.forEach(ad => {
+              const data = ad.data();
+              let changed = false;
+              const updatedRecords = data.records ? { ...data.records } : {};
+              if (updatedRecords[oldDocId as string] !== undefined) {
+                updatedRecords[user.uid] = updatedRecords[oldDocId as string];
+                delete updatedRecords[oldDocId as string];
+                changed = true;
+              }
+              const updatedBiometricLogs = data.biometricLogs ? { ...data.biometricLogs } : {};
+              if (updatedBiometricLogs[oldDocId as string] !== undefined) {
+                updatedBiometricLogs[user.uid] = updatedBiometricLogs[oldDocId as string];
+                delete updatedBiometricLogs[oldDocId as string];
+                changed = true;
+              }
+              if (changed) {
+                batch.update(doc(db, 'attendance', ad.id), {
+                  records: updatedRecords,
+                  biometricLogs: updatedBiometricLogs
+                });
+                docsChanged++;
+              }
+            });
+
+            if (docsChanged > 0) {
+              await batch.commit();
+            }
+            console.log(`Successfully migrated ${docsChanged} references from old UID ${oldDocId} to Google UID ${user.uid}`);
+          } catch (cascadeErr) {
+            console.error("Error migrating referencing records:", cascadeErr);
+          }
+        }
+      }
+
       if (!existingData || !existingData.role) {
         const userEmail = user.email?.toLowerCase() || '';
         let finalRole: 'student' | 'teacher' | 'admin' = role;
@@ -64,6 +185,7 @@ export const Auth: React.FC = () => {
           email: user.email,
           role: finalRole,
           createdAt: new Date().toISOString(),
+          uid: user.uid,
         }, { merge: true });
       }
     } catch (err: any) {

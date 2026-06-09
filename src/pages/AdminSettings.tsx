@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -45,6 +45,22 @@ export const AdminSettings: React.FC = () => {
   const [backupName, setBackupName] = useState('');
   const [backupNotes, setBackupNotes] = useState('');
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+
+  // School Cloning & Export Preparation state
+  const [cloneSchoolName, setCloneSchoolName] = useState('');
+  const [cloneOptions, setCloneOptions] = useState({
+    purgeStudents: true,
+    purgeAttendance: true,
+    purgeFees: true,
+    purgeExams: true,
+    purgeClasses: false,
+    purgeTimetable: false,
+    purgeExpenses: true,
+    purgeChats: true,
+  });
+  const [isCloning, setIsCloning] = useState(false);
+  const [showCloneConfirmModal, setShowCloneConfirmModal] = useState(false);
+  const [cloneResult, setCloneResult] = useState<any>(null);
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -756,6 +772,39 @@ export const AdminSettings: React.FC = () => {
       }
     } finally {
       setIsReactivatingAll(false);
+    }
+  };
+
+  const handlePerformCloneSanitization = async () => {
+    setIsCloning(true);
+    setCloneResult(null);
+    try {
+      const response = await fetch('/api/maintenance/sanitize-school-clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          schoolName: cloneSchoolName,
+          ...cloneOptions
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setCloneResult(data);
+        addToast("Database prepared successfully for school clone!", "success");
+        setShowCloneConfirmModal(false);
+        // Refresh local lists and backup points list
+        await fetchAdminData();
+        await fetchBackups();
+      } else {
+        addToast(data.error || "Failed to prepare school clone", "error");
+      }
+    } catch (err: any) {
+      console.error("Clone sanitization error:", err);
+      addToast(err.message || "Network error preparing school clone", "error");
+    } finally {
+      setIsCloning(false);
     }
   };
 
@@ -1491,6 +1540,170 @@ export const AdminSettings: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* School Cloning & Clean Template deployment builder */}
+            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald-100 p-2 rounded-xl text-emerald-700 shadow-xs">
+                  <GraduationCap size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">Prepare Clone for Another School</h3>
+                  <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider mt-px">SaaS Reseller Packager</p>
+                </div>
+              </div>
+              
+              <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+                Easily clean and package this app instance to sell to another school. Choose which dataset logs to wipe completely while preserving clean system configurations.
+              </p>
+
+              <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-emerald-100/60 shadow-inner">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">New Institution / School Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Greenwood Academy" 
+                    value={cloneSchoolName}
+                    onChange={(e) => setCloneSchoolName(e.target.value)}
+                    className="w-full border border-gray-200 bg-white rounded-xl p-3 text-xs text-gray-950 focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
+                  />
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Configure Purge Parameters:</p>
+                  
+                  <div className="grid grid-cols-1 gap-2.5">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeStudents}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeStudents: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">All Student & Parent Register profiles</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeAttendance}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeAttendance: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">Daily Gate & Biometric Attendance records</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeFees}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeFees: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">Student Fee Structures, logs & balances</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeExams}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeExams: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">Exam Marks sheets, submissions & results</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeExpenses}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeExpenses: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">School expenses & financial logs</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeChats}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeChats: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-black">Internal Chats, announcements & alerts</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none opacity-60">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeClasses}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeClasses: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-bold">Wipe Classes & Course Templates</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none opacity-60">
+                      <input 
+                        type="checkbox" 
+                        checked={cloneOptions.purgeTimetable}
+                        onChange={(e) => setCloneOptions(prev => ({ ...prev, purgeTimetable: e.target.checked }))}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span className="text-xs text-slate-700 font-bold">Reset lesson timetable slots</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCloneConfirmModal(true)}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-3.5 rounded-xl font-black transition-all shadow-md shadow-emerald-100 flex items-center justify-center gap-2 text-xs uppercase tracking-widest cursor-pointer"
+              >
+                <Trash2 size={15} />
+                Wipe & Rebrand App Template
+              </button>
+
+              {cloneResult && (
+                <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl space-y-3.5 text-xs text-emerald-800 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-extrabold uppercase text-[10px] tracking-wider text-emerald-900 border-b border-emerald-150 pb-2">
+                    <CheckCircle size={16} className="text-emerald-600 animate-pulse" /> 
+                    <span>Application Clone Template Packaged Successfully!</span>
+                  </div>
+
+                  <p className="text-slate-650 font-semibold leading-relaxed text-[11px]">
+                    The current sandbox workspace has been seamlessly rebranded to <strong className="text-emerald-950">"{cloneSchoolName || 'New Institution'}"</strong> in-place, and all transactional data logs have been sanitized.
+                  </p>
+
+                  <div className="space-y-1">
+                    <p className="font-extrabold uppercase text-[9px] tracking-wider text-slate-500">Purge Summary:</p>
+                    <ul className="list-disc list-inside space-y-0.5 font-mono text-[10px] text-slate-600 bg-white/70 p-2.5 rounded-xl border border-emerald-100/60 max-h-32 overflow-y-auto shadow-inner">
+                      {Object.entries(cloneResult.deletedCounts || {}).map(([key, val]) => (
+                        <li key={key}><span className="capitalize font-sans font-bold text-slate-705">{key}</span>: <span className="font-bold text-emerald-700">{String(val)}</span> deleted</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {cloneResult.createdBackup && (
+                    <div className="pt-2">
+                      <p className="text-[10px] text-slate-500 font-medium italic mb-2">
+                        A pristine backup checkpoint has also been added in your history panel on the right. You can download the exported template database package below:
+                      </p>
+                      
+                      <a
+                        href={`/api/backup/download/${cloneResult.createdBackup.id}`}
+                        download
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-100 hover:shadow-lg hover:shadow-emerald-200 cursor-pointer active:scale-95"
+                      >
+                        <FileDown size={15} />
+                        Download Cloned Database (.json)
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2604,6 +2817,77 @@ export const AdminSettings: React.FC = () => {
                   {editingRole ? 'Update Role' : 'Create Role'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Clone Confirmation Modal */}
+      <AnimatePresence>
+        {showCloneConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              onClick={() => setShowCloneConfirmModal(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl border border-red-100"
+            >
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 bg-red-50 text-red-650 rounded-full flex items-center justify-center border border-red-100 shadow-inner">
+                  <AlertTriangle size={32} className="animate-bounce text-red-600" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-black text-rose-950 uppercase tracking-tight">DANGER: Permanent Data Wipe</h3>
+                  <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                    This action is <span className="text-red-650 font-black underline">PERMANENT and IRREVERSIBLE</span>.
+                    You are preparing this application database for school cloning. This will purge selected transactional log data and create a clean SaaS startup template.
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-left space-y-2 text-xs">
+                  <p className="font-extrabold text-amber-955 uppercase tracking-wide">Selected Purge Items:</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-700 font-semibold">
+                    {cloneOptions.purgeStudents && <li>All Student & Parent accounts</li>}
+                    {cloneOptions.purgeAttendance && <li>All Attendance registries (Daily/Exams)</li>}
+                    {cloneOptions.purgeFees && <li>All Fees logs, balances, structures, groups</li>}
+                    {cloneOptions.purgeExams && <li>All Grades, Marks, Submissions</li>}
+                    {cloneOptions.purgeExpenses && <li>All Accounting expense entries</li>}
+                    {cloneOptions.purgeChats && <li>All Chats/Messages & Alerts</li>}
+                    {cloneOptions.purgeClasses && <li>All Class / Course records</li>}
+                    {cloneOptions.purgeTimetable && <li>All Timetables / Rosters</li>}
+                  </ul>
+                  {cloneSchoolName && (
+                    <p className="border-t border-amber-150 pt-2 text-slate-800 font-extrabold">
+                      🏫 Rebranding to: <span className="text-emerald-700 font-black">{cloneSchoolName}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCloneConfirmModal(false)}
+                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePerformCloneSanitization}
+                    disabled={isCloning}
+                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-red-200 flex items-center justify-center gap-1.5"
+                  >
+                    {isCloning ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    Wipe & Sanitize
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
