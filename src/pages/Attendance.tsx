@@ -14,6 +14,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 
 let globalIsAdminOrSupervisor = false;
 let sharedAudioContext: AudioContext | null = null;
+const activeSpeechUtterances = new Set<SpeechSynthesisUtterance>();
 const getSharedAudioContext = () => {
   if (typeof window === 'undefined') return null;
   if (!sharedAudioContext) {
@@ -99,6 +100,7 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
   try {
     if (!window.speechSynthesis) return;
     
+    // Clear any active queue. Canceling before speaking ensures immediate responsiveness
     window.speechSynthesis.cancel();
     
     const firstName = fullName.split(/[\s,._]+/)[0] || fullName;
@@ -117,68 +119,95 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
       text = `${cleanName} already has leave recorded today.`;
     }
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Primary local African English dialect settings
-    utterance.lang = 'en-ZA'; 
-    utterance.rate = 0.88; // Slower cadence ensures clear syllabic parsing for local accents
-    utterance.pitch = 1.0;
-    
-    const voices = window.speechSynthesis.getVoices();
-    
-    // High-priority African English localizations (South Africa, Kenya, Nigeria, etc.)
-    const africanLocales = ['en-ZA', 'en-KE', 'en-NG', 'en-GH', 'en-TZ'];
-    let selectedVoice = null;
-    
-    // 1. Try explicitly matching the preferred African codes
-    for (const locCode of africanLocales) {
-      const v = voices.find(voice => {
-        const langLower = voice.lang.toLowerCase();
-        return langLower === locCode.toLowerCase() || langLower.startsWith(locCode.toLowerCase() + '-');
-      });
-      if (v) {
-        selectedVoice = v;
-        break;
+    // We execute the speech on a brief 60ms delay. This accommodates different browser
+    // speech synthesis threads (such as Chrome on Windows, iOS and Android) allowing
+    // them to truly free up the speech channel from the cancel() invocation.
+    setTimeout(() => {
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Prevent speech synthesis from stopping prematurely/hanging due to Javascript
+        // garbage-collecting the utterance object while it is actively playing.
+        activeSpeechUtterances.add(utterance);
+        
+        const removeRef = () => {
+          activeSpeechUtterances.delete(utterance);
+        };
+        utterance.onend = removeRef;
+        utterance.onerror = removeRef;
+        
+        // Standard high-quality English pronunciation parameters.
+        // Rates around 0.98 - 1.0 sound continuous, pleasant, and natural.
+        // Choppy speeds below 0.9 (like 0.88) feel synthetic and "hang" word-to-word.
+        utterance.lang = 'en-ZA'; 
+        utterance.rate = 1.0; 
+        utterance.pitch = 1.0;
+        
+        const voices = window.speechSynthesis.getVoices();
+        
+        // High-priority African English localizations (South Africa, Kenya, Nigeria, etc.)
+        const africanLocales = ['en-ZA', 'en-KE', 'en-NG', 'en-GH', 'en-TZ'];
+        let selectedVoice = null;
+        
+        // 1. Try explicitly matching preferred African codes
+        for (const locCode of africanLocales) {
+          const v = voices.find(voice => {
+            const langLower = voice.lang.toLowerCase();
+            return langLower === locCode.toLowerCase() || langLower.startsWith(locCode.toLowerCase() + '-');
+          });
+          if (v) {
+            selectedVoice = v;
+            break;
+          }
+        }
+        
+        // 2. Fallback search for voices with name properties matching African regions
+        if (!selectedVoice) {
+          selectedVoice = voices.find(v => {
+            const langLower = v.lang.toLowerCase();
+            const nameLower = v.name.toLowerCase();
+            return langLower.startsWith('en') && (
+              langLower.includes('za') ||
+              langLower.includes('ke') ||
+              langLower.includes('ng') ||
+              langLower.includes('gh') ||
+              nameLower.includes('africa') ||
+              nameLower.includes('kenya') ||
+              nameLower.includes('nigeria')
+            );
+          });
+        }
+        
+        // 3. Match English British dialect en-GB as secondary tier fallback
+        if (!selectedVoice) {
+          selectedVoice = voices.find(v => {
+            const langLower = v.lang.toLowerCase();
+            return langLower === 'en-gb' || langLower.startsWith('en-gb-');
+          });
+        }
+        
+        // 4. Default standard English voice
+        if (!selectedVoice) {
+          selectedVoice = voices.find(v => v.lang.startsWith('en'));
+        }
+        
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          utterance.lang = selectedVoice.lang;
+          console.log(`[TTS Speech Synthesis] Selected Localized Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
+        }
+        
+        // Recover if speech synthesis engine gets in a paused state due to system wakes or interruptions
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        
+        window.speechSynthesis.speak(utterance);
+      } catch (innerErr) {
+        console.error("SpeechSynthesis inner speak call failed:", innerErr);
       }
-    }
+    }, 60);
     
-    // 2. Fallback search for voices with name properties matching African regions
-    if (!selectedVoice) {
-      selectedVoice = voices.find(v => {
-        const langLower = v.lang.toLowerCase();
-        const nameLower = v.name.toLowerCase();
-        return langLower.startsWith('en') && (
-          langLower.includes('za') ||
-          langLower.includes('ke') ||
-          langLower.includes('ng') ||
-          langLower.includes('gh') ||
-          nameLower.includes('africa') ||
-          nameLower.includes('kenya') ||
-          nameLower.includes('nigeria')
-        );
-      });
-    }
-    
-    // 3. Match English British dialect en-GB as secondary tier fallback (non-rhotic cadences align best)
-    if (!selectedVoice) {
-      selectedVoice = voices.find(v => {
-        const langLower = v.lang.toLowerCase();
-        return langLower === 'en-gb' || langLower.startsWith('en-gb-');
-      });
-    }
-    
-    // 4. Default standard English voice
-    if (!selectedVoice) {
-      selectedVoice = voices.find(v => v.lang.startsWith('en'));
-    }
-    
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
-      console.log(`[TTS Speech Synthesis] Selected Localized Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
-    }
-    
-    window.speechSynthesis.speak(utterance);
   } catch (err) {
     console.error("Speech synthesis failed", err);
   }
