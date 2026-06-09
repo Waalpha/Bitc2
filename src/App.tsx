@@ -47,7 +47,7 @@ const ProtectedRoute = ({
   }
 
   if (!user || !userData) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (userData.disabled) {

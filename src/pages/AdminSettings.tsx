@@ -91,8 +91,8 @@ export const AdminSettings: React.FC = () => {
     publicHeroImages: [],
     publicHeroFont: 'Inter',
     publicHeroAlign: 'left',
-    publicHeroTitleSize: 'text-5xl md:text-7xl',
-    publicHeroDescriptionSize: 'text-xl',
+    publicHeroTitleSize: 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl',
+    publicHeroDescriptionSize: 'text-xs sm:text-sm md:text-base',
     portalAboutUs: '',
     portalGallery: [],
     sessionTimeoutSeconds: 300,
@@ -2018,6 +2018,35 @@ export const AdminSettings: React.FC = () => {
                     placeholder="Breakthrough training college offers..."
                     className="w-full px-4 py-2 bg-white border border-gray-305 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm min-h-[40px]"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Title Font Size</label>
+                  <select
+                    value={appSettings.publicHeroTitleSize || 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleSize: e.target.value })}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
+                  >
+                    <option value="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Extra Small (text-2xl to text-5xl)</option>
+                    <option value="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">Small - Recommended (text-3xl to text-6xl)</option>
+                    <option value="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Medium (text-4xl to text-7xl)</option>
+                    <option value="text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Large / Original (text-5xl to text-8xl)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Subtitle Font Size</label>
+                  <select
+                    value={appSettings.publicHeroDescriptionSize || 'text-xs sm:text-sm md:text-base'}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionSize: e.target.value })}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
+                  >
+                    <option value="text-[10px] sm:text-xs md:text-sm">Smallest (text-xs)</option>
+                    <option value="text-xs sm:text-sm md:text-base">Medium - Recommended (text-sm to text-base)</option>
+                    <option value="text-sm sm:text-base md:text-lg">Large (text-base to text-lg)</option>
+                    <option value="text-base sm:text-lg md:text-xl">Extra Large / Original (text-lg to text-xl)</option>
+                  </select>
                 </div>
               </div>
 

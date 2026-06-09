@@ -140,8 +140,8 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
         // Rates around 0.98 - 1.0 sound continuous, pleasant, and natural.
         // Choppy speeds below 0.9 (like 0.88) feel synthetic and "hang" word-to-word.
         utterance.lang = 'en-KE'; 
-        utterance.rate = 1.5; 
-        utterance.pitch = 1.5;
+        utterance.rate = 1.0; 
+        utterance.pitch = 1.0;
         
         const voices = window.speechSynthesis.getVoices();
         
@@ -397,6 +397,7 @@ void loop() {
   const adminSelectedClassIdRef = React.useRef(selectedClassId);
   const adminLeaveReasonRef = React.useRef(leaveReason);
   const adminReturnDateRef = React.useRef(returnDate);
+  const usbDeviceRef = React.useRef<any>(null);
 
   React.useEffect(() => {
     userRef.current = user;
@@ -409,6 +410,7 @@ void loop() {
     adminSelectedClassIdRef.current = selectedClassId;
     adminLeaveReasonRef.current = leaveReason;
     adminReturnDateRef.current = returnDate;
+    usbDeviceRef.current = usbDevice;
     globalIsAdminOrSupervisor = userData?.role === 'admin' || userData?.role === 'teacher';
   });
 
@@ -718,7 +720,7 @@ void loop() {
     };
 
     const handleDisconnect = (event: any) => {
-      if (usbDevice?.serialNumber === event.device.serialNumber) {
+      if (usbDeviceRef.current?.serialNumber === event.device.serialNumber) {
         setUsbDevice(null);
         addToast("External scanner disconnected", "error");
       }
@@ -729,7 +731,11 @@ void loop() {
 
     // Initial check
     nav.usb.getDevices().then((devices: any[]) => {
-      if (devices.length > 0) setUsbDevice(devices[0]);
+      if (devices.length > 0) {
+        if (!usbDeviceRef.current || usbDeviceRef.current.serialNumber !== devices[0].serialNumber) {
+          setUsbDevice(devices[0]);
+        }
+      }
     }).catch((err: any) => {
       console.warn("WebUSB getDevices error:", err);
     });
@@ -738,7 +744,7 @@ void loop() {
       nav.usb.removeEventListener('connect', handleConnect);
       nav.usb.removeEventListener('disconnect', handleDisconnect);
     };
-  }, [usbDevice]);
+  }, []);
 
   const requestUsbScanner = async () => {
     const nav = navigator as any;

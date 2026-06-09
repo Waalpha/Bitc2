@@ -392,11 +392,11 @@ export function PublicPortal() {
                   <span>{currentSlide.badge}</span>
                 </div>
                 
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-sans font-black text-white tracking-tight leading-[1.12]">
+                <h1 className={`${settings?.publicHeroTitleSize || 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'} font-sans font-black text-white tracking-tight leading-[1.12]`}>
                   {currentSlide.title}
                 </h1>
                 
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed max-w-xl font-medium">
+                <p className={`${settings?.publicHeroDescriptionSize || 'text-xs sm:text-sm md:text-base'} text-gray-300 leading-relaxed max-w-xl font-medium`}>
                   {currentSlide.description}
                 </p>
               </motion.div>
