@@ -2188,7 +2188,7 @@ void loop() {
           <div className="w-full max-w-2xl border-4 border-double border-gray-900 p-8">
             <div className="flex justify-between items-start mb-8 pb-8 border-b-2 border-gray-900">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-blue-800 rounded-2xl flex items-center justify-center text-white font-bold text-2xl overflow-hidden shadow-lg border-2 border-blue-900">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl overflow-hidden ${globalSettings?.logoUrl ? '' : 'bg-blue-800 shadow-lg border-2 border-blue-900'}`}>
                   {globalSettings?.logoUrl ? (
                     <img src={globalSettings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
@@ -3944,7 +3944,7 @@ void loop() {
                     style={{ borderStyle: 'double' }}
                   >
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-12 h-12 bg-blue-900 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg ${globalSettings?.logoUrl ? '' : 'bg-blue-900 shadow-md'}`}>
                         {globalSettings?.logoUrl ? (
                           <img src={globalSettings.logoUrl} alt="Logo" className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
                         ) : (

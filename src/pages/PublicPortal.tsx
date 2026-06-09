@@ -314,8 +314,8 @@ export function PublicPortal() {
       {/* Premium Floating Header */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100/80 px-6 py-4.5 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-11 h-11 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold shadow-md shadow-indigo-150 transition-all group-hover:scale-105 duration-300">
+           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-extrabold transition-all group-hover:scale-105 duration-300 ${settings?.logoUrl ? '' : 'bg-indigo-600 shadow-md shadow-indigo-150'}`}>
               {settings?.logoUrl ? (
                 <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
               ) : (

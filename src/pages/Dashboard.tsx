@@ -712,7 +712,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <NotificationBell />
-            <div className="bg-white p-1 rounded-xl shadow-xl shadow-black/20 transform hover:scale-110 transition-transform">
+            <div className={settings?.logoUrl ? "transform hover:scale-110 transition-transform" : "bg-white p-1 rounded-xl shadow-xl shadow-black/20 transform hover:scale-110 transition-transform"}>
               {settings?.logoUrl ? (
                 <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
               ) : (

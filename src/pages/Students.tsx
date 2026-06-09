@@ -1334,7 +1334,6 @@ export const Students: React.FC = () => {
         width: 32px;
         height: 32px;
         border-radius: 6px;
-        background: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
