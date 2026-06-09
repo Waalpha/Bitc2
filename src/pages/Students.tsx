@@ -3,13 +3,47 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon, Camera, Trash2 } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon, Camera, Trash2, Upload } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { uploadFile } from '../services/uploadService';
+
+const headerMapping: Record<string, string> = {
+  "first name": "firstName",
+  "name": "firstName",
+  "last name": "lastName",
+  "email": "email",
+  "phone": "phone",
+  "admission number": "admissionNumber",
+  "adm number": "admissionNumber",
+  "admission date": "admissionDate",
+  "academic year": "academicYear",
+  "gender": "gender",
+  "date of birth": "dateOfBirth",
+  "dob": "dateOfBirth",
+  "religion": "religion",
+  "caste": "caste",
+  "course": "course",
+  "roll": "roll",
+  "group": "group",
+  "blood group": "bloodGroup",
+  "category": "category",
+  "id number": "idNumber",
+  "nationality": "nationality",
+  "emergency contact": "emergencyContact",
+  "emergency phone": "emergencyPhone",
+  "father name": "fatherName",
+  "father phone": "fatherPhone",
+  "mother name": "motherName",
+  "mother phone": "motherPhone",
+  "address": "address",
+  "classes": "classIds",
+  "class": "classIds",
+  "class names": "classIds"
+};
 
 export const Students: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
@@ -41,6 +75,313 @@ export const Students: React.FC = () => {
   const [idCardCustomRole, setIdCardCustomRole] = useState('STUDENT');
   const [isSavingPdf, setIsSavingPdf] = useState(false);
   const [isSavingPng, setIsSavingPng] = useState(false);
+
+  // Import/Export States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [parsedStudents, setParsedStudents] = useState<any[]>([]);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [defaultImportClassId, setDefaultImportClassId] = useState<string>('');
+  const [isImporting, setIsImporting] = useState(false);
+
+  const parseCSVLine = (text: string): string[] => {
+    const result: string[] = [];
+    let currentVal = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"') {
+        if (inQuotes && text[i + 1] === '"') {
+          currentVal += '"';
+          i++; // skip next quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(currentVal.trim());
+        currentVal = '';
+      } else {
+        currentVal += char;
+      }
+    }
+    result.push(currentVal.trim());
+    return result;
+  };
+
+  const handleCSVFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFile(file);
+    setParsedStudents([]);
+    setImportErrors([]);
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) {
+          setImportErrors(["The CSV file is empty."]);
+          return;
+        }
+        
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+        if (lines.length < 2) {
+          setImportErrors(["CSV file must contain a header row and at least one student record."]);
+          return;
+        }
+
+        const headers = parseCSVLine(lines[0]);
+        // Map headers to field names
+        const fieldIndices = headers.reduce((acc, h, idx) => {
+          const cleanH = h.trim().toLowerCase();
+          const mappedField = headerMapping[cleanH];
+          if (mappedField) {
+            acc[mappedField] = idx;
+          }
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Verify minimum required fields
+        const pathHasName = ('firstName' in fieldIndices) || ('name' in fieldIndices);
+        if (!pathHasName) {
+          setImportErrors(["CSV must contain at least a 'First Name' or 'Name' column so students can be registered with a name."]);
+          return;
+        }
+
+        const records: any[] = [];
+        const errors: string[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const rowValues = parseCSVLine(lines[i]);
+          if (rowValues.length <= 1 && (!rowValues[0] || rowValues[0].trim() === "")) {
+            continue; // Skip empty trailing rows
+          }
+          
+          const record: any = {};
+          
+          // Map each matched field
+          Object.entries(fieldIndices).forEach(([field, index]) => {
+            if (rowValues[index] !== undefined) {
+              record[field] = rowValues[index].trim();
+            }
+          });
+
+          // Compute names
+          if (!record.firstName && record.name) {
+            const nameParts = record.name.split(/\s+/);
+            record.firstName = nameParts[0] || "";
+            record.lastName = nameParts.slice(1).join(" ") || "";
+          } else if (record.firstName && !record.lastName) {
+            const nameParts = record.firstName.split(/\s+/);
+            if (nameParts.length > 1) {
+              record.firstName = nameParts[0];
+              record.lastName = nameParts.slice(1).join(" ");
+            } else {
+              record.lastName = "";
+            }
+          }
+
+          record.name = `${record.firstName || ''} ${record.lastName || ''}`.trim();
+          if (!record.name) {
+            errors.push(`Row ${i + 1}: Student Name/First Name is missing.`);
+            continue;
+          }
+
+          // Handle classes
+          if (record.classIds) {
+            const classNames = record.classIds.split(/[,;]+/).map((s: string) => s.trim().toLowerCase());
+            const mappedIds: string[] = [];
+            classNames.forEach((cName: string) => {
+              const matchedClass = classes.find(c => 
+                c.name.toLowerCase() === cName || 
+                c.id.toLowerCase() === cName
+              );
+              if (matchedClass) {
+                mappedIds.push(matchedClass.id);
+              }
+            });
+            record.classIds = mappedIds;
+          } else {
+            record.classIds = [];
+          }
+
+          // Fill basic structural defaults
+          record.role = 'student';
+          record.createdAt = new Date().toISOString();
+          record.updatedAt = new Date().toISOString();
+          if (!record.email) {
+            record.email = "";
+          }
+
+          records.push(record);
+        }
+
+        setParsedStudents(records);
+        if (errors.length > 0) {
+          setImportErrors(errors);
+        }
+      } catch (err: any) {
+        console.error("Error parsing CSV: ", err);
+        setImportErrors([`Failed to parse CSV file: ${err.message || err}`]);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "First Name", "Last Name", "Email", "Phone", "Admission Number", "Admission Date",
+      "Academic Year", "Gender", "Date of Birth", "Religion", "Caste", "Course", 
+      "Roll", "Group", "Blood Group", "Category", "ID Number", "Nationality",
+      "Emergency Contact", "Emergency Phone", "Father Name", "Father Phone",
+      "Mother Name", "Mother Phone", "Address", "Class"
+    ];
+
+    const sampleRow = [
+      "Alice", "Mwangi", "alice.mwangi@gmail.com", "+254712345678", "BITC/SD/2026/040", "2026-01-15",
+      "2026", "Female", "2002-05-12", "Christianity", "Noreligion", "Cosmetology",
+      "01", "A", "O+", "Regular", "38123456", "Kenyan",
+      "John Mwangi (Father)", "+254712000000", "John Mwangi", "+254712000000",
+      "Grace Mwangi", "+254712000001", "Thika Main St, Suite 4", classes[0]?.name || "Form 1A"
+    ];
+
+    const csvString = [
+      headers.join(","),
+      sampleRow.map(val => {
+        const stringVal = String(val).replace(/"/g, '""');
+        return `"${stringVal}"`;
+      }).join(",")
+    ].join("\n");
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Student_Import_Template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addToast("CSV import template downloaded successfully!", "success");
+  };
+
+  const handleExportCSV = () => {
+    if (filteredStudents.length === 0) {
+      addToast("No student records found to export.", "error");
+      return;
+    }
+
+    const headers = [
+      "First Name", "Last Name", "Email", "Phone", "Admission Number", "Admission Date",
+      "Academic Year", "Gender", "Date of Birth", "Religion", "Caste", "Course", 
+      "Roll", "Group", "Blood Group", "Category", "ID Number", "Nationality",
+      "Emergency Contact", "Emergency Phone", "Father Name", "Father Phone",
+      "Mother Name", "Mother Phone", "Address", "Class Names"
+    ];
+
+    const rows = filteredStudents.map(s => {
+      let fName = s.firstName || "";
+      let lName = s.lastName || "";
+      if (!fName && s.name) {
+        const parts = s.name.trim().split(/\s+/);
+        fName = parts[0] || "";
+        lName = parts.slice(1).join(" ") || "";
+      }
+
+      const classNames = s.classIds && s.classIds.length > 0
+        ? s.classIds.map(cid => classes.find(c => c.id === cid)?.name || "").filter(Boolean).join("; ")
+        : "";
+
+      return [
+        fName,
+        lName,
+        s.email || "",
+        s.phone || "",
+        s.admissionNumber || "",
+        s.admissionDate || "",
+        s.academicYear || "",
+        s.gender || "",
+        s.dateOfBirth || "",
+        s.religion || "",
+        s.caste || "",
+        s.course || "",
+        s.roll || "",
+        s.group || "",
+        s.bloodGroup || "",
+        s.category || "",
+        s.idNumber || "",
+        s.nationality || "",
+        s.emergencyContact || "",
+        s.emergencyPhone || "",
+        s.fatherName || "",
+        s.fatherPhone || "",
+        s.motherName || "",
+        s.motherPhone || "",
+        s.address || "",
+        classNames
+      ];
+    });
+
+    const csvString = [
+      headers.join(","),
+      ...rows.map(row => row.map(val => {
+        const stringVal = String(val).replace(/"/g, '""');
+        return `"${stringVal}"`;
+      }).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const fileName = `Student_Roster_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addToast(`Successfully exported ${filteredStudents.length} students to CSV!`, "success");
+  };
+
+  const handleConfirmImport = async () => {
+    if (parsedStudents.length === 0) return;
+    
+    setIsImporting(true);
+    
+    try {
+      const dbRef = collection(db, 'users');
+      const chunkSize = 300;
+      
+      for (let i = 0; i < parsedStudents.length; i += chunkSize) {
+        const batch = writeBatch(db);
+        const chunk = parsedStudents.slice(i, i + chunkSize);
+        
+        chunk.forEach(student => {
+          if (defaultImportClassId && student.classIds.length === 0) {
+            student.classIds = [defaultImportClassId];
+          }
+          const docRef = doc(dbRef);
+          batch.set(docRef, student);
+        });
+        
+        await batch.commit();
+      }
+      
+      addToast(`Successfully imported ${parsedStudents.length} students!`, 'success');
+      setShowImportModal(false);
+      setImportFile(null);
+      setParsedStudents([]);
+      setImportErrors([]);
+      fetchData();
+    } catch (error) {
+      console.error("Error importing students: ", error);
+      handleFirestoreError(error, OperationType.CREATE, 'users-batch');
+      addToast("Failed to complete students import.", "error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const toggleStudentSelection = (uid: string) => {
     const next = new Set(selectedStudentIds);
@@ -1985,17 +2326,35 @@ export const Students: React.FC = () => {
           >
             {selectedStudentIds.size === filteredStudents.length && filteredStudents.length > 0 ? 'Deselect All' : 'Select All'}
           </button>
+          {canManageStudents && (
+            <>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-550/20 font-bold flex-1 md:flex-none justify-center cursor-pointer"
+              >
+                <Upload size={18} />
+                Import
+              </button>
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-550/20 font-bold flex-1 md:flex-none justify-center cursor-pointer"
+              >
+                <Download size={18} />
+                Export
+              </button>
+            </>
+          )}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 bg-white/5 text-text-primary px-4 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/10 font-bold flex-1 md:flex-none justify-center disabled:opacity-50"
+            className="flex items-center gap-2 bg-white/5 text-text-primary px-4 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/10 font-bold flex-1 md:flex-none justify-center disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 font-bold flex-1 md:flex-none justify-center"
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 font-bold flex-1 md:flex-none justify-center cursor-pointer"
           >
             <Printer size={18} />
             Print
@@ -3292,6 +3651,202 @@ export const Students: React.FC = () => {
             </div>
           );
         })()}
+
+        {showImportModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => { if (!isImporting) setShowImportModal(false); }}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col border border-gray-100"
+            >
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Upload className="text-emerald-600" size={24} />
+                    Import Students
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">Upload a CSV roster file to register students in bulk.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  disabled={isImporting}
+                  className="p-1 px-3 text-sm font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 rounded-xl transition-all cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Information / Instructions */}
+                <div className="bg-emerald-50/70 border border-emerald-100 text-emerald-900 rounded-2xl p-4 flex gap-4 items-start text-sm">
+                  <Info className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Important CSV Format Instructions</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs text-emerald-800">
+                      <li>Your file must have a header row. Download the official template below.</li>
+                      <li>Headers are flexible but must include at least <strong className="font-bold">First Name</strong> or <strong className="font-bold">Name</strong>.</li>
+                      <li>We automatically match written Class Names (e.g., <code className="bg-emerald-100/60 px-1 rounded">Form 1A</code>) to your existing system classes!</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column: File uploader */}
+                  <div className="space-y-4">
+                    <div className="block text-sm font-semibold text-gray-700">Choose CSV File</div>
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:bg-slate-50/50 cursor-pointer hover:border-emerald-500 transition-all text-center">
+                      <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl mb-3 shadow-inner">
+                        <Upload size={28} />
+                      </div>
+                      <span className="text-sm font-bold text-gray-700">
+                        {importFile ? importFile.name : "Select CSV file"}
+                      </span>
+                      <span className="text-xs text-gray-400 mt-1">
+                        {importFile ? `${(importFile.size / 1024).toFixed(1)} KB` : "or drag and drop here"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCSVFileChange}
+                        disabled={isImporting}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadTemplate}
+                      className="w-full flex items-center justify-center gap-2 border border-blue-200 text-blue-600 hover:bg-blue-50 py-3 rounded-2xl font-bold text-sm transition-colors cursor-pointer"
+                    >
+                      <Download size={16} />
+                      Download Roster Template (.csv)
+                    </button>
+                  </div>
+
+                  {/* Right Column: Global attributes assignment */}
+                  <div className="space-y-4">
+                    <div className="block text-sm font-semibold text-gray-700">Default Assigned Class</div>
+                    <p className="text-xs text-gray-400">Apply this class to any imported students who do not have a matched class in the sheet columns.</p>
+                    <select
+                      value={defaultImportClassId}
+                      onChange={(e) => setDefaultImportClassId(e.target.value)}
+                      disabled={isImporting}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium text-gray-850"
+                    >
+                      <option value="">No Default Class (Keep unassigned)</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                      ))}
+                    </select>
+
+                    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-150 space-y-2">
+                      <div className="text-xs font-bold text-gray-500 uppercase tracking-wider"> Roster Summary </div>
+                      <div className="flex justify-between items-center text-sm py-1">
+                        <span className="text-gray-600">Students parsed:</span>
+                        <span className="font-bold text-gray-900">{parsedStudents.length}</span>
+                      </div>
+                      {importErrors.length > 0 && (
+                        <div className="bg-rose-50 border border-rose-100 text-rose-800 text-xs rounded-xl p-3 max-h-32 overflow-y-auto space-y-1 mt-2">
+                          <p className="font-bold flex items-center gap-1">
+                            <AlertCircle size={14} className="text-rose-600 shrink-0" />
+                            File Warnings / Errors:
+                          </p>
+                          {importErrors.map((err, idx) => (
+                            <p key={idx} className="font-mono text-[10px]">{err}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Parsed Students Directory Review Panel */}
+                {parsedStudents.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-gray-100">
+                    <div className="text-sm font-semibold text-gray-700">Detailed Student Roster Review</div>
+                    <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto shadow-sm">
+                      <table className="w-full text-left border-collapse bg-white">
+                        <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-250">
+                          <tr>
+                            <th className="px-4 py-3">Student Name</th>
+                            <th className="px-4 py-3">Email Address</th>
+                            <th className="px-4 py-3">Admission Number</th>
+                            <th className="px-4 py-3">Course / Assigned Class</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-sm">
+                          {parsedStudents.slice(0, 50).map((p, idx) => {
+                            const showClassName = p.classIds && p.classIds.length > 0
+                              ? p.classIds.map((cid: string) => classes.find(c => c.id === cid)?.name || "").join(", ")
+                              : defaultImportClassId 
+                                ? classes.find(c => c.id === defaultImportClassId)?.name || "Default Assigned"
+                                : "Unassigned";
+
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="px-4 py-3 font-semibold text-gray-900">{p.name}</td>
+                                <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.email || 'N/A'}</td>
+                                <td className="px-4 py-3 text-gray-700">{p.admissionNumber || 'Pending'}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-0.5 font-bold rounded-full text-xs ${showClassName === 'Unassigned' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    {showClassName}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      {parsedStudents.length > 50 && (
+                        <div className="text-center py-2 bg-gray-50 text-gray-500 text-xs border-t border-gray-100 font-bold">
+                          Showing first 50 of {parsedStudents.length} entries.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-100 flex gap-3 justify-end bg-gray-50/50">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  disabled={isImporting}
+                  className="px-5 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-2xl text-sm transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmImport}
+                  disabled={isImporting || parsedStudents.length === 0}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} />
+                      Importing Records...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Admit & Safe Save ({parsedStudents.length})
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {filteredStudents.length === 0 && (
