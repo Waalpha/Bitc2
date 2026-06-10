@@ -64,21 +64,27 @@ export const ExamAttendance: React.FC = () => {
         <head>
           <title>${title}</title>
           <style>
-            body { font-family: sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .info-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-            .info-item b { font-size: 12px; color: #666; text-transform: uppercase; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 10px; }
+            body { font-family: sans-serif; padding: 20px; margin: 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-size: 12px; }
+            th { background-color: #f8f9fa; color: #333; font-weight: bold; }
+            .info-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 8px 16px; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 12px; }
+            .info-item b { font-size: 10px; color: #666; text-transform: uppercase; display: block; margin: 0 0 2px 0; letter-spacing: 0.5px; }
+            .info-item p { margin: 0; font-size: 13px; font-weight: 600; color: #111; }
+            h1 { color: #111; font-size: 18px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.2px; }
             .status-present { color: green; font-weight: bold; }
             .status-absent { color: red; font-weight: bold; }
             .status-excused { color: orange; font-weight: bold; }
-            .footer { margin-top: 30px; font-size: 10px; color: #666; display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 10px; }
+            .footer { margin-top: 20px; font-size: 10px; color: #666; display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 8px; }
+            @media print {
+              body { padding: 10px; }
+              table { page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+            }
           </style>
         </head>
         <body>
-          ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="School Logo" style="max-height: 60px; width: auto; margin-bottom: 10px;" />` : ''}
+          ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="School Logo" style="max-height: 48px; width: auto; margin-bottom: 8px; display: block;" />` : ''}
           <h1>BITC - Exam Attendance Sheet</h1>
           <div class="info-grid">
             <div class="info-item">

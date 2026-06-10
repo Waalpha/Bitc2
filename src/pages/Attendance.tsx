@@ -138,63 +138,26 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
         
         // Standard high-quality English pronunciation parameters.
         // Rates around 0.98 - 1.0 sound continuous, pleasant, and natural.
-        // Choppy speeds below 0.9 (like 0.88) feel synthetic and "hang" word-to-word.
-        utterance.lang = 'en-KE'; 
-        utterance.rate = 1.0; 
-        utterance.pitch = 1.0;
+        utterance.rate = 1.00; 
+        utterance.pitch = 1.05; // Slightly elevated pitch for a warm, friendly, natural youthfulness
         
         const voices = window.speechSynthesis.getVoices();
         
-        // High-priority African English localizations (South Africa, Kenya, Nigeria, etc.)
-        const africanLocales = ['en-ZA', 'en-KE', 'en-NG', 'en-GH', 'en-TZ'];
+        // Select standard high-quality English (US/GB) or system default voice to sound natural and crisp
         let selectedVoice = null;
         
-        // 1. Try explicitly matching preferred African codes
-        for (const locCode of africanLocales) {
-          const v = voices.find(voice => {
-            const langLower = voice.lang.toLowerCase();
-            return langLower === locCode.toLowerCase() || langLower.startsWith(locCode.toLowerCase() + '-');
-          });
-          if (v) {
-            selectedVoice = v;
-            break;
-          }
-        }
-        
-        // 2. Fallback search for voices with name properties matching African regions
-        if (!selectedVoice) {
-          selectedVoice = voices.find(v => {
-            const langLower = v.lang.toLowerCase();
-            const nameLower = v.name.toLowerCase();
-            return langLower.startsWith('en') && (
-              langLower.includes('za') ||
-              langLower.includes('ke') ||
-              langLower.includes('ng') ||
-              langLower.includes('gh') ||
-              nameLower.includes('africa') ||
-              nameLower.includes('kenya') ||
-              nameLower.includes('nigeria')
-            );
-          });
-        }
-        
-        // 3. Match English British dialect en-GB as secondary tier fallback
-        if (!selectedVoice) {
-          selectedVoice = voices.find(v => {
-            const langLower = v.lang.toLowerCase();
-            return langLower === 'en-gb' || langLower.startsWith('en-gb-');
-          });
-        }
-        
-        // 4. Default standard English voice
-        if (!selectedVoice) {
-          selectedVoice = voices.find(v => v.lang.startsWith('en'));
-        }
+        // Prioritize premium/natural/Google voices, and explicitly avoid Microsoft Zira (which can sound old or harsh)
+        selectedVoice = voices.find(v => v.lang.toLowerCase() === 'en-us' && v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-us' && v.name.toLowerCase().includes('natural') && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-us' && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-us') ||
+                        voices.find(v => v.lang.toLowerCase().startsWith('en') && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.toLowerCase().startsWith('en'));
         
         if (selectedVoice) {
           utterance.voice = selectedVoice;
           utterance.lang = selectedVoice.lang;
-          console.log(`[TTS Speech Synthesis] Selected Localized Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
+          console.log(`[TTS Speech Synthesis] Selected Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
         }
         
         // Recover if speech synthesis engine gets in a paused state due to system wakes or interruptions
