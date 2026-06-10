@@ -50,6 +50,7 @@ export const StudentAdmission: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [baseSerial, setBaseSerial] = useState(355);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -182,30 +183,73 @@ export const StudentAdmission: React.FC = () => {
     fetchClasses();
   }, []);
 
+  // Extract course code abbreviation dynamically
+  const getCourseCode = (courseName: string): string => {
+    if (!courseName) return 'CNA';
+    const lower = courseName.toLowerCase();
+    
+    // Explicit course matches
+    if (lower.includes('beauty') || lower.includes('makeup')) return 'DBT';
+    if (lower.includes('hairdressing') || lower.includes('styling')) return 'CHD';
+    if (lower.includes('software') || lower.includes('engineering') || lower.includes('web')) return 'DSE';
+    if (lower.includes('packages') || lower.includes('computer')) return 'CCP';
+    if (lower.includes('caregiver') || lower.includes('community health')) return 'CNA';
+    if (lower.includes('nursing') || lower.includes('aide')) return 'DNA';
+    if (lower.includes('cookery') || lower.includes('baking') || lower.includes('cake')) return 'CPC';
+    if (lower.includes('catering') || lower.includes('hospitality')) return 'DCH';
+    if (lower.includes('solar')) return 'CSPV';
+    if (lower.includes('electrical')) return 'DEE';
+    
+    // Fallback: 3 letter uppercase abbreviation from the word initials
+    const words = courseName.trim().replace(/[^a-zA-Z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !['and', 'for', 'the', 'with'].includes(w.toLowerCase()));
+    if (words.length >= 3) {
+      return words.slice(0, 3).map(w => w[0].toUpperCase()).join('');
+    } else if (words.length > 0) {
+      const combined = words.join('').toUpperCase();
+      return combined.slice(0, 3).padEnd(3, 'A');
+    }
+    return 'CNA';
+  };
+
+  // Load highest base serial number from database starting from 355
   useEffect(() => {
-    const fetchAdmissionNumber = async () => {
+    const fetchBaseSerial = async () => {
       try {
         const usersSnap = await getDocs(collection(db, 'users'));
-        let maxNum = 341;
+        let maxNum = 355; // Next will automatically block to 356
         usersSnap.docs.forEach(doc => {
           const data = doc.data();
           if (data.admissionNumber) {
-            const num = parseInt(data.admissionNumber || '');
-            if (!isNaN(num) && num > maxNum) {
-              maxNum = num;
-            }
+            const parts = data.admissionNumber.toString().split('/');
+            parts.forEach(part => {
+              const num = parseInt(part, 10);
+              // Ignore high numbers that look like years (e.g. 2024 to 2029) and invalid values
+              if (!isNaN(num) && num !== 2024 && num !== 2025 && num !== 2026 && num !== 2027 && num !== 2028 && num !== 2029 && num > maxNum && num < 10000) {
+                maxNum = num;
+              }
+            });
           }
         });
-        setFormData(prev => ({ 
-          ...prev, 
-          admissionNumber: prev.admissionNumber || (maxNum + 1).toString() 
-        }));
+        setBaseSerial(maxNum);
       } catch (error) {
-        console.error("Error fetching students for admission number:", error);
+        console.error("Error fetching students for base serial:", error);
       }
     };
-    fetchAdmissionNumber();
+    fetchBaseSerial();
   }, []);
+
+  // Reactively calculate course-based automated admission number
+  useEffect(() => {
+    const nextSerial = baseSerial + 1;
+    const code = getCourseCode(formData.course);
+    const yr = formData.academicYear || '2026';
+    const formattedId = `BITC/${code}/${nextSerial}/${yr}`;
+    
+    setFormData(prev => ({
+      ...prev,
+      admissionNumber: formattedId
+    }));
+  }, [baseSerial, formData.course, formData.academicYear]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -296,6 +340,15 @@ export const StudentAdmission: React.FC = () => {
         documents: uploadedDocs,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
+      });
+
+      // Update the base serial internally so the next student is assigned the next incremental number
+      const currentParts = formData.admissionNumber.toString().split('/');
+      currentParts.forEach(part => {
+        const num = parseInt(part, 10);
+        if (!isNaN(num) && num !== 2024 && num !== 2025 && num !== 2026 && num !== 2027 && num > baseSerial && num < 10000) {
+          setBaseSerial(num);
+        }
       });
 
       addToast("Student admitted successfully!", "success");
