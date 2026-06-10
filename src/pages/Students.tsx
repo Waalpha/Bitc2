@@ -52,6 +52,12 @@ export const Students: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [statusTab, setStatusTab] = useState<'active' | 'disabled'>('active');
+
+  const handleStatusTabChange = (status: 'active' | 'disabled') => {
+    setStatusTab(status);
+    setSelectedStudentIds(new Set());
+  };
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const studentFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -2041,6 +2047,10 @@ export const Students: React.FC = () => {
   };
 
   const filteredStudents = students.filter(student => {
+    // Partition students by active vs deactivated status
+    const matchesStatus = statusTab === 'active' ? !student.disabled : !!student.disabled;
+    if (!matchesStatus) return false;
+
     const searchLow = searchTerm.toLowerCase();
     const admNum = student.admissionNumber ? String(student.admissionNumber).toLowerCase() : '';
     
@@ -2269,10 +2279,36 @@ export const Students: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Student Directory</h1>
-          <p className="text-text-secondary">View and search all students in the system</p>
+          <p className="text-text-secondary font-medium text-sm">View and search all students in the system</p>
+        </div>
+        
+        {/* Account Status Segment Tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-xs self-start md:self-auto">
+          <button
+            onClick={() => handleStatusTabChange('active')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
+              statusTab === 'active'
+                ? 'bg-white text-slate-900 shadow-sm font-black'
+                : 'text-slate-500 hover:text-slate-800 font-bold'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span>Active ({students.filter(s => !s.disabled).length})</span>
+          </button>
+          <button
+            onClick={() => handleStatusTabChange('disabled')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
+              statusTab === 'disabled'
+                ? 'bg-white text-slate-900 shadow-sm font-black'
+                : 'text-slate-500 hover:text-slate-800 font-bold'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>Deactivated ({students.filter(s => s.disabled).length})</span>
+          </button>
         </div>
       </div>
 

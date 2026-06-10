@@ -354,30 +354,42 @@ export function PublicPortal() {
       </nav>
 
       {/* Hero Section with Interactive Slideshow spanning full dimension */}
-      <header className="relative bg-slate-950 overflow-hidden h-[calc(100vh-76px)] min-h-[600px] flex items-center justify-center">
+      <header className="relative bg-slate-950 overflow-hidden h-[calc(100vh-80px)] min-h-[460px] md:min-h-[550px] lg:min-h-[620px] flex items-center justify-center">
         {/* Full screen Background Slides Layer */}
         <div className="absolute inset-0 z-0 select-none">
-          <AnimatePresence>
-            <motion.img 
+          <AnimatePresence mode="wait">
+            <motion.div
               key={safeSlideIndex}
-              src={currentSlide.url} 
-              alt={currentSlide.title} 
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 0.85, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full object-cover opacity-85" 
-              referrerPolicy="no-referrer"
-            />
+              className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden"
+            >
+              {/* Blurred scale background to prevent empty boundaries and keep aesthetic alignment */}
+              <img 
+                src={currentSlide.url} 
+                className="absolute inset-0 w-full h-full object-cover opacity-35 blur-2xl scale-110" 
+                referrerPolicy="no-referrer"
+                alt=""
+              />
+              {/* Crisp contained foreground image ensuring full visibility of text/graphics within the slide */}
+              <img 
+                src={currentSlide.url} 
+                alt={currentSlide.title} 
+                className="relative max-w-full max-h-full object-contain mx-auto opacity-75 md:opacity-85" 
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
           </AnimatePresence>
           {/* Dual layers of dark gradient overlays to guarantee perfect text contrast and design elegance */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/50 to-slate-950/20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/55 to-slate-950/20 z-[2]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/25 z-[2]" />
         </div>
         
         {/* Centered overlays of text and interactive controls */}
-        <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 w-full text-white">
-          <div className="max-w-3xl space-y-6">
+        <div className="max-w-7xl mx-auto px-6 py-8 md:py-16 relative z-10 w-full text-white">
+          <div className="max-w-3xl space-y-4 md:space-y-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={safeSlideIndex}
@@ -385,7 +397,7 @@ export function PublicPortal() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="space-y-6"
+                className="space-y-4 md:space-y-6"
               >
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[10px] font-black uppercase tracking-widest rounded-full backdrop-blur-md">
                   <Sparkles size={11} className="text-indigo-400 animate-pulse" />
@@ -402,25 +414,25 @@ export function PublicPortal() {
               </motion.div>
             </AnimatePresence>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 md:pt-4">
               <button
                 onClick={navToAuth}
-                className="px-8 py-4.5 bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-650/30 flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
+                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-650/30 flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
               >
                 <span>Access Student Portal</span>
                 <ArrowRight size={14} />
               </button>
               <a
                 href="#contact"
-                className="px-8 py-4.5 bg-slate-900/60 hover:bg-slate-800 border-2 border-white/20 text-white hover:border-white transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 backdrop-blur-md"
+                className="px-8 py-4 bg-slate-900/60 hover:bg-slate-800 border-2 border-white/20 text-white hover:border-white transition-all rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 backdrop-blur-md"
               >
                 <MessageCircle size={15} />
                 <span>Quick Inquiry</span>
               </a>
             </div>
-
+ 
             {/* Quick specifications counter overlay */}
-            <div className="grid grid-cols-3 gap-6 pt-10 border-t border-white/15 max-w-lg mt-8">
+            <div className="grid grid-cols-3 gap-6 pt-6 sm:pt-10 border-t border-white/15 max-w-lg mt-6 sm:mt-8">
               <div className="text-left">
                 <span className="block text-2.5xl font-black text-white leading-none">100%</span>
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1.5">Hands-On Labs</span>
