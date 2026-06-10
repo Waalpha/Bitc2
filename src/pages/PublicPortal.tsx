@@ -53,7 +53,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface Course {
   id: string;
   name: string;
-  category: 'cosmetology' | 'ict' | 'healthcare' | 'hospitality' | 'engineering';
+  category: 'cosmetology' | 'ict' | 'healthcare' | 'hospitality' | 'engineering' | 'theology';
   duration: string;
   requirements: string;
   exams: string;
@@ -172,6 +172,61 @@ const COURSES: Course[] = [
     skills: ['Three-Phase System Wiring', 'Electrical Instrumentation', 'Generator Synchronization', 'Industrial Automation Tech'],
     description: 'Advance to advanced manufacturing plants installer, commercial contractor, and power grid maintenance supervisor.',
     featured: true
+  },
+  {
+    id: 'theo-1',
+    name: 'Certificate in Theology & Biblical Studies',
+    category: 'theology',
+    duration: '1 Year',
+    requirements: 'KCSE D- minus / Secondary Certificate or equivalent',
+    exams: 'Christian Education Board Exams',
+    skills: ['Biblical Interpretation', 'Christian Ministry Ethics', 'Basic Pastoral Counseling', 'Homiletics & Preaching'],
+    description: 'Foundations of Christian doctrine, spiritual formation, and pulpit practice designed to empower aspiring church lay leaders.',
+    featured: false
+  },
+  {
+    id: 'theo-2',
+    name: 'Diploma in Theology & Christian Ministry',
+    category: 'theology',
+    duration: '2 Years',
+    requirements: 'KCSE D Plain and above (or equivalent certificate)',
+    exams: 'Joint Theological Board Assessments',
+    skills: ['Systematic Theology', 'Chaplaincy Care', 'Pastoral Counseling', 'Church Administration Skills'],
+    description: 'A comprehensive guide to ecclesiology, sermon preparation, local church planting, and effective parish governance.',
+    featured: true
+  },
+  {
+    id: 'theo-3',
+    name: 'Bachelor of Theology & Divinity Studies',
+    category: 'theology',
+    duration: '3 Years',
+    requirements: 'KCSE C+ or Diploma in Theology',
+    exams: 'National Theological University Board',
+    skills: ['Biblical Greek & Hebrew', 'Advanced Hermeneutics', 'Counseling Psychology', 'Historical Theology'],
+    description: 'In-depth undergraduate leadership preparation equipping senior clergy, community group creators, and mission scholars.',
+    featured: false
+  },
+  {
+    id: 'theo-4',
+    name: 'Master of Divinity & Practical Theology',
+    category: 'theology',
+    duration: '2 Years',
+    requirements: 'Bachelor of Theology / Relevant Degree',
+    exams: 'Senate Post-Graduate Panel',
+    skills: ['Expository Preaching', 'Crisis Intervention Counseling', 'Christian Apologetics', 'Global Mission Studies'],
+    description: 'Rigorous post-graduate training that equips active ministers and pastors with deep exegetical skills and leadership capacity.',
+    featured: true
+  },
+  {
+    id: 'theo-5',
+    name: 'Doctor of Ministry & Theological Leadership',
+    category: 'theology',
+    duration: '3 Years',
+    requirements: 'Master of Divinity / Masters in Theology',
+    exams: 'Doctoral Dissertation Defense',
+    skills: ['Strategic Ecclesial Research', 'Advanced Spiritual Leadership', 'Theological Ethics & Morals', 'Organizational Development'],
+    description: 'The highest professional training program designed for senior ecclesiastical executives, spiritual writers, and church reformers.',
+    featured: false
   }
 ];
 
@@ -405,7 +460,7 @@ export function PublicPortal() {
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'healthcare' | 'hospitality' | 'engineering'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'cosmetology' | 'ict' | 'healthcare' | 'hospitality' | 'engineering' | 'theology'>('all');
 
   // Multi-mode Form State (general inquiry or online enrollment application)
   const [formType, setFormType] = useState<'inquiry' | 'apply'>('inquiry');
@@ -514,6 +569,7 @@ export function PublicPortal() {
       case 'healthcare': return 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400';
       case 'hospitality': return 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400';
       case 'engineering': return 'bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400';
+      case 'theology': return 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400';
       default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
     }
   };
@@ -936,7 +992,8 @@ export function PublicPortal() {
                 { id: 'ict', label: 'ICT & Software' },
                 { id: 'healthcare', label: 'Caregiver Health' },
                 { id: 'hospitality', label: 'Culinary Art' },
-                { id: 'engineering', label: 'Electrical Tech' }
+                { id: 'engineering', label: 'Electrical Tech' },
+                { id: 'theology', label: 'Theological Studies' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -965,6 +1022,7 @@ export function PublicPortal() {
                 if (course.category === 'healthcare') CatIcon = Heart;
                 if (course.category === 'hospitality') CatIcon = Coffee;
                 if (course.category === 'engineering') CatIcon = Plug;
+                if (course.category === 'theology') CatIcon = GraduationCap;
 
                 return (
                   <motion.div
@@ -1652,6 +1710,13 @@ export function PublicPortal() {
                             <option value="Certificate in Solar PV Technology & Electrical Wiring">Certificate in Solar PV Setup</option>
                             <option value="Diploma in Domestic & Industrial Electrical Engineering">Diploma in Electrical Engineering</option>
                           </optgroup>
+                          <optgroup label="School of Theological Studies">
+                            <option value="Certificate in Theology & Biblical Studies">Certificate in Theology & Biblical Studies</option>
+                            <option value="Diploma in Theology & Christian Ministry">Diploma in Theology & Christian Ministry</option>
+                            <option value="Bachelor of Theology & Divinity Studies">Bachelor of Theology & Divinity Studies</option>
+                            <option value="Master of Divinity & Practical Theology">Master of Divinity & Practical Theology</option>
+                            <option value="Doctor of Ministry & Theological Leadership">Doctor of Ministry & Theological Leadership</option>
+                          </optgroup>
                         </select>
                       </div>
 
@@ -1833,6 +1898,7 @@ export function PublicPortal() {
               <a href="#programs" onClick={() => setSelectedCategory('healthcare')} className="hover:text-white">Caregiver Healthcare Studies</a>
               <a href="#programs" onClick={() => setSelectedCategory('hospitality')} className="hover:text-white">Culinary Pastry Culinary Arts</a>
               <a href="#programs" onClick={() => setSelectedCategory('engineering')} className="hover:text-white">Solar PV & Electrical Systems</a>
+              <a href="#programs" onClick={() => setSelectedCategory('theology')} className="hover:text-white">School of Theological Studies</a>
             </div>
           </div>
 

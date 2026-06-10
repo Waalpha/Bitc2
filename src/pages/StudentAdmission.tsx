@@ -199,6 +199,7 @@ export const StudentAdmission: React.FC = () => {
     if (lower.includes('catering') || lower.includes('hospitality')) return 'DCH';
     if (lower.includes('solar')) return 'CSPV';
     if (lower.includes('electrical')) return 'DEE';
+    if (lower.includes('theological') || lower.includes('theology') || lower.includes('divinity') || lower.includes('biblical')) return 'THS';
     
     // Fallback: 3 letter uppercase abbreviation from the word initials
     const words = courseName.trim().replace(/[^a-zA-Z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !['and', 'for', 'the', 'with'].includes(w.toLowerCase()));
