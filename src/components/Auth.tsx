@@ -42,7 +42,7 @@ export const Auth: React.FC = () => {
 
   useEffect(() => {
     if (isAuthReady && authUser && userData) {
-      if (location.pathname === '/auth') {
+      if (location.pathname === '/' || location.pathname === '/auth') {
         const fallback = userData.role === 'student' ? '/results' : '/dashboard';
         navigate(fallback, { replace: true });
       }

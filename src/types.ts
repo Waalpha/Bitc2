@@ -311,6 +311,14 @@ export interface AppSettings {
   publicHeroAlign?: 'left' | 'center' | 'right';
   publicHeroTitleSize?: string;
   publicHeroDescriptionSize?: string;
+  publicHeroTitleBold?: boolean;
+  publicHeroTitleItalic?: boolean;
+  publicHeroDescriptionBold?: boolean;
+  publicHeroDescriptionItalic?: boolean;
+  publicLogoUrl?: string;
+  publicPrimaryColor?: string;
+  publicSecondaryColor?: string;
+  publicAccentColor?: string;
   // Public Portal Sections
   portalAboutUs?: string;
   aboutTitle?: string;

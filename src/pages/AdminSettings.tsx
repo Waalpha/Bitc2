@@ -93,6 +93,14 @@ export const AdminSettings: React.FC = () => {
     publicHeroAlign: 'left',
     publicHeroTitleSize: 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl',
     publicHeroDescriptionSize: 'text-xs sm:text-sm md:text-base',
+    publicHeroTitleBold: true,
+    publicHeroTitleItalic: false,
+    publicHeroDescriptionBold: false,
+    publicHeroDescriptionItalic: false,
+    publicLogoUrl: '',
+    publicPrimaryColor: '#1E40AF',
+    publicSecondaryColor: '#10B981',
+    publicAccentColor: '#F59E0B',
     portalAboutUs: '',
     portalGallery: [],
     sessionTimeoutSeconds: 300,
@@ -406,7 +414,7 @@ export const AdminSettings: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logoUrl' | 'stampUrl' | 'publicHeroImageUrl' | 'aboutImageUrl') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logoUrl' | 'stampUrl' | 'publicHeroImageUrl' | 'aboutImageUrl' | 'publicLogoUrl') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -2048,6 +2056,169 @@ export const AdminSettings: React.FC = () => {
                     <option value="text-base sm:text-lg md:text-xl">Extra Large / Original (text-lg to text-xl)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Headline Font Family</label>
+                  <select
+                    value={appSettings.publicHeroFont || 'Inter'}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroFont: e.target.value })}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
+                  >
+                    <option value="Inter">Inter (Sans-Serif Modern)</option>
+                    <option value="Poppins">Poppins (Geometric Round)</option>
+                    <option value="Montserrat">Montserrat (Classic Alternate)</option>
+                    <option value="Space Grotesk">Space Grotesk (Tech Modern)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Headline Text Alignment</label>
+                  <select
+                    value={appSettings.publicHeroAlign || 'left'}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroAlign: e.target.value as any })}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
+                  >
+                    <option value="left">Left Align</option>
+                    <option value="center">Center Align</option>
+                    <option value="right">Right Align</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-center gap-2 pt-2 md:pt-4">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={appSettings.publicHeroTitleBold !== false}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleBold: e.target.checked })}
+                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                    />
+                    <span>Heavy bold styling on Heading Title</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!appSettings.publicHeroTitleItalic}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleItalic: e.target.checked })}
+                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                    />
+                    <span>Italicize Title</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div className="flex flex-col gap-2 justify-center">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!appSettings.publicHeroDescriptionBold}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionBold: e.target.checked })}
+                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                    />
+                    <span>Bold subtitle description</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!appSettings.publicHeroDescriptionItalic}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionItalic: e.target.checked })}
+                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                    />
+                    <span>Italicize subtitle description</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Color Customizers */}
+              <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Primary Branding Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={appSettings.publicPrimaryColor || '#1E40AF'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
+                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={appSettings.publicPrimaryColor || '#1E40AF'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
+                      placeholder="#1E40AF"
+                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Secondary Branding Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={appSettings.publicSecondaryColor || '#10B981'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
+                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={appSettings.publicSecondaryColor || '#10B981'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
+                      placeholder="#10B981"
+                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Accent Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={appSettings.publicAccentColor || '#F59E0B'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
+                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={appSettings.publicAccentColor || '#F59E0B'}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
+                      placeholder="#F59E0B"
+                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Public Portal Logo */}
+              <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-200">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Public Portal Logo Override</label>
+                <p className="text-[10px] text-gray-400 mb-2">Configure a specific header logo for your public portal. Leaves blank to use primary system logo.</p>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="text"
+                    value={appSettings.publicLogoUrl || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, publicLogoUrl: e.target.value })}
+                    placeholder="Paste public logo URL..."
+                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
+                  />
+                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
+                    <Upload size={14} className="text-gray-400" />
+                    <span>Upload Logo</span>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'publicLogoUrl')} className="hidden" />
+                  </label>
+                </div>
+                {appSettings.publicLogoUrl && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <img src={appSettings.publicLogoUrl} alt="Public Logo Preview" className="h-10 w-auto rounded object-contain border border-gray-200" referrerPolicy="no-referrer" />
+                    <button
+                      type="button"
+                      onClick={() => setAppSettings(prev => ({ ...prev, publicLogoUrl: '' }))}
+                      className="text-[10px] font-bold text-red-500 hover:underline"
+                    >
+                      Reset Custom Logo
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
