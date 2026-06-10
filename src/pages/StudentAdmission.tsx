@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, addDoc, doc, setDoc, writeBatch, getDocs, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, doc, setDoc, writeBatch, getDocs, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import Papa from 'papaparse';
 import { Class, User } from '../types';
@@ -20,12 +20,19 @@ import {
   Layout,
   File as FileIcon,
   Image as ImageIcon,
-  X as XCircle
+  X as XCircle,
+  Inbox,
+  Trash2,
+  Sparkles,
+  Check,
+  Search,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 
 const TABS = [
+  { id: 'online-apps', name: 'ONLINE APPLICATIONS INBOX', icon: Inbox },
   { id: 'personal', name: 'PERSONAL INFO', icon: UserIcon },
   { id: 'parents', name: 'PARENTS & GUARDIAN INFO', icon: Users },
   { id: 'document', name: 'DOCUMENT INFO', icon: Upload },
@@ -39,7 +46,7 @@ import { uploadFile } from '../services/uploadService';
 export const StudentAdmission: React.FC = () => {
   const { user, userData, hasPermission } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState('online-apps');
   const [classes, setClasses] = useState<Class[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +96,78 @@ export const StudentAdmission: React.FC = () => {
 
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Online Applications State
+  const [onlineApplications, setOnlineApplications] = useState<any[]>([]);
+  const [onlineSearch, setOnlineSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending_review' | 'processed' | 'archived'>('all');
+
+  // Real-time listener for the 'admissions' Firestore collection
+  useEffect(() => {
+    const q = query(collection(db, 'admissions'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      // Sort newest first
+      apps.sort((a, b) => {
+        const dateA = new Date(a.submittedAt || a.createdAt || 0).getTime();
+        const dateB = new Date(b.submittedAt || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+      setOnlineApplications(apps);
+    }, (error) => {
+      console.error("Error watching admissions: ", error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Pre-fill student admission form from an online application
+  const handleProcessApplication = (app: any) => {
+    const fullName = app.fullName || app.applicantName || "";
+    const nameParts = fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    setFormData(prev => ({
+      ...prev,
+      firstName,
+      lastName,
+      email: app.email || app.applicantEmail || "",
+      phone: app.phone || app.applicantPhone || "",
+      gender: app.gender || "Male",
+      dateOfBirth: app.dateOfBirth || "",
+      guardianName: app.guardianName || "",
+      guardianPhone: app.guardianPhone || "",
+      guardianEmail: app.email || app.applicantEmail || "",
+      address: app.address || "Thika",
+      course: app.courseInterest || "",
+    }));
+
+    setActiveTab('personal');
+    addToast(`Pre-loaded details for ${fullName}! Choose classes and click Save Student.`, 'success');
+  };
+
+  // Change online application status
+  const handleUpdateAppStatus = async (appId: string, status: 'pending_review' | 'processed' | 'archived') => {
+    try {
+      await updateDoc(doc(db, 'admissions', appId), { status });
+      addToast(`Updated status to ${status.replace('_', ' ').toUpperCase()}`, 'success');
+    } catch (err) {
+      console.error("Error updating admission status:", err);
+      addToast("Failed to update status", "error");
+    }
+  };
+
+  // Delete online application
+  const handleDeleteApplication = async (appId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this application?")) return;
+    try {
+      await deleteDoc(doc(db, 'admissions', appId));
+      addToast("Application deleted successfully", "success");
+    } catch (err) {
+      console.error("Error deleting admission:", err);
+      addToast("Failed to delete application", "error");
+    }
   };
 
   useEffect(() => {
@@ -403,54 +482,276 @@ export const StudentAdmission: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Student Admission</h1>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept=".csv"
-            className="hidden"
-          />
-          <button 
-            type="button"
-            onClick={handleImportClick}
-            disabled={loading}
-            className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
-          >
-            <FileDown size={18} />
-            {loading ? 'IMPORTING...' : 'IMPORT STUDENT'}
-          </button>
-          <button 
-            type="submit" 
-            form="admission-form"
-            disabled={loading || isUploading}
-            className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
-          >
-            <Save size={18} />
-            {isUploading ? 'UPLOADING...' : loading ? 'SAVING...' : 'SAVE STUDENT'}
-          </button>
+          {activeTab !== 'online-apps' && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".csv"
+                className="hidden"
+              />
+              <button 
+                type="button"
+                onClick={handleImportClick}
+                disabled={loading}
+                className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+              >
+                <FileDown size={18} />
+                {loading ? 'IMPORTING...' : 'IMPORT STUDENT'}
+              </button>
+              <button 
+                type="submit" 
+                form="admission-form"
+                disabled={loading || isUploading}
+                className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+              >
+                <Save size={18} />
+                {isUploading ? 'UPLOADING...' : loading ? 'SAVING...' : 'SAVE STUDENT'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
       <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-2 overflow-x-auto no-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-100 shadow-sm'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            <tab.icon size={16} />
-            {tab.name}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const pendingCount = onlineApplications.filter(app => app.status !== 'processed' && app.status !== 'archived').length;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-100 shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              <tab.icon size={16} />
+              <span>{tab.name}</span>
+              {tab.id === 'online-apps' && pendingCount > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-[10px] font-black bg-rose-500 text-white rounded-full animate-pulse">
+                  {pendingCount} NEW
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <form id="admission-form" onSubmit={handleSubmit} className="space-y-8">
         <AnimatePresence mode="wait">
+          {activeTab === 'online-apps' && (
+            <motion.div
+              key="online-apps"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Filter controls panel */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {(['all', 'pending_review', 'processed', 'archived'] as const).map((filter) => {
+                    const count = filter === 'all' 
+                      ? onlineApplications.length
+                      : onlineApplications.filter(app => app.status === filter).length;
+                    return (
+                      <button
+                        type="button"
+                        key={filter}
+                        onClick={() => setStatusFilter(filter)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                          statusFilter === filter
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-150'
+                        }`}
+                      >
+                        {filter.replace('_', ' ')} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* Search Inbox */}
+                <div className="relative w-full md:w-80 font-heading">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search applicants..."
+                    value={onlineSearch}
+                    onChange={(e) => setOnlineSearch(e.target.value)}
+                    className="w-full bg-gray-50 border-none rounded-2xl pl-11 pr-4 py-2.5 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:ring-4 focus:ring-blue-100 transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Grid representation */}
+              {(() => {
+                const filtered = onlineApplications.filter(app => {
+                  const matchStatus = statusFilter === 'all' || app.status === statusFilter;
+                  const searchLower = onlineSearch.toLowerCase();
+                  const matchSearch = 
+                    (app.fullName || app.applicantName || '').toLowerCase().includes(searchLower) ||
+                    (app.email || app.applicantEmail || '').toLowerCase().includes(searchLower) ||
+                    (app.phone || app.applicantPhone || '').toLowerCase().includes(searchLower) ||
+                    (app.courseInterest || '').toLowerCase().includes(searchLower);
+                  return matchStatus && matchSearch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="bg-white p-12 rounded-[2rem] shadow-sm border border-gray-100 text-center space-y-4">
+                      <Inbox size={48} className="mx-auto text-gray-300 animate-bounce" />
+                      <h3 className="text-lg font-bold text-gray-900 uppercase">No Online Applications</h3>
+                      <p className="text-gray-500 text-sm font-medium max-w-sm mx-auto">
+                        No online admission submissions match your filters right now. Direct applications from the public web portal will automatically persist here.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map((app) => {
+                      const isApply = app.formCategory === 'apply';
+                      return (
+                        <div 
+                          key={app.id} 
+                          className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-5"
+                        >
+                          {/* Upper Card Header */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                isApply 
+                                  ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                                  : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                              }`}>
+                                {isApply ? 'Online Admission' : 'Inquiry Lead'}
+                              </span>
+
+                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                                app.status === 'processed' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : app.status === 'archived'
+                                  ? 'bg-gray-100 text-gray-650'
+                                  : 'bg-amber-100 text-amber-700 animate-pulse'
+                              }`}>
+                                {app.status === 'processed' ? 'Processed' : app.status === 'archived' ? 'Archived' : 'New Intake'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h3 className="text-base font-extrabold text-gray-900 tracking-tight font-heading">
+                                {app.fullName || app.applicantName || 'Unnamed Applicant'}
+                              </h3>
+                              {app.courseInterest && (
+                                <p className="text-xs text-blue-600 font-bold mt-1 uppercase flex items-center gap-1 font-sans">
+                                  <Sparkles size={11} className="text-blue-500 animate-pulse" />
+                                  {app.courseInterest}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Data Details List */}
+                          <div className="space-y-2 border-t border-b border-gray-50 py-3 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400 font-medium font-sans">Phone:</span>
+                              <span className="font-bold text-gray-800 font-mono">{app.phone || app.applicantPhone || 'None'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400 font-medium font-sans">Email:</span>
+                              <span className="font-bold text-gray-800 truncate max-w-[150px]">{app.email || app.applicantEmail || 'None'}</span>
+                            </div>
+                            {app.dateOfBirth && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400 font-medium font-sans">Birth Date:</span>
+                                <span className="font-bold text-gray-800">{app.dateOfBirth} ({app.gender || 'M'})</span>
+                              </div>
+                            )}
+                            {app.prevSchool && (
+                              <div className="flex flex-col gap-0.5 pt-1">
+                                <span className="text-gray-400 font-medium block font-sans">Previous School:</span>
+                                <span className="font-bold text-gray-800 italic">{app.prevSchool}</span>
+                              </div>
+                            )}
+                            {app.guardianName && (
+                              <div className="bg-gray-50 p-2.5 rounded-xl text-[11px] mt-1 space-y-0.5">
+                                <span className="text-gray-400 font-bold block uppercase text-[8px] tracking-wider font-sans">Parent/Guardian Info:</span>
+                                <p className="font-extrabold text-gray-850">{app.guardianName}</p>
+                                <p className="text-gray-500 font-mono text-[10px]">{app.guardianPhone}</p>
+                              </div>
+                            )}
+                            {app.message && (
+                              <div className="mt-2 text-gray-600 border-l-2 border-slate-200 pl-2 italic">
+                                "{app.message}"
+                              </div>
+                            )}
+                            {app.intakePeriod && (
+                              <div className="flex justify-between text-[11px] font-sans pb-1">
+                                <span className="text-slate-400">Intake Period:</span>
+                                <span className="font-bold text-emerald-600">{app.intakePeriod}</span>
+                              </div>
+                            )}
+                            <div className="text-[9px] text-gray-400 font-mono pt-1 text-right">
+                              Recd: {new Date(app.submittedAt || app.createdAt || '').toLocaleString()}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons for Card */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleProcessApplication(app)}
+                              className="flex-1 py-1 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all border-0 h-9"
+                            >
+                              <Check size={13} />
+                              <span>Admit</span>
+                            </button>
+
+                            {app.status !== 'processed' && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateAppStatus(app.id, 'processed')}
+                                title="Mark Processed"
+                                className="p-2 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 border border-green-100 transition-colors h-9 w-9 flex items-center justify-center"
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+
+                            {app.status !== 'archived' && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateAppStatus(app.id, 'archived')}
+                                title="Archive Application"
+                                className="p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-100 transition-colors h-9 w-9 flex items-center justify-center"
+                              >
+                                <Inbox size={14} />
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteApplication(app.id)}
+                              title="Delete Record"
+                              className="p-2 rounded-xl bg-red-50 hover:bg-red-105 text-red-650 border border-red-100 transition-colors h-9 w-9 flex items-center justify-center"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </motion.div>
+          )}
+
           {activeTab === 'personal' && (
             <motion.div
               key="personal"
