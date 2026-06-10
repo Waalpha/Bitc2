@@ -194,39 +194,6 @@ const COURSES: Course[] = [
     skills: ['Systematic Theology', 'Chaplaincy Care', 'Pastoral Counseling', 'Church Administration Skills'],
     description: 'A comprehensive guide to ecclesiology, sermon preparation, local church planting, and effective parish governance.',
     featured: true
-  },
-  {
-    id: 'theo-3',
-    name: 'Bachelor of Theology & Divinity Studies',
-    category: 'theology',
-    duration: '3 Years',
-    requirements: 'KCSE C+ or Diploma in Theology',
-    exams: 'National Theological University Board',
-    skills: ['Biblical Greek & Hebrew', 'Advanced Hermeneutics', 'Counseling Psychology', 'Historical Theology'],
-    description: 'In-depth undergraduate leadership preparation equipping senior clergy, community group creators, and mission scholars.',
-    featured: false
-  },
-  {
-    id: 'theo-4',
-    name: 'Master of Divinity & Practical Theology',
-    category: 'theology',
-    duration: '2 Years',
-    requirements: 'Bachelor of Theology / Relevant Degree',
-    exams: 'Senate Post-Graduate Panel',
-    skills: ['Expository Preaching', 'Crisis Intervention Counseling', 'Christian Apologetics', 'Global Mission Studies'],
-    description: 'Rigorous post-graduate training that equips active ministers and pastors with deep exegetical skills and leadership capacity.',
-    featured: true
-  },
-  {
-    id: 'theo-5',
-    name: 'Doctor of Ministry & Theological Leadership',
-    category: 'theology',
-    duration: '3 Years',
-    requirements: 'Master of Divinity / Masters in Theology',
-    exams: 'Doctoral Dissertation Defense',
-    skills: ['Strategic Ecclesial Research', 'Advanced Spiritual Leadership', 'Theological Ethics & Morals', 'Organizational Development'],
-    description: 'The highest professional training program designed for senior ecclesiastical executives, spiritual writers, and church reformers.',
-    featured: false
   }
 ];
 
@@ -1713,9 +1680,6 @@ export function PublicPortal() {
                           <optgroup label="School of Theological Studies">
                             <option value="Certificate in Theology & Biblical Studies">Certificate in Theology & Biblical Studies</option>
                             <option value="Diploma in Theology & Christian Ministry">Diploma in Theology & Christian Ministry</option>
-                            <option value="Bachelor of Theology & Divinity Studies">Bachelor of Theology & Divinity Studies</option>
-                            <option value="Master of Divinity & Practical Theology">Master of Divinity & Practical Theology</option>
-                            <option value="Doctor of Ministry & Theological Leadership">Doctor of Ministry & Theological Leadership</option>
                           </optgroup>
                         </select>
                       </div>
