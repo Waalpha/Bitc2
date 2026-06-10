@@ -179,7 +179,7 @@ const COURSES: Course[] = [
     category: 'theology',
     duration: '1 Year',
     requirements: 'KCSE D- minus / Secondary Certificate or equivalent',
-    exams: 'Christian Education Board Exams',
+    exams: 'TVET CDACC',
     skills: ['Biblical Interpretation', 'Christian Ministry Ethics', 'Basic Pastoral Counseling', 'Homiletics & Preaching'],
     description: 'Foundations of Christian doctrine, spiritual formation, and pulpit practice designed to empower aspiring church lay leaders.',
     featured: false
@@ -190,7 +190,7 @@ const COURSES: Course[] = [
     category: 'theology',
     duration: '2 Years',
     requirements: 'KCSE D Plain and above (or equivalent certificate)',
-    exams: 'Joint Theological Board Assessments',
+    exams: 'TVET CDACC',
     skills: ['Systematic Theology', 'Chaplaincy Care', 'Pastoral Counseling', 'Church Administration Skills'],
     description: 'A comprehensive guide to ecclesiology, sermon preparation, local church planting, and effective parish governance.',
     featured: true
