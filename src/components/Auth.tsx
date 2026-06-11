@@ -214,9 +214,69 @@ export const Auth: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Google Login error:", err);
-      setError(err.message || "Failed to login with Google.");
+      if (err?.code === 'auth/popup-blocked' || err?.message?.includes('popup-blocked')) {
+        setError(
+          "Your browser blocked the Google Login pop-up. Since the app is running in an iframe preview, please click 'Open app in a new tab' (top right), allow pop-ups for this site, or select the Quick Demo Account below."
+        );
+      } else {
+        setError(err.message || "Failed to login with Google.");
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (uid: string, profile: any) => {
+    setError(null);
+    setLoading(true);
+    try {
+      if (isFirebaseReady) {
+        // Guarantee that the selected demo account document exists in Firestore
+        const docRef = doc(db, 'users', uid);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
+          await setDoc(docRef, {
+            name: profile.name,
+            email: profile.email,
+            role: profile.role || activeTab,
+            createdAt: new Date().toISOString(),
+            uid,
+            ...profile
+          });
+        }
+      }
+      if (loginAsDemoUser) {
+        loginAsDemoUser(uid, profile);
+      }
+    } catch (err: any) {
+      console.error("Demo login fail:", err);
+      setError("Failed to initialize demo session. Try Google SSO.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDemoAccountsToRender = () => {
+    if (demoProfiles && demoProfiles.length > 0) {
+      return demoProfiles;
+    }
+    // Static highly authentic school portal backup records if DB is not yet synchronized
+    switch (activeTab) {
+      case 'student':
+        return [
+          { uid: 'std_john_doe', name: 'John Doe', email: 'student1@school.com', role: 'student', course: 'Computer Science', admissionNumber: 'ADM/2026/001' },
+          { uid: 'std_jane_smith', name: 'Jane Smith', email: 'student2@school.com', role: 'student', course: 'Computer Science', admissionNumber: 'ADM/2026/002' }
+        ];
+      case 'teacher':
+        return [
+          { uid: 'tech_prof_jones', name: 'Prof. Alan Jones', email: 'teacher1@school.com', role: 'teacher' },
+          { uid: 'tech_dr_smith', name: 'Dr. Sarah Smith', email: 'teacher2@school.com', role: 'teacher' }
+        ];
+      case 'admin':
+        return [
+          { uid: 'is5B5zbkEbUNlwYGQGlXJiAt66A2', name: 'Daud', email: 'daudimuchiri4@gmail.com', role: 'admin' },
+          { uid: 'admin_demo', name: 'System Admin', email: 'admin@school.com', role: 'admin' }
+        ];
     }
   };
 
@@ -366,6 +426,48 @@ export const Auth: React.FC = () => {
             )}
             <span>Sign In with Google</span>
           </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-200" />
+            <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Or Select Demo Account</span>
+            <div className="flex-grow border-t border-slate-200" />
+          </div>
+
+          <div className="space-y-3">
+            {loadingProfiles ? (
+              <div className="flex items-center justify-center py-4 gap-2 text-xs text-slate-400 font-medium">
+                <Loader2 className="animate-spin text-slate-500" size={14} />
+                <span>Scanning active demo profiles...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                {getDemoAccountsToRender().map((profile) => (
+                  <button
+                    key={profile.uid}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleDemoLogin(profile.uid, profile)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200/60 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300/80 transition-all text-left group cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="min-w-0 flex-1 pr-2">
+                      <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate transition-colors">
+                        {profile.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">
+                        {profile.email} {profile.admissionNumber ? `• ${profile.admissionNumber}` : ''}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] font-extrabold uppercase px-2 py-1 rounded bg-white border border-slate-100 group-hover:border-slate-200 ${theme?.colorClass} transition-colors shrink-0`}>
+                      Log In
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-center text-slate-400 font-medium mt-1">
+              Select any profile to log in instantly.
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>
