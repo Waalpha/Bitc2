@@ -388,7 +388,7 @@ export function PublicPortal() {
             setUserLocation({ lat: latitude, lng: longitude, accuracy });
             
             // Calculate distance to Thika Kiganjo campus
-            const dKiganjo = calculateDistance(latitude, longitude, -1.04543, 37.0853);
+            const dKiganjo = calculateDistance(latitude, longitude, -1.073224, 37.097750);
             setCampusDistances({ kiganjo: dKiganjo });
 
             setGpsState('bearing');
@@ -406,7 +406,7 @@ export function PublicPortal() {
             const fallbackLng = 37.0583;
             setUserLocation({ lat: fallbackLat, lng: fallbackLng, accuracy: 25 });
             
-            const dKiganjo = calculateDistance(fallbackLat, fallbackLng, -1.04543, 37.0853);
+            const dKiganjo = calculateDistance(fallbackLat, fallbackLng, -1.073224, 37.097750);
             setCampusDistances({ kiganjo: dKiganjo });
 
             setGpsState('bearing');
@@ -1682,7 +1682,7 @@ export function PublicPortal() {
                           </span>
                         </div>
                         <a
-                          href="https://www.google.com/maps/dir/?api=1&destination=-1.04543,37.0853"
+                          href="https://www.google.com/maps/dir/?api=1&destination=-1.073224,37.097750"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] uppercase tracking-widest text-center flex items-center justify-center gap-1.5 transition-colors border-0"

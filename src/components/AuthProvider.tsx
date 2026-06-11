@@ -289,6 +289,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user]);
 
+  // Auto-migrate map embed URL if it is the old coordinate or empty
+  useEffect(() => {
+    if (!isFirebaseReady || !user || !userData || !settings) return;
+    if (userData.role !== 'admin' && userData.role !== 'developer') return;
+
+    const isDefault = activeSchoolId === 'bitc';
+    const activeSettingsKey = isDefault ? 'global' : activeSchoolId;
+
+    const oldEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15956.230743516568!2d37.070000!3d-1.033333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e0000000000%3A0x0000000000000000!2sBreakthrough+International+Training+College!5e0!3m2!1sen!2ske!4v1714988426000!5m2!1sen!2ske';
+    const mtKenyaEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.956041121345!2d37.081498!3d-1.045059!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e0c4f87770f%3A0x6bba35bc40ebf5bf!2smt.kenya%20soccer%20pitch%2C%20General%20Kago%20Rd%2C%20Thika!5e0!3m2!1sen!2ske!4v1781197480024!5m2!1sen!2ske';
+    const kiganjoEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.118404095059!2d37.09775020000001!3d-1.0732241999999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4fbf02a24a19%3A0x462a484c79a9d615!2sBreakthrough%20International%20Training%20College%2C%20Kiganjo!5e0!3m2!1sen!2ske!4v1781197480024!5m2!1sen!2ske';
+
+    if (settings.publicLocationEmbed === oldEmbedUrl || settings.publicLocationEmbed === mtKenyaEmbedUrl) {
+      console.log("Migrating map embed URL to Kiganjo breakthrough campus...");
+      const globalRef = doc(db, 'settings', activeSettingsKey);
+      updateDoc(globalRef, {
+        publicLocationEmbed: kiganjoEmbedUrl,
+        publicAddress: 'Thika Kiganjo Corner 2, Kenya'
+      }).catch(err => console.error("Could not run map migration check:", err));
+    }
+  }, [isFirebaseReady, user, userData, settings, activeSchoolId]);
+
   // Sync children list if logged in user is a parent
   useEffect(() => {
     if (!isFirebaseReady || !user || !userData || userData.role !== 'parent') {
