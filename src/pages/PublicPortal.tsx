@@ -39,7 +39,8 @@ import {
   Locate,
   Activity,
   RotateCw,
-  Navigation
+  Navigation,
+  Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -450,6 +451,17 @@ export function PublicPortal() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [lastSubmission, setLastSubmission] = useState<{
+    name: string;
+    course: string;
+    phone: string;
+    email: string;
+    dateOfBirth?: string;
+    guardianName?: string;
+    guardianPhone?: string;
+    address?: string;
+    intakePeriod?: string;
+  } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Lightbox index state for Gallery
@@ -467,6 +479,202 @@ export function PublicPortal() {
     if (contactSection) {
       contactSection.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handlePrintAdmissionLetter = (studentData: {
+    name: string;
+    course: string;
+    phone: string;
+    email: string;
+    dateOfBirth?: string;
+    guardianName?: string;
+    guardianPhone?: string;
+    address?: string;
+    intakePeriod?: string;
+  }) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Popup blocker is preventing opening the print window. Please allow popups for active print-outs.");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'Main Highway, P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
+    const logoHtml = settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : '';
+    const stampHtml = settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" alt="Stamp" />` : '';
+    const secureId = Math.random().toString(36).substring(2, 9).toUpperCase();
+
+    const html = `
+      <html>
+        <head>
+          <title>Admission Letter - ${studentData.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.6; 
+              color: #1a202c; 
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #cbd5e1; 
+              padding-bottom: 15px; 
+              margin-bottom: 25px; 
+            }
+            .logo { max-height: 80px; margin-bottom: 10px; }
+            .school-name { font-size: 22px; font-weight: 800; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 11px; color: #475569; margin: 3px 0; font-weight: 500; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; }
+            .date { font-weight: 700; color: #1e293b; }
+            .ref-no { font-size: 11px; color: #64748b; font-family: monospace; }
+            
+            .recipient { margin-bottom: 25px; border-left: 3px solid #3b82f6; padding-left: 15px; background: #f8fafc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+            .recipient p { margin: 4px 0; color: #1e293b; font-size: 13px; }
+            .recipient-label { font-size: 10px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; display: inline-block; width: 120px; }
+            .recipient-value { font-weight: 700; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 25px;
+              font-size: 15px;
+              text-align: center;
+              color: #1e3a8a;
+            }
+            
+            .content { font-size: 13.5px; text-align: justify; }
+            .content p { margin-bottom: 15px; }
+            .requirements-list {
+              background: #f0fdf4;
+              border: 1px solid #bbf7d0;
+              border-left: 4px solid #22c55e;
+              padding: 15px 20px;
+              margin: 20px 0;
+              border-radius: 6px;
+            }
+            .requirements-title {
+              font-weight: 800;
+              color: #14532d;
+              margin-bottom: 8px;
+              font-size: 13px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .requirements-list ul {
+              margin: 0;
+              padding-left: 20px;
+            }
+            .requirements-list li {
+              margin-bottom: 6px;
+              color: #166534;
+              font-weight: 500;
+            }
+            
+            .closing { margin-top: 40px; page-break-inside: avoid; }
+            .signature-space { height: 60px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -15px; left: 15px; max-height: 85px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #475569; width: 220px; margin-top: 10px; }
+            .signatory-name { font-weight: 800; margin-top: 5px; font-size: 13px; color: #1e293b; }
+            .signatory-title { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 50px; 
+              font-size: 9px; 
+              border-top: 1px solid #e2e8f0; 
+              padding-top: 15px;
+              text-align: center;
+              color: #94a3b8;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 25px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${logoHtml}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${today}</div>
+            <div class="ref-no">REF: BITC/ADM/2026/PROV/${secureId}</div>
+          </div>
+
+          <div class="recipient">
+            <p><span class="recipient-label">TO APPLICANT:</span> <span class="recipient-value">${studentData.name.toUpperCase()}</span></p>
+            <p><span class="recipient-label">EMAIL:</span> <span>${studentData.email}</span></p>
+            <p><span class="recipient-label">PHONE:</span> <span>${studentData.phone}</span></p>
+            <p><span class="recipient-label">COURSE:</span> <span class="recipient-value">${studentData.course.toUpperCase()}</span></p>
+            <p><span class="recipient-label">INTAKE PERIOD:</span> <span>${studentData.intakePeriod || 'September 2026 Intake'}</span></p>
+          </div>
+
+          <div class="subject">
+            RE: PROVISIONAL OFFER OF ADMISSION
+          </div>
+
+          <div class="content">
+            <p>Dear ${studentData.name.split(' ')[0]},</p>
+            
+            <p>We are pleased to inform you that your online enrollment application has been processed and accepted at Breakthrough International Training College (BITC). You have been provisionally offered a place to pursue a <strong>${studentData.course}</strong> program, commencing in the <strong>${studentData.intakePeriod || 'September 2026 Intake'}</strong>.</p>
+            
+            <p>Breakthrough International Training College is committed to providing high-quality, practical training to prepare you fully for a successful career. Your offer is provisional subject to the administrative verification of your academic credentials and certificates.</p>
+            
+            <div class="requirements-list">
+              <div class="requirements-title">Required Reporting Documents</div>
+              <ul>
+                <li>Original and copies of KCSE Result Slip/Certificate</li>
+                <li>National Identity Card / Birth Certificate copy</li>
+                <li>Two recent passport-size color photographs</li>
+                <li>Copies of prior school certificates or leaving certificates</li>
+              </ul>
+            </div>
+            
+            <p>Please report to our campus registry to complete your physical enrollment, clear any fee payments, and receive your official registration package and orientation program timetables.</p>
+            
+            <p>We look forward to welcoming you to our college and supporting you in achieving your professional potential.</p>
+          </div>
+
+          <div class="closing">
+            <p>Yours faithfully,</p>
+            <div class="signature-space">
+              ${stampHtml}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">Admissions Registrar</div>
+            <div class="signatory-title">Breakthrough International Training College</div>
+          </div>
+
+          <div class="footer">
+            Generated securely via BITC Student Portal on ${today}. Security ID: bitc-${secureId.toLowerCase()}
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   // Form submit handler writing into secure public firebase collections (admissions path mapped in Rules!)
@@ -499,6 +707,18 @@ export function PublicPortal() {
 
       await addDoc(collection(db, 'admissions'), submissionPayload);
       
+      setLastSubmission({
+        name: formData.fullName,
+        course: formData.courseInterest || 'Selected Course',
+        phone: formData.phone,
+        email: formData.email,
+        dateOfBirth: formData.dateOfBirth,
+        guardianName: formData.guardianName,
+        guardianPhone: formData.guardianPhone,
+        address: formData.address,
+        intakePeriod: formData.intakePeriod
+      });
+
       setSubmitSuccess(true);
       // Reset critical fields but keep names
       setFormData(prev => ({
@@ -1573,27 +1793,152 @@ export function PublicPortal() {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
-                    className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-emerald-100 dark:border-emerald-950/40 flex flex-col items-center gap-4 shadow shadow-emerald-500/5"
+                    className="w-full"
                   >
-                    <div className="h-16 w-16 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-4xl animate-bounce">
-                      <CheckCircle2 size={32} />
-                    </div>
-                    <p className="font-heading font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                      Submission Received Successfully!
-                    </p>
-                    <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                      Thank you for connecting with Breakthrough International Training College! Your secure details have been successfully saved in our database. Our admissions department will reach out on phone or email within 24 hours.
-                    </p>
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-955/30 px-3 py-1 rounded-lg">
-                      Secure ID: {Math.random().toString(36).substring(2, 9).toUpperCase()}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setSubmitSuccess(false)}
-                      className="px-6 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl"
-                    >
-                      Reset Form Input
-                    </button>
+                    {formType === 'inquiry' ? (
+                      <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-emerald-100 dark:border-emerald-950/40 flex flex-col items-center gap-4 shadow shadow-emerald-500/5">
+                        <div className="h-16 w-16 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-4xl animate-bounce">
+                          <CheckCircle2 size={32} />
+                        </div>
+                        <p className="font-heading font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                          Inquiry Received Successfully!
+                        </p>
+                        <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+                          Thank you for connecting with Breakthrough International Training College! Your inquiry has been logged in our database. Our counseling team will reach out on phone or email within 24 hours.
+                        </p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-lg">
+                          Reference ID: {Math.random().toString(36).substring(2, 9).toUpperCase()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSubmitSuccess(false)}
+                          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl"
+                        >
+                          Reset Form Input
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full text-left space-y-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                              <CheckCircle2 size={24} />
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-slate-950 dark:text-white text-sm">Application Submitted Successfully!</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Your Provisional Admission Letter has been generated.</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                              type="button"
+                              onClick={() => lastSubmission && handlePrintAdmissionLetter(lastSubmission)}
+                              className="flex-1 sm:flex-none px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md transition-all font-sans uppercase tracking-wider border-0"
+                            >
+                              <Printer size={15} />
+                              <span>Print Letter</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSubmitSuccess(false)}
+                              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl border-0"
+                            >
+                              New Application
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* On-screen Visual Letterhead Preview */}
+                        <div className="p-6 sm:p-8 bg-white text-slate-800 shadow-md rounded-3xl border border-slate-100 space-y-6 relative overflow-hidden font-sans border-t-8 border-t-blue-600">
+                          {/* Letterhead */}
+                          <div className="text-center border-b border-slate-100 pb-5 space-y-1">
+                            {settings?.logoUrl && (
+                              <img src={settings.logoUrl} className="max-h-16 mx-auto mb-2" alt="BITC Logo" />
+                            )}
+                            <h2 className="text-xl sm:text-2xl font-black text-[#1e3a8a] tracking-wide uppercase">
+                              {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}
+                            </h2>
+                            <p className="text-xs text-slate-500 font-semibold">
+                              {settings?.publicAddress || 'Main Highway, P.O. Box 1234-01000, Thika, Kenya'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              TEL: {settings?.publicPhone || '+254700000000'} | EMAIL: {settings?.publicEmail || 'info@bitc.ac.ke'}
+                            </p>
+                          </div>
+
+                          {/* Reference & Date */}
+                          <div className="flex justify-between text-[11px] font-bold text-slate-400">
+                            <div>
+                              DATE: {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </div>
+                            <div>
+                              REF: BITC/ADM/2026/PROV
+                            </div>
+                          </div>
+
+                          {/* Recipient box */}
+                          <div className="space-y-1 text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
+                            <p className="font-extrabold text-slate-900 tracking-wider text-[10px] uppercase text-blue-800">Applicant Offer Details:</p>
+                            <p className="font-medium"><span className="text-slate-400 font-bold font-sans mr-2">APPLICANT NAME:</span> <span className="text-slate-900 font-bold">{lastSubmission?.name?.toUpperCase()}</span></p>
+                            <p className="font-medium"><span className="text-slate-400 font-bold font-sans mr-2">EMAIL ADDRESS:</span> <span className="text-slate-900 font-bold">{lastSubmission?.email}</span></p>
+                            <p className="font-medium"><span className="text-slate-400 font-bold font-sans mr-2">MOBILE CONTACT:</span> <span className="text-slate-900 font-bold">{lastSubmission?.phone}</span></p>
+                            <p className="font-medium"><span className="text-slate-400 font-bold font-sans mr-2">OFFERED COURSE:</span> <span className="text-blue-800 font-extrabold">{lastSubmission?.course?.toUpperCase()}</span></p>
+                            <p className="font-medium"><span className="text-slate-400 font-bold font-sans mr-2">INTAKE PERIOD:</span> <span className="text-emerald-700 font-bold">{lastSubmission?.intakePeriod || 'September 2026 Intake'}</span></p>
+                          </div>
+
+                          {/* Subject line */}
+                          <div className="text-center font-extrabold text-[#111827] text-xs sm:text-sm underline uppercase my-4">
+                            RE: PROVISIONAL OFFER OF ADMISSION
+                          </div>
+
+                          {/* Body letter */}
+                          <div className="text-xs text-slate-600 leading-relaxed space-y-3.5 text-justify">
+                            <p>
+                              We are pleased to inform you that your online enrollment application has been received and successfully accepted in our student database system. You have been offered provisional admission to Breakthrough International Training College (BITC) for the <strong>{lastSubmission?.course}</strong> program under the <strong>{lastSubmission?.intakePeriod}</strong>.
+                            </p>
+                            <p>
+                              At Breakthrough, our training methodology is structured to deliver practical, job-ready training solutions accredited by national registration bodies. Please note that this offer is provisional, subject to full physical authentication of your academic credentials.
+                            </p>
+                            
+                            <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl space-y-1.5">
+                              <p className="font-extrabold text-[#14532d] text-[10px] uppercase tracking-wider">Required Physical Documents on Reporting Day:</p>
+                              <ul className="list-disc list-inside text-[#166534] space-y-1 text-[11px] font-medium pl-2">
+                                <li>Original and copies of academic result slips or certificates</li>
+                                <li>National Identity Card / Birth Certificate copy</li>
+                                <li>Two recent passport-size color photographs</li>
+                                <li>Copies of high school leaving certificates</li>
+                              </ul>
+                            </div>
+
+                            <p>
+                              If you have any questions regarding departmental requirements, tuition fees schedules, or campus hostels arrangements, please reach out to our customer helplines or directly via our WhatsApp icon listed on this portal.
+                            </p>
+                            <p>
+                              We look forward to welcoming you physically to Breakthrough International Training College to nurture your talents and actualize your professional career goals.
+                            </p>
+                          </div>
+
+                          {/* Sign-off signatures */}
+                          <div className="pt-4 flex justify-between items-end">
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-bold text-slate-800">Yours Faithfully,</p>
+                              <div className="h-10 relative">
+                                {settings?.stampUrl && (
+                                  <img src={settings.stampUrl} className="h-14 absolute -top-3 opacity-60 mix-blend-multiply" alt="Stamp" />
+                                )}
+                              </div>
+                              <div className="border-t border-slate-200 w-44 pt-1">
+                                <p className="text-xs font-black text-slate-900">Admissions Registrar</p>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase">BITC Academic Board</p>
+                              </div>
+                            </div>
+                            <div className="text-right text-[10px] text-slate-400 font-mono">
+                              Security ID: bitc-{Math.random().toString(36).substring(2, 9).toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 ) : (
                   <motion.form

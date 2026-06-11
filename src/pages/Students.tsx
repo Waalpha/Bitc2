@@ -61,6 +61,8 @@ export const Students: React.FC = () => {
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const studentFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingLetter, setIsUploadingLetter] = useState(false);
+  const letterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [viewingStudent, setViewingStudent] = useState<User | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [messagingStudents, setMessagingStudents] = useState<User[]>([]);
@@ -81,6 +83,38 @@ export const Students: React.FC = () => {
   const [idCardCustomRole, setIdCardCustomRole] = useState('STUDENT');
   const [isSavingPdf, setIsSavingPdf] = useState(false);
   const [isSavingPng, setIsSavingPng] = useState(false);
+
+  // Editable Rotation Letter States
+  const [editorLetterStudent, setEditorLetterStudent] = useState<User | null>(null);
+  const [isSavingRotationProfile, setIsSavingRotationProfile] = useState(false);
+  const [letterConfig, setLetterConfig] = useState({
+    dateOfLetter: '',
+    refNo: '',
+    recipientTitle: 'THE HUMAN RESOURCE MANAGER / HEAD OF TRAINING',
+    recipientOrg: '',
+    recipientDept: '',
+    recipientAddress: '',
+    subjectLine: '',
+    paragraph1: '',
+    paragraph2: '',
+    paragraph3: '',
+    paragraph4: '',
+    paragraph5: '',
+    signatoryName: 'OFFICE OF THE ACADEMIC REGISTRAR',
+    signatoryTitle: 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+    showSignRef: true,
+    showSealRef: true,
+    // Live update student database flags
+    dbHostOrg: '',
+    dbDepartment: '',
+    dbSupervisor: '',
+    dbSupervisorContact: '',
+    dbStartDate: '',
+    dbEndDate: '',
+    dbStatus: 'active' as 'none' | 'pending' | 'active' | 'completed',
+    dbNotes: '',
+    syncToDb: true
+  });
 
   // Import/Export States
   const [showImportModal, setShowImportModal] = useState(false);
@@ -599,6 +633,646 @@ export const Students: React.FC = () => {
 
           <div class="footer">
             THIS IS AN OFFICIAL ELECTRONICALLY GENERATED COMMUNICATION OF ${schoolName}. NO ALTERATIONS PERMITTED.
+          </div>
+
+          <script>
+            window.onload = function() { 
+              window.print(); 
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handlePrintModifiedLetter = (student: User, config: typeof letterConfig) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 711 223 344';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const academicYear = new Date().getFullYear();
+
+    const headerLogoHtml = settings?.logoUrl 
+      ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` 
+      : `<div class="default-logo-placeholder">
+           <svg viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" style="width: 50px; height: 50px;">
+             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>
+         </div>`;
+
+    const html = `
+      <html>
+        <head>
+          <title>Clinical Rotation Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght=600;700&family=Inter:wght=400;500;600;700;800&display=swap');
+            
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.6; 
+              color: #2d3748; 
+              padding: 40px 50px;
+              max-width: 850px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header-container {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 20px;
+              border-bottom: 3px double #1e3a8a; 
+              padding-bottom: 12px; 
+              margin-bottom: 25px; 
+            }
+            .logo-box {
+              flex-shrink: 0;
+            }
+            .logo { 
+              max-height: 80px; 
+              max-width: 80px;
+              object-fit: contain;
+            }
+            .default-logo-placeholder {
+              width: 70px;
+              height: 70px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .school-text {
+              text-align: center;
+            }
+            .school-name { 
+              font-family: 'Cinzel', serif;
+              font-size: 20px; 
+              font-weight: 700; 
+              color: #1e3a8a; 
+              margin: 0 0 4px 0; 
+              text-transform: uppercase; 
+              letter-spacing: 0.5px; 
+              line-height: 1.2;
+            }
+            .school-info { 
+              font-size: 11px; 
+              color: #4a5568; 
+              margin: 2px 0; 
+              font-weight: 500; 
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            .school-contact {
+              font-size: 10px;
+              color: #718096;
+              margin: 2px 0;
+            }
+            
+            .letter-meta { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-bottom: 25px; 
+            }
+            .date { font-weight: 600; color: #2d3748; font-size: 13px; }
+            .ref-no { font-weight: 600; font-size: 11px; color: #4a5568; font-family: monospace; }
+            
+            .recipient { margin-bottom: 25px; }
+            .recipient-title { font-weight: 750; color: #1a202c; font-size: 13px; margin: 0 0 4px 0; }
+            .recipient p { margin: 2px 0; color: #4a5568; font-size: 13px; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 25px;
+              font-size: 14px;
+              text-align: left;
+              color: #1e3a8a;
+              line-height: 1.4;
+            }
+            
+            .content p { margin-bottom: 16px; text-align: justify; font-size: 14px; color: #2d3748; white-space: pre-wrap; }
+            
+            .student-info-table {
+              width: 100%;
+              margin: 20px 0;
+              border-collapse: collapse;
+              font-size: 13.5px;
+              background-color: #f7fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              overflow: hidden;
+            }
+            .student-info-table td {
+              padding: 10px 15px;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .student-info-table td.label {
+              font-weight: 700;
+              color: #4a5568;
+              width: 30%;
+              background-color: #edf2f7;
+            }
+            .student-info-table td.val {
+              color: #1a202c;
+              font-weight: 600;
+            }
+            
+            .closing { margin-top: 35px; page-break-inside: avoid; }
+            .signature-space { height: 75px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -15px; left: 30px; max-height: 90px; opacity: 0.8; mix-blend-mode: multiply; pointer-events: none; }
+            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
+            .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
+            .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
+            .signatory-title { font-size: 11px; color: #718096; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 50px; 
+              font-size: 9px; 
+              border-top: 1px solid #edf2f7; 
+              padding-top: 12px;
+              text-align: center;
+              color: #718096;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 30px 45px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div class="logo-box">
+              ${headerLogoHtml}
+            </div>
+            <div class="school-text">
+              <h1 class="school-name">${schoolName}</h1>
+              <p class="school-info">${schoolAddress}</p>
+              <p class="school-contact">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+              <p class="school-info" style="font-size: 9px; color: #718096; margin-top: 2px;">Office of the Registrar & Academic Affairs</p>
+            </div>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${config.dateOfLetter}</div>
+            <div class="ref-no">REF: ${config.refNo}</div>
+          </div>
+
+          <div class="recipient">
+            <h4 class="recipient-title font-sans">TO: ${config.recipientTitle}</h4>
+            <p><strong>${config.recipientOrg || '[Host Organization Name]'}</strong></p>
+            <p>${config.recipientDept || 'Relevant Training Section'}</p>
+            <p>${config.recipientAddress || 'Kenya'}</p>
+          </div>
+
+          <div class="subject">
+            ${config.subjectLine}
+          </div>
+
+          <div class="content">
+            <p>Dear Sir / Madam,</p>
+            
+            <p>${config.paragraph1}</p>
+
+            <p>${config.paragraph2}</p>
+
+            <p>${config.paragraph3}</p>
+
+            <table class="student-info-table">
+              <tr>
+                <td class="label">Student Name</td>
+                <td class="val">${student.name}</td>
+              </tr>
+              <tr>
+                <td class="label">Admission Number</td>
+                <td class="val">${student.admissionNumber || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td class="label">Course / Program</td>
+                <td class="val">${student.course || 'the registered course'}</td>
+              </tr>
+              <tr>
+                <td class="label">Designated Host</td>
+                <td class="val">${config.recipientOrg || 'To Be Assigned'}</td>
+              </tr>
+              <tr>
+                <td class="label">Assigned Department</td>
+                <td class="val">${config.recipientDept || 'All Relevant Sections'}</td>
+              </tr>
+              <tr>
+                <td class="label">Duration Period</td>
+                <td class="val">
+                  ${config.dbStartDate ? new Date(config.dbStartDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending Start'} 
+                  &nbsp;to&nbsp; 
+                  ${config.dbEndDate ? new Date(config.dbEndDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending End'}
+                </td>
+              </tr>
+            </table>
+
+            <p>${config.paragraph4}</p>
+
+            <p>${config.paragraph5}</p>
+          </div>
+
+          <div class="closing">
+            <p>Yours faithfully,</p>
+            <div class="signature-space">
+              ${config.showSignRef ? `
+              <!-- Digital verified registrar signature -->
+              <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px;">
+                <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+              </svg>
+              ` : ''}
+              ${config.showSealRef ? (settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : `
+                <!-- Graphic verification stamp overlay -->
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px;">
+                  <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
+                  <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
+                  <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
+                  <text x="50" y="82" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">APPROVED TRANSIT</text>
+                  <path d="M 24 50 L 76 50" stroke="#1e3a8a" stroke-width="1.5" />
+                  <text x="50" y="44" font-family="sans-serif" font-size="7" font-weight="900" fill="#1e3a8a" text-anchor="middle">VERIFIED</text>
+                  <text x="50" y="59" font-family="sans-serif" font-size="5" font-weight="700" fill="#1e3a8a" text-anchor="middle">${academicYear}</text>
+                  <text x="50" y="70" font-family="sans-serif" font-size="5.5" font-weight="bold" fill="#1e3a8a" text-anchor="middle">SEALED</text>
+                </svg>
+              `) : ''}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name font-sans">${config.signatoryName}</div>
+            <div class="signatory-title font-sans">${config.signatoryTitle}</div>
+          </div>
+
+          <div class="footer">
+            Note: This dispatch certificate is an official school record produced electronically to recommend the candidate for practical placement. No handwritten amendments or unauthorized adjustments are permitted.
+          </div>
+
+          <script>
+            window.onload = function() { 
+              window.print(); 
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handleSaveAndPrintLetter = async (student: User) => {
+    setIsSavingRotationProfile(true);
+    try {
+      if (letterConfig.syncToDb) {
+        // Save rotation properties in the database for the student!
+        const userRef = doc(db, 'users', student.uid);
+        await updateDoc(userRef, {
+          rotationHostOrg: letterConfig.recipientOrg,
+          rotationDepartment: letterConfig.recipientDept ? letterConfig.recipientDept.replace(/^Department of\s+/i, '') : '',
+          rotationSupervisor: letterConfig.dbSupervisor,
+          rotationSupervisorContact: letterConfig.dbSupervisorContact,
+          rotationStartDate: letterConfig.dbStartDate,
+          rotationEndDate: letterConfig.dbEndDate,
+          rotationStatus: letterConfig.dbStatus,
+          rotationNotes: letterConfig.dbNotes
+        });
+        
+        // Update local state list so it updates the table in real time too!
+        setStudents(prev => prev.map(s => {
+          if (s.uid === student.uid) {
+            return {
+              ...s,
+              rotationHostOrg: letterConfig.recipientOrg,
+              rotationDepartment: letterConfig.recipientDept ? letterConfig.recipientDept.replace(/^Department of\s+/i, '') : '',
+              rotationSupervisor: letterConfig.dbSupervisor,
+              rotationSupervisorContact: letterConfig.dbSupervisorContact,
+              rotationStartDate: letterConfig.dbStartDate,
+              rotationEndDate: letterConfig.dbEndDate,
+              rotationStatus: letterConfig.dbStatus,
+              rotationNotes: letterConfig.dbNotes
+            };
+          }
+          return s;
+        }));
+        
+        addToast("Rotation details successfully updated on student profile in database!", "success");
+      }
+      
+      handlePrintModifiedLetter(student, letterConfig);
+    } catch (err: any) {
+      console.error(err);
+      addToast("Failed to save changes to database: " + err.message, "error");
+    } finally {
+      setIsSavingRotationProfile(false);
+    }
+  };
+
+  const handlePrintRotationLetter = (student: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 711 223 344';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const academicYear = new Date().getFullYear();
+    
+    // Determine placement type dynamically
+    const isMedical = student.course?.toLowerCase().includes('nurs') || 
+                      student.course?.toLowerCase().includes('clinic') || 
+                      student.course?.toLowerCase().includes('health') || 
+                      student.course?.toLowerCase().includes('medic') || 
+                      student.course?.toLowerCase().includes('pharm') ||
+                      student.course?.toLowerCase().includes('dent');
+
+    const placementType = isMedical ? "Clinical Rotation" : "Industrial Attachment";
+    const courseTitle = student.course || 'the registered course';
+
+    const headerLogoHtml = settings?.logoUrl 
+      ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` 
+      : `<div class="default-logo-placeholder">
+           <svg viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" style="width: 50px; height: 50px;">
+             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>
+         </div>`;
+
+    const html = `
+      <html>
+        <head>
+          <title>${placementType} Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+            
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.6; 
+              color: #2d3748; 
+              padding: 40px 50px;
+              max-width: 850px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header-container {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 20px;
+              border-bottom: 3px double #1e3a8a; 
+              padding-bottom: 12px; 
+              margin-bottom: 25px; 
+            }
+            .logo-box {
+              flex-shrink: 0;
+            }
+            .logo { 
+              max-height: 80px; 
+              max-width: 80px;
+              object-fit: contain;
+            }
+            .default-logo-placeholder {
+              width: 70px;
+              height: 70px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .school-text {
+              text-align: center;
+            }
+            .school-name { 
+              font-family: 'Cinzel', serif;
+              font-size: 20px; 
+              font-weight: 700; 
+              color: #1e3a8a; 
+              margin: 0 0 4px 0; 
+              text-transform: uppercase; 
+              letter-spacing: 0.5px; 
+              line-height: 1.2;
+            }
+            .school-info { 
+              font-size: 11px; 
+              color: #4a5568; 
+              margin: 2px 0; 
+              font-weight: 500; 
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            .school-contact {
+              font-size: 10px;
+              color: #718096;
+              margin: 2px 0;
+            }
+            
+            .letter-meta { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-bottom: 25px; 
+            }
+            .date { font-weight: 600; color: #2d3748; font-size: 13px; }
+            .ref-no { font-weight: 600; font-size: 11px; color: #4a5568; font-family: monospace; }
+            
+            .recipient { margin-bottom: 25px; }
+            .recipient-title { font-weight: 750; color: #1a202c; font-size: 13px; margin: 0 0 4px 0; }
+            .recipient p { margin: 2px 0; color: #4a5568; font-size: 13px; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 25px;
+              font-size: 14px;
+              text-align: left;
+              color: #1e3a8a;
+              line-height: 1.4;
+            }
+            
+            .content p { margin-bottom: 16px; text-align: justify; font-size: 14px; color: #2d3748; }
+            
+            .student-info-table {
+              width: 100%;
+              margin: 20px 0;
+              border-collapse: collapse;
+              font-size: 13.5px;
+              background-color: #f7fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              overflow: hidden;
+            }
+            .student-info-table td {
+              padding: 10px 15px;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .student-info-table td.label {
+              font-weight: 700;
+              color: #4a5568;
+              width: 30%;
+              background-color: #edf2f7;
+            }
+            .student-info-table td.val {
+              color: #1a202c;
+              font-weight: 600;
+            }
+            
+            .closing { margin-top: 35px; page-break-inside: avoid; }
+            .signature-space { height: 75px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -15px; left: 30px; max-height: 90px; opacity: 0.8; mix-blend-mode: multiply; pointer-events: none; }
+            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
+            .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
+            .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
+            .signatory-title { font-size: 11px; color: #718096; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 50px; 
+              font-size: 9px; 
+              border-top: 1px solid #edf2f7; 
+              padding-top: 12px;
+              text-align: center;
+              color: #718096;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 30px 45px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div class="logo-box">
+              ${headerLogoHtml}
+            </div>
+            <div class="school-text">
+              <h1 class="school-name">${schoolName}</h1>
+              <p class="school-info">${schoolAddress}</p>
+              <p class="school-contact">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+              <p class="school-info" style="font-size: 9px; color: #718096; margin-top: 2px;">Office of the Registrar & Academic Affairs</p>
+            </div>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${today}</div>
+            <div class="ref-no">REF: BITC/REG/DISP/${academicYear}/${student.admissionNumber || 'ADM'}</div>
+          </div>
+
+          <div class="recipient">
+            <h4 class="recipient-title font-sans">TO: THE HUMAN RESOURCE MANAGER / HEAD OF TRAINING</h4>
+            <p><strong>${student.rotationHostOrg || '[Host Organization / Hospital Name]'}</strong></p>
+            <p>${student.rotationDepartment ? 'Department of ' + student.rotationDepartment : 'Relevant Training & Placement Unit'}</p>
+            <p>${student.residence || 'Kenya'}</p>
+          </div>
+
+          <div class="subject">
+            RE: OFFICIAL DISPATCH REQUISITION FOR STIPULATED ${placementType.toUpperCase()} PLACEMENT — ${student.name.toUpperCase()} (ADM: ${student.admissionNumber || 'N/A'})
+          </div>
+
+          <div class="content">
+            <p>Dear Sir / Madam,</p>
+            
+            <p>
+              We wish to introduce the above-named candidate who is an active student at <strong>${schoolName}</strong> 
+              pursuing a course leading to a <strong>${courseTitle}</strong>. The student is currently in Year ${student.year || '1'} 
+              of their study program.
+            </p>
+
+            <p>
+              Under our curriculum regulations and standards established by governing professional boards, all students are required 
+              to complete an intensive period of hands-on field experience. This is intended to expose them to real-world tasks, 
+              modern techniques, clinical methods, and regulatory codes of practice that cannot be fully replicated in classroom bounds.
+            </p>
+
+            <p>
+              In this connection, we have approved this student to be dispatched to your reputable establishment to cover the core syllabus requirements 
+              under the rotation details recorded below:
+            </p>
+
+            <table class="student-info-table">
+              <tr>
+                <td class="label">Student Name</td>
+                <td class="val">${student.name}</td>
+              </tr>
+              <tr>
+                <td class="label">Admission Number</td>
+                <td class="val">${student.admissionNumber || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td class="label">Course / Program</td>
+                <td class="val">${courseTitle}</td>
+              </tr>
+              <tr>
+                <td class="label">Designated Host</td>
+                <td class="val">${student.rotationHostOrg || 'To Be Assigned'}</td>
+              </tr>
+              <tr>
+                <td class="label">Assigned Department</td>
+                <td class="val">${student.rotationDepartment || 'All Relevant Sections'}</td>
+              </tr>
+              <tr>
+                <td class="label">Duration Period</td>
+                <td class="val">
+                  ${student.rotationStartDate ? new Date(student.rotationStartDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending Start'} 
+                  &nbsp;to&nbsp; 
+                  ${student.rotationEndDate ? new Date(student.rotationEndDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending End'}
+                </td>
+              </tr>
+            </table>
+
+            <p>
+              During this dispatch block, the student will be under the direct supervision of your designated mentors and your 
+              appointed site coordinator <strong>${student.rotationSupervisor || 'the Department Supervisor'}</strong>. 
+              The student is bound by all industrial rules, confidentiality agreements, and strict attendance protocols. 
+              They are also required to maintain a daily Log Book provided by our assessment registry.
+            </p>
+
+            <p>
+              Any assistance, hands-on training, or assessment evaluation accorded to ${student.gender === 'female' ? 'her' : student.gender === 'male' ? 'him' : 'this candidate'} 
+              under your care will be highly valued. We thank you in advance for your continued guidance of our rising professionals.
+            </p>
+          </div>
+
+          <div class="closing">
+            <p>Yours faithfully,</p>
+            <div class="signature-space">
+              <!-- Digital verified registrar signature -->
+              <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px;">
+                <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+              </svg>
+              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : `
+                <!-- Graphic verification stamp overlay -->
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px;">
+                  <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
+                  <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
+                  <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
+                  <text x="50" y="82" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">APPROVED TRANSIT</text>
+                  <path d="M 24 50 L 76 50" stroke="#1e3a8a" stroke-width="1.5" />
+                  <text x="50" y="44" font-family="sans-serif" font-size="7" font-weight="900" fill="#1e3a8a" text-anchor="middle">VERIFIED</text>
+                  <text x="50" y="59" font-family="sans-serif" font-size="5" font-weight="700" fill="#1e3a8a" text-anchor="middle">${academicYear}</text>
+                  <text x="50" y="70" font-family="sans-serif" font-size="5.5" font-weight="bold" fill="#1e3a8a" text-anchor="middle">SEALED</text>
+                </svg>
+              `}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name font-sans">OFFICE OF THE ACADEMIC REGISTRAR</div>
+            <div class="signatory-title font-sans">ADMISSIONS, ATTACHMENTS &amp; PLACEMENT</div>
+          </div>
+
+          <div class="footer">
+            Note: This dispatch certificate is an official school record produced electronically to recommend the candidate for practical placement. No handwritten amendments or unauthorized adjustments are permitted.
           </div>
 
           <script>
@@ -2041,6 +2715,64 @@ export const Students: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (editorLetterStudent) {
+      const student = editorLetterStudent;
+      const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+      const academicYear = new Date().getFullYear();
+      const todayString = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      
+      const isMedical = student.course?.toLowerCase().includes('nurs') || 
+                        student.course?.toLowerCase().includes('clinic') || 
+                        student.course?.toLowerCase().includes('health') || 
+                        student.course?.toLowerCase().includes('medic') || 
+                        student.course?.toLowerCase().includes('pharm') ||
+                        student.course?.toLowerCase().includes('dent');
+
+      const placementType = isMedical ? "Clinical Rotation" : "Industrial Attachment";
+      const courseTitle = student.course || 'the registered course';
+
+      const defaultP1 = `We wish to introduce the above-named candidate who is an active student at ${schoolName} pursuing a course leading to a ${courseTitle}. The student is currently in Year ${student.year || '1'} of their study program.`;
+      
+      const defaultP2 = `Under our curriculum regulations and standards established by governing professional boards, all students are required to complete an intensive period of hands-on field experience. This is intended to expose them to real-world tasks, modern techniques, clinical methods, and regulatory codes of practice that cannot be fully replicated in classroom bounds.`;
+
+      const defaultP3 = `In this connection, we have approved this student to be dispatched to your reputable establishment to cover the core syllabus requirements under the rotation details recorded below:`;
+
+      const defaultP4 = `During this dispatch block, the student will be under the direct supervision of your designated mentors and your appointed site coordinator ${student.rotationSupervisor || 'the Department Supervisor'}. The student is bound by all industrial rules, confidentiality agreements, and strict attendance protocols. They are also required to maintain a daily Log Book provided by our assessment registry.`;
+
+      const defaultP5 = `Any assistance, hands-on training, or assessment evaluation accorded to ${student.gender === 'female' ? 'her' : student.gender === 'male' ? 'him' : 'this candidate'} under your care will be highly valued. We thank you in advance for your continued guidance of our rising professionals.`;
+
+      setLetterConfig({
+        dateOfLetter: todayString,
+        refNo: `BITC/REG/DISP/${academicYear}/${student.admissionNumber || 'ADM'}`,
+        recipientTitle: 'THE HUMAN RESOURCE MANAGER / HEAD OF TRAINING',
+        recipientOrg: student.rotationHostOrg || '',
+        recipientDept: student.rotationDepartment ? `Department of ${student.rotationDepartment}` : 'Relevant Training & Placement Unit',
+        recipientAddress: student.residence || 'Kenya',
+        subjectLine: `RE: OFFICIAL DISPATCH REQUISITION FOR STIPULATED ${placementType.toUpperCase()} PLACEMENT — ${student.name.toUpperCase()} (ADM: ${student.admissionNumber || 'N/A'})`,
+        paragraph1: defaultP1,
+        paragraph2: defaultP2,
+        paragraph3: defaultP3,
+        paragraph4: defaultP4,
+        paragraph5: defaultP5,
+        signatoryName: 'OFFICE OF THE ACADEMIC REGISTRAR',
+        signatoryTitle: 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+        showSignRef: true,
+        showSealRef: true,
+        // Live update student database flags
+        dbHostOrg: student.rotationHostOrg || '',
+        dbDepartment: student.rotationDepartment || '',
+        dbSupervisor: student.rotationSupervisor || '',
+        dbSupervisorContact: student.rotationSupervisorContact || '',
+        dbStartDate: student.rotationStartDate || '',
+        dbEndDate: student.rotationEndDate || '',
+        dbStatus: student.rotationStatus || 'active',
+        dbNotes: student.rotationNotes || '',
+        syncToDb: true
+      });
+    }
+  }, [editorLetterStudent, settings]);
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchData();
@@ -2108,6 +2840,32 @@ export const Students: React.FC = () => {
     }
   };
 
+  const handleStudentLetterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingStudent) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('Attachment letter document must be less than 10MB', 'error');
+      return;
+    }
+
+    setIsUploadingLetter(true);
+    try {
+      const uploadResult = await uploadFile(file);
+      setEditingStudent(prev => prev ? { 
+        ...prev, 
+        attachmentLetterUrl: uploadResult.url, 
+        attachmentLetterName: uploadResult.filename || file.name 
+      } : null);
+      addToast('Attachment letter uploaded successfully!');
+    } catch (error) {
+      console.error('Letter upload failed:', error);
+      addToast('Failed to upload letter doc', 'error');
+    } finally {
+      setIsUploadingLetter(false);
+    }
+  };
+
   const handleUpdateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) {
@@ -2142,7 +2900,18 @@ export const Students: React.FC = () => {
         year: editingStudent.year || '1',
         course: editingStudent.course || '',
         earlyCheckoutAllowed: editingStudent.earlyCheckoutAllowed || false,
-        photoUrl: editingStudent.photoUrl || ''
+        photoUrl: editingStudent.photoUrl || '',
+        // Attachment & Rotation Details
+        attachmentLetterUrl: editingStudent.attachmentLetterUrl || '',
+        attachmentLetterName: editingStudent.attachmentLetterName || '',
+        rotationHostOrg: editingStudent.rotationHostOrg || '',
+        rotationDepartment: editingStudent.rotationDepartment || '',
+        rotationStartDate: editingStudent.rotationStartDate || '',
+        rotationEndDate: editingStudent.rotationEndDate || '',
+        rotationSupervisor: editingStudent.rotationSupervisor || '',
+        rotationSupervisorContact: editingStudent.rotationSupervisorContact || '',
+        rotationStatus: editingStudent.rotationStatus || 'none',
+        rotationNotes: editingStudent.rotationNotes || ''
       });
       setEditingStudent(null);
       addToast("Student profile updated successfully!");
@@ -2508,6 +3277,13 @@ export const Students: React.FC = () => {
                   >
                     <QrCode size={20} />
                   </button>
+                  <button
+                    onClick={() => setEditorLetterStudent(student)}
+                    className="text-gray-400 hover:text-teal-600 transition-colors"
+                    title="Generate Rotation Letter"
+                  >
+                    <Briefcase size={20} />
+                  </button>
                   {isAdmin && (
                     <>
                       <button
@@ -2675,6 +3451,123 @@ export const Students: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Industrial Attachment & Clinical Rotations Visualizer */}
+                    <div className="col-span-1 md:col-span-2 pt-6 border-t border-gray-100">
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <Briefcase size={14} className="text-indigo-500" />
+                        Industrial Attachment & Clinical Rotations
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/50 p-6 rounded-3xl border border-gray-100">
+                        {/* Rotation Metadata */}
+                        <div className="md:col-span-7 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rotation Status</p>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                viewingStudent.rotationStatus === 'active'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : viewingStudent.rotationStatus === 'completed'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  : viewingStudent.rotationStatus === 'pending'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+                              }`}>
+                                {viewingStudent.rotationStatus === 'active' && '🟢 Active Rotation'}
+                                {viewingStudent.rotationStatus === 'completed' && '🔵 Completed Rotation'}
+                                {viewingStudent.rotationStatus === 'pending' && '🟡 Pending Rotation'}
+                                {(!viewingStudent.rotationStatus || viewingStudent.rotationStatus === 'none') && '⚪ No Active Assignment'}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Host Organization</p>
+                              <p className="font-extrabold text-gray-905">{viewingStudent.rotationHostOrg || 'Not Assigned'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Department / Unit</p>
+                              <p className="font-bold text-gray-800">{viewingStudent.rotationDepartment || 'Not Set'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Supervisor Name</p>
+                              <p className="font-bold text-gray-800">{viewingStudent.rotationSupervisor || 'Not Set'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Supervisor Contact</p>
+                              <p className="font-bold text-blue-600">{viewingStudent.rotationSupervisorContact || 'Not Set'}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Duration Block</p>
+                              <p className="text-xs font-semibold text-gray-700">
+                                {viewingStudent.rotationStartDate ? new Date(viewingStudent.rotationStartDate).toLocaleDateString() : 'Start Date N/A'}
+                                {' — '}
+                                {viewingStudent.rotationEndDate ? new Date(viewingStudent.rotationEndDate).toLocaleDateString() : 'End Date N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          {viewingStudent.rotationNotes && (
+                            <div className="pt-2 border-t border-gray-100">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Remarks & Log Notes</p>
+                              <p className="text-xs text-gray-700 bg-white p-3 rounded-2xl border border-gray-150 whitespace-pre-wrap font-medium leading-relaxed">
+                                {viewingStudent.rotationNotes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Attachment Letter Display Card */}
+                        <div className="md:col-span-5 flex flex-col justify-between p-5 bg-white rounded-3xl border border-gray-150 h-full min-h-[160px]">
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Official Attachment / Dispatch Letter</p>
+                            {viewingStudent.attachmentLetterUrl ? (
+                              <div className="flex items-center gap-3 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50">
+                                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                                  <FileText size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-indigo-950 truncate">
+                                    {viewingStudent.attachmentLetterName || 'attachment_letter.pdf'}
+                                  </p>
+                                  <p className="text-[9px] text-indigo-650 font-black uppercase tracking-wider mt-0.5">
+                                    Authorized Dispatch Letter
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-6 text-center text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                <FileText size={28} className="mb-2 text-gray-300" />
+                                <span className="text-xs font-bold text-gray-500">No dispatch letter uploaded</span>
+                                <span className="text-[10px] text-gray-400 mt-1">Upload a PDF or Image in edit profile</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {viewingStudent.attachmentLetterUrl && (
+                            <div className="mt-4 flex gap-2">
+                              <a
+                                href={viewingStudent.attachmentLetterUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(viewingStudent.attachmentLetterUrl)}&filename=${encodeURIComponent(viewingStudent.attachmentLetterName || 'attachment_letter')}` : viewingStudent.attachmentLetterUrl}
+                                download={viewingStudent.attachmentLetterName || 'attachment_letter'}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
+                              >
+                                <Download size={14} />
+                                Download Letter
+                              </a>
+                              <a
+                                href={viewingStudent.attachmentLetterUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-3 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 rounded-2xl text-xs font-bold transition-colors flex items-center justify-center"
+                                title="Open Original File"
+                              >
+                                <Eye size={14} />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2685,6 +3578,17 @@ export const Students: React.FC = () => {
                   className="px-6 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   Close
+                </button>
+                <button
+                  onClick={() => {
+                    setEditorLetterStudent(viewingStudent);
+                    setViewingStudent(null);
+                  }}
+                  className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-lg shadow-teal-100 flex items-center gap-2"
+                  title="Print Rotation Dispatch Letter"
+                >
+                  <FileText size={18} />
+                  Print Rotation Letter
                 </button>
                 <button
                   onClick={() => {
@@ -3135,6 +4039,156 @@ export const Students: React.FC = () => {
                         value={editingStudent.motherName || ''}
                         onChange={(e) => setEditingStudent({ ...editingStudent, motherName: e.target.value })}
                         className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:bg-white focus:border-orange-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    {/* Attachment & Clinical Rotation Section */}
+                    <div className="space-y-4 lg:col-span-3 pt-4 border-t border-gray-100">
+                      <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Briefcase size={14} />
+                        Industrial Attachment & Clinical Rotations
+                      </h3>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Rotation Status</label>
+                      <select
+                        value={editingStudent.rotationStatus || 'none'}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationStatus: e.target.value as any })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      >
+                        <option value="none">None / No Rotation</option>
+                        <option value="pending">Pending Assignment</option>
+                        <option value="active">Active Assignment</option>
+                        <option value="completed">Completed Rotation</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Host Organization</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Greenwood Hospital"
+                        value={editingStudent.rotationHostOrg || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationHostOrg: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Department / Unit</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. ICU, Pediatrics, IT"
+                        value={editingStudent.rotationDepartment || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationDepartment: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Supervisor Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Dr. Jane Smith"
+                        value={editingStudent.rotationSupervisor || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationSupervisor: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Supervisor Contact</label>
+                      <input
+                        type="text"
+                        placeholder="Email or Phone Number"
+                        value={editingStudent.rotationSupervisorContact || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationSupervisorContact: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={editingStudent.rotationStartDate || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationStartDate: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">End Date</label>
+                      <input
+                        type="date"
+                        value={editingStudent.rotationEndDate || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationEndDate: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    {/* Letter Document Attachment */}
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Attachment / Dispatch Letter</label>
+                      <div className="bg-gray-50 p-4 rounded-3xl border border-gray-100 flex items-center gap-4">
+                        <input
+                          type="file"
+                          ref={letterFileInputRef}
+                          onChange={handleStudentLetterUpload}
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => letterFileInputRef.current?.click()}
+                          disabled={isUploadingLetter}
+                          className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm shrink-0"
+                        >
+                          <Upload size={14} />
+                          {isUploadingLetter ? 'Uploading...' : 'Upload Doc'}
+                        </button>
+                        
+                        <div className="flex-1 min-w-0">
+                          {editingStudent.attachmentLetterUrl ? (
+                            <div className="flex items-center justify-between gap-2 pr-1">
+                              <span className="text-xs font-bold text-gray-700 truncate block">
+                                {editingStudent.attachmentLetterName || 'uploaded_doc.pdf'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingStudent({ ...editingStudent, attachmentLetterUrl: '', attachmentLetterName: '' })}
+                                className="p-1 hover:bg-rose-100 text-rose-600 rounded-full transition-colors shrink-0"
+                                title="Clear document"
+                              >
+                                <X size={14} strokeWidth={3} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold text-gray-400 block italic">No file selected</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 pl-1">
+                        <input
+                          type="url"
+                          placeholder="Or paste official letter URL directly"
+                          value={editingStudent.attachmentLetterUrl || ''}
+                          onChange={(e) => setEditingStudent({ ...editingStudent, attachmentLetterUrl: e.target.value })}
+                          className="w-full px-4 py-2 bg-white border border-gray-150 rounded-xl outline-none text-xs font-bold text-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+                    </div>
+
+                    {/* supervisor notes text area */}
+                    <div className="lg:col-span-3">
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Supervisor Remarks & Log Notes</label>
+                      <textarea
+                        rows={3}
+                        placeholder="Provide details of the rotation tasks, supervisor reports, or assessment comments here..."
+                        value={editingStudent.rotationNotes || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, rotationNotes: e.target.value })}
+                        className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-3xl outline-none text-sm font-medium text-gray-900 focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-500 transition-all resize-none leading-relaxed"
                       />
                     </div>
 
@@ -3686,6 +4740,432 @@ export const Students: React.FC = () => {
             </div>
           );
         })()}
+
+        {editorLetterStudent && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="bg-slate-100 rounded-3xl w-full max-w-7xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px] max-h-[92vh] border border-gray-200"
+            >
+              {/* Left Column: Form Settings Customizer */}
+              <div className="lg:col-span-5 bg-white p-6 border-r border-gray-100 flex flex-col justify-between overflow-y-auto max-h-[92vh]">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-teal-50 p-2.5 rounded-2xl text-teal-600 shrink-0">
+                      <Briefcase size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">Official Letter Builder</h2>
+                      <p className="text-xs text-gray-500">Edit, customize and preview dispatch requisitions live</p>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gray-100" />
+
+                  {/* Accordion list */}
+                  <div className="space-y-4">
+                    {/* section: recipient details */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200/60 space-y-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Recipient Details</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">Organization / Hospital Name</label>
+                          <input
+                            type="text"
+                            value={letterConfig.recipientOrg}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, recipientOrg: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100 placeholder:text-gray-300"
+                            placeholder="e.g. Thika Level 5 Hospital"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">Designated Department</label>
+                          <input
+                            type="text"
+                            value={letterConfig.recipientDept}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, recipientDept: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100 placeholder:text-gray-300"
+                            placeholder="e.g. Department of Pediatrics"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">City / Region Address</label>
+                          <input
+                            type="text"
+                            value={letterConfig.recipientAddress}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, recipientAddress: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">Recipient Title Prefix</label>
+                          <input
+                            type="text"
+                            value={letterConfig.recipientTitle}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, recipientTitle: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* section: meta */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200/60 space-y-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Reference & Dates</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1 font-mono">Dispatch Code (Ref)</label>
+                          <input
+                            type="text"
+                            value={letterConfig.refNo}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, refNo: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">Letter Issue Date</label>
+                          <input
+                            type="text"
+                            value={letterConfig.dateOfLetter}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, dateOfLetter: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Rotation Info parameters - to be stored in DB if desired */}
+                      <div className="grid grid-cols-2 gap-3 pt-1 border-t border-dashed border-gray-200">
+                        <div>
+                          <label className="text-[10px] font-bold text-indigo-700 block mb-1">Placement Starts</label>
+                          <input
+                            type="date"
+                            value={letterConfig.dbStartDate}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, dbStartDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-100 text-indigo-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-indigo-700 block mb-1">Placement Ends</label>
+                          <input
+                            type="date"
+                            value={letterConfig.dbEndDate}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, dbEndDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-100 text-indigo-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-indigo-700 block mb-1">Site Supervisor Name</label>
+                          <input
+                            type="text"
+                            value={letterConfig.dbSupervisor}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, dbSupervisor: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-100 text-indigo-900 placeholder:text-gray-300"
+                            placeholder="e.g. Dr. Jane Carter"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-indigo-700 block mb-1">Supervisor Contact</label>
+                          <input
+                            type="text"
+                            value={letterConfig.dbSupervisorContact}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, dbSupervisorContact: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-100 text-indigo-900 placeholder:text-gray-300"
+                            placeholder="e.g. +254 7XX XXX"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* section: letter content paragraphs */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200/60 space-y-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Core Paragraph Editor</span>
+                      
+                      <div>
+                        <label className="text-[10px] font-extrabold text-gray-500 block mb-1">Subject Header Title</label>
+                        <input
+                          type="text"
+                          value={letterConfig.subjectLine}
+                          onChange={(e) => setLetterConfig(prev => ({ ...prev, subjectLine: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-[11px] font-semibold text-teal-800 outline-none focus:ring-2 focus:ring-teal-100"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-[9px] font-extrabold text-blue-600 block mb-1">Paragraph 1 (Student Introduction)</span>
+                          <textarea
+                            rows={2}
+                            value={letterConfig.paragraph1}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, paragraph1: e.target.value }))}
+                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-[10.5px] leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-teal-100 resize-y font-sans"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold text-blue-600 block mb-1">Paragraph 2 (Rules & Syllabus context)</span>
+                          <textarea
+                            rows={3}
+                            value={letterConfig.paragraph2}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, paragraph2: e.target.value }))}
+                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-[10.5px] leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-teal-100 resize-y font-sans"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold text-blue-600 block mb-1">Paragraph 4 (Placement guidelines & Supervision)</span>
+                          <textarea
+                            rows={3}
+                            value={letterConfig.paragraph4}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, paragraph4: e.target.value }))}
+                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-[10.5px] leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-teal-100 resize-y font-sans"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold text-blue-600 block mb-1">Paragraph 5 (Closing Appreciation)</span>
+                          <textarea
+                            rows={2}
+                            value={letterConfig.paragraph5}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, paragraph5: e.target.value }))}
+                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-[10.5px] leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-teal-100 resize-y font-sans"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* section: Signatory Office */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200/60 space-y-3">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Logistics & Signatory</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1 font-sans">Authorized Office</label>
+                          <input
+                            type="text"
+                            value={letterConfig.signatoryName}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, signatoryName: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 block mb-1">Office Designation Title</label>
+                          <input
+                            type="text"
+                            value={letterConfig.signatoryTitle}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, signatoryTitle: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Signature Toggles */}
+                      <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-200 mt-1">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="showSignRef"
+                            checked={letterConfig.showSignRef}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, showSignRef: e.target.checked }))}
+                            className="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+                          />
+                          <label htmlFor="showSignRef" className="text-xs font-bold text-gray-600 block cursor-pointer select-none">Digital Signature</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="showSealRef"
+                            checked={letterConfig.showSealRef}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, showSealRef: e.target.checked }))}
+                            className="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+                          />
+                          <label htmlFor="showSealRef" className="text-xs font-bold text-gray-600 block cursor-pointer select-none">Registry Stamp Seal</label>
+                        </div>
+                      </div>
+
+                      {/* Sync to profile database check */}
+                      <div className="bg-indigo-50 p-2.5 rounded-xl border border-indigo-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <input 
+                            type="checkbox"
+                            id="syncToDbCheck"
+                            checked={letterConfig.syncToDb}
+                            onChange={(e) => setLetterConfig(prev => ({ ...prev, syncToDb: e.target.checked }))}
+                            className="h-4.5 w-4.5 text-indigo-600 border-indigo-200 rounded focus:ring-indigo-400 cursor-pointer"
+                          />
+                          <div>
+                            <label htmlFor="syncToDbCheck" className="text-xs font-bold text-indigo-900 block cursor-pointer select-none">Sync to Student Cloud Profile</label>
+                            <span className="text-[10px] text-indigo-500 block leading-none select-none mt-0.5">Auto-updates database placement entries upon print</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer panel controls */}
+                <div className="pt-6 border-t border-gray-100 flex gap-2.5 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditorLetterStudent(null)}
+                    className="w-24 px-4 py-3 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSavingRotationProfile}
+                    onClick={() => handleSaveAndPrintLetter(editorLetterStudent)}
+                    className="flex-1 px-4 py-3 bg-[#0d1b94] hover:bg-[#071370] text-white rounded-xl text-xs font-extrabold uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSavingRotationProfile ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        Saving to DB...
+                      </>
+                    ) : (
+                      <>
+                        <Printer size={15} />
+                        {letterConfig.syncToDb ? "Save & Print Letter" : "Print Letter Now"}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Live Mock A4 Document preview */}
+              <div className="lg:col-span-7 bg-slate-800 p-8 flex flex-col items-center overflow-y-auto max-h-[92vh]">
+                <div className="w-full text-slate-300 text-[10px] uppercase font-bold tracking-widest text-center mb-4 flex justify-between items-center px-4">
+                  <span>LIVE COMPOSITOR PREVIEW (YEAR {editorLetterStudent.year || '1'})</span>
+                  <span className="text-xs text-teal-400 flex items-center gap-1 font-serif">
+                    <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" /> Dynamic Draft Mode
+                  </span>
+                </div>
+
+                {/* A4 Paper mockup */}
+                <div className="w-full max-w-[620px] bg-white rounded-xl shadow-2xl p-10 text-slate-800 select-none border border-gray-300 flex flex-col font-sans relative text-left leading-relaxed text-[10px]">
+                  
+                  {/* School header */}
+                  <div className="flex items-center justify-between border-b-2 border-double border-indigo-900 pb-3 mb-6 gap-3">
+                    <div className="w-12 h-12 rounded bg-white flex items-center justify-center shrink-0">
+                      {settings?.logoUrl ? (
+                        <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <div className="w-10 h-10 border-2 border-[#1e3a8a] flex items-center justify-center text-[#1e3a8a] font-bold text-xs rounded-lg">BITC</div>
+                      )}
+                    </div>
+                    <div className="text-center flex-1">
+                      <h1 className="font-serif font-black text-xs text-indigo-900 uppercase tracking-tight">
+                        {settings?.schoolName || 'Breakthrough International Training College'}
+                      </h1>
+                      <p className="text-[8px] text-gray-500 uppercase mt-0.5">{settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya'}</p>
+                      <p className="text-[7.5px] text-slate-400 mt-0.5">TEL: {settings?.publicPhone || '+254711'} | EMAIL: {settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+                    </div>
+                  </div>
+
+                  {/* Letter meta */}
+                  <div className="flex justify-between font-bold text-[9px] text-gray-600 mb-5">
+                    <div>DATE: {letterConfig.dateOfLetter}</div>
+                    <div className="font-mono">REF: {letterConfig.refNo}</div>
+                  </div>
+
+                  {/* Recipient */}
+                  <div className="mb-4 text-[9.5px]">
+                    <div className="font-extrabold uppercase text-gray-900">TO: {letterConfig.recipientTitle}</div>
+                    <div className="font-extrabold text-slate-800">{letterConfig.recipientOrg || '[Host Hospital / Organization Name]'}</div>
+                    <div className="text-slate-600 font-semibold">{letterConfig.recipientDept || 'Relevant Department/Unit'}</div>
+                    <div className="text-slate-500">{letterConfig.recipientAddress || 'Kenya'}</div>
+                  </div>
+
+                  {/* Subject Line */}
+                  <div className="font-black text-indigo-900 text-[10px] uppercase underline leading-tight mb-5 text-left">
+                    {letterConfig.subjectLine}
+                  </div>
+
+                  {/* Dear Sir or Madam */}
+                  <div className="mb-3 text-[9.5px]">Dear Sir / Madam,</div>
+
+                  {/* Body Content */}
+                  <div className="space-y-3 text-[9.5px] text-justify text-slate-700 leading-relaxed">
+                    <p className="indent-4">{letterConfig.paragraph1}</p>
+                    <p className="indent-4">{letterConfig.paragraph2}</p>
+                    <p className="indent-4">{letterConfig.paragraph3}</p>
+
+                    {/* Integrated placement Table spec */}
+                    <table className="w-full border border-gray-200 rounded-lg overflow-hidden bg-slate-50/50 my-4 text-[9px]">
+                      <tbody>
+                        <tr className="border-b border-gray-200">
+                          <td className="p-2 font-bold text-gray-500 bg-gray-100/70 w-1/3">Student Name</td>
+                          <td className="p-2 font-black text-slate-800">{editorLetterStudent.name}</td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="p-2 font-bold text-gray-500 bg-gray-100/70">Admission Number</td>
+                          <td className="p-2 font-black text-slate-800 font-mono">{editorLetterStudent.admissionNumber || 'N/A'}</td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="p-2 font-bold text-gray-500 bg-gray-100/70">Designated Placement Host</td>
+                          <td className="p-2 font-black text-slate-800">{letterConfig.recipientOrg || 'To Be Assigned'}</td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="p-2 font-bold text-gray-500 bg-gray-100/70">Assigned Department</td>
+                          <td className="p-2 font-black text-slate-800">{letterConfig.recipientDept || 'All Sections'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2 font-bold text-gray-500 bg-gray-100/70">Duration Period</td>
+                          <td className="p-2 font-black text-slate-800">
+                            {letterConfig.dbStartDate ? new Date(letterConfig.dbStartDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending Start'} 
+                            &nbsp;to&nbsp; 
+                            {letterConfig.dbEndDate ? new Date(letterConfig.dbEndDate).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : 'Pending End'}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <p className="indent-4">{letterConfig.paragraph4}</p>
+                    <p className="indent-4">{letterConfig.paragraph5}</p>
+                  </div>
+
+                  {/* Signatory Footer segment */}
+                  <div className="mt-8 text-[9.5px]">
+                    <div>Yours faithfully,</div>
+                    <div className="h-10 relative mt-2">
+                      {letterConfig.showSignRef && (
+                        <svg className="absolute left-[10px] top-0 max-h-8" viewBox="0 0 300 80" fill="none" style={{ width: '80px' }}>
+                          <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" strokeWidth="3" fill="none"/>
+                          <path d="M80 50 L 260 20" stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4 4"/>
+                        </svg>
+                      )}
+                      
+                      {letterConfig.showSealRef && (
+                        settings?.stampUrl ? (
+                          <img src={settings?.stampUrl} className="absolute left-[80px] top-[-10px] max-h-12 mix-blend-multiply opacity-80" />
+                        ) : (
+                          <svg className="absolute left-[80px] top-[-10px] max-h-12 opacity-85" viewBox="0 0 100 100" style={{ width: '45px', height: '45px' }}>
+                            <circle cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="3" fill="none"/>
+                            <text x="50" y="32" fontSize="7" fontWeight="bold" fill="#1e3a8a" text-anchor="middle">REGISTRY</text>
+                            <path d="M20 50 L80 50" stroke="#1e3a8a" strokeWidth="2" />
+                            <text x="50" y="65" fontSize="8" fontWeight="black" fill="#1e3a8a" text-anchor="middle">SEAL</text>
+                          </svg>
+                        )
+                      )}
+                    </div>
+                    <div className="w-1/3 border-t border-gray-400 mt-2" />
+                    <div className="font-bold text-gray-950 mt-1 uppercase text-[8.5px] font-sans">{letterConfig.signatoryName}</div>
+                    <div className="font-semibold text-slate-500 uppercase text-[7px] font-sans tracking-wide leading-none">{letterConfig.signatoryTitle}</div>
+                  </div>
+
+                  {/* Mini-Footnote info */}
+                  <div className="border-t border-gray-150 mt-8 pt-2 text-center text-[6px] tracking-wide text-slate-400 uppercase italic">
+                    Certified Electronic Academic Document (B.I.T.C Registry Dispatch Protocol)
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {showImportModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

@@ -26,7 +26,8 @@ import {
   Sparkles,
   Check,
   Search,
-  FileText
+  FileText,
+  Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -44,13 +45,25 @@ const TABS = [
 import { uploadFile } from '../services/uploadService';
 
 export const StudentAdmission: React.FC = () => {
-  const { user, userData, hasPermission } = useAuth();
+  const { user, userData, hasPermission, settings } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('online-apps');
   const [classes, setClasses] = useState<Class[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [baseSerial, setBaseSerial] = useState(355);
+  const [lastAdmittedStudent, setLastAdmittedStudent] = useState<{
+    name: string;
+    course: string;
+    phone: string;
+    email: string;
+    admissionNumber: string;
+    admissionDate?: string;
+    guardianName?: string;
+    guardianPhone?: string;
+    address?: string;
+    intakePeriod?: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -121,6 +134,204 @@ export const StudentAdmission: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  const handlePrintAdmissionLetter = (studentData: {
+    name: string;
+    course: string;
+    phone: string;
+    email: string;
+    admissionNumber: string;
+    admissionDate?: string;
+    guardianName?: string;
+    guardianPhone?: string;
+    address?: string;
+    intakePeriod?: string;
+  }) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Popup blocker is preventing opening the print window. Please allow popups for active print-outs.");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'Main Highway, P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
+    const logoHtml = settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : '';
+    const stampHtml = settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" alt="Stamp" />` : '';
+    const secureId = Math.random().toString(36).substring(2, 9).toUpperCase();
+
+    const html = `
+      <html>
+        <head>
+          <title>Admission Letter - ${studentData.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.6; 
+              color: #1a202c; 
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #cbd5e1; 
+              padding-bottom: 15px; 
+              margin-bottom: 25px; 
+            }
+            .logo { max-height: 80px; margin-bottom: 10px; }
+            .school-name { font-size: 22px; font-weight: 800; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 11px; color: #475569; margin: 3px 0; font-weight: 500; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; }
+            .date { font-weight: 700; color: #1e293b; }
+            .ref-no { font-size: 11px; color: #64748b; font-family: monospace; }
+            
+            .recipient { margin-bottom: 25px; border-left: 3px solid #3b82f6; padding-left: 15px; background: #f8fafc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+            .recipient p { margin: 4px 0; color: #1e293b; font-size: 13px; }
+            .recipient-label { font-size: 10px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; display: inline-block; width: 120px; }
+            .recipient-value { font-weight: 700; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 25px;
+              font-size: 15px;
+              text-align: center;
+              color: #1e3a8a;
+            }
+            
+            .content { font-size: 13.5px; text-align: justify; }
+            .content p { margin-bottom: 15px; }
+            .requirements-list {
+              background: #f0fdf4;
+              border: 1px solid #bbf7d0;
+              border-left: 4px solid #22c55e;
+              padding: 15px 20px;
+              margin: 20px 0;
+              border-radius: 6px;
+            }
+            .requirements-title {
+              font-weight: 800;
+              color: #14532d;
+              margin-bottom: 8px;
+              font-size: 13px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .requirements-list ul {
+              margin: 0;
+              padding-left: 20px;
+            }
+            .requirements-list li {
+              margin-bottom: 6px;
+              color: #166534;
+              font-weight: 500;
+            }
+            
+            .closing { margin-top: 40px; page-break-inside: avoid; }
+            .signature-space { height: 60px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -15px; left: 15px; max-height: 85px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #475569; width: 220px; margin-top: 10px; }
+            .signatory-name { font-weight: 800; margin-top: 5px; font-size: 13px; color: #1e293b; }
+            .signatory-title { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 50px; 
+              font-size: 9px; 
+              border-top: 1px solid #e2e8f0; 
+              padding-top: 15px;
+              text-align: center;
+              color: #94a3b8;
+              font-style: italic;
+            }
+
+            @media print {
+              body { padding: 25px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${logoHtml}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${studentData.admissionDate ? new Date(studentData.admissionDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' }) : today}</div>
+            <div class="ref-no">REF: BITC/ADM/${studentData.admissionNumber || 'REG-' + secureId}</div>
+          </div>
+
+          <div class="recipient">
+            <p><span class="recipient-label">TO STUDENT:</span> <span class="recipient-value">${studentData.name.toUpperCase()}</span></p>
+            <p><span class="recipient-label">ADMISSION NO:</span> <span class="recipient-value" style="color: #1e3a8a;">${studentData.admissionNumber}</span></p>
+            <p><span class="recipient-label">EMAIL:</span> <span>${studentData.email || 'N/A'}</span></p>
+            <p><span class="recipient-label">PHONE:</span> <span>${studentData.phone || 'N/A'}</span></p>
+            <p><span class="recipient-label">COURSE OFFERED:</span> <span class="recipient-value">${studentData.course.toUpperCase()}</span></p>
+            <p><span class="recipient-label">INTAKE PERIOD:</span> <span>${studentData.intakePeriod || 'September 2026 Intake'}</span></p>
+          </div>
+
+          <div class="subject">
+            RE: OFFICIAL OFFER OF ADMISSION
+          </div>
+
+          <div class="content">
+            <p>Dear ${studentData.name.split(' ')[0]},</p>
+            
+            <p>Following your application for admission to Breakthrough International Training College (BITC), we are pleased to inform you that you have been offered admission to pursue a <strong>${studentData.course}</strong> program starting in our <strong>${studentData.intakePeriod || 'September 2026 Intake'}</strong>.</p>
+            
+            <p>Our college is fully dedicated to producing high-quality practitioners who excel inside professional laboratories and modern job fields. Your official registration number is <strong>${studentData.admissionNumber}</strong>, which you should quote in all correspondence with the college administration.</p>
+            
+            <div class="requirements-list">
+              <div class="requirements-title">Official Reporting Checklist</div>
+              <ul>
+                <li>Original and copies of KCSE Result Slip/Certificate</li>
+                <li>National ID Card or Birth Certificate copy</li>
+                <li>Two recent passport-size color photographs</li>
+                <li>Fees deposit payment slip as specified in your syllabus package</li>
+              </ul>
+            </div>
+            
+            <p>Please report to the Registrar of Admissions desk to clear any pending syllabus fees, secure hostel rooms guidelines where applicable, and pick up your lecture timetable and orientation pack.</p>
+            
+            <p>Congratulations on your admission! We wish you a peaceful, successful, and inspiring course of study at our institution.</p>
+          </div>
+
+          <div class="closing">
+            <p>Yours faithfully,</p>
+            <div class="signature-space">
+              ${stampHtml}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">Admissions Registrar</div>
+            <div class="signatory-title">Breakthrough International Training College</div>
+          </div>
+
+          <div class="footer">
+            Breakthrough International Training College Registrar Portal. Generated securely on ${today}.
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
 
   // Pre-fill student admission form from an online application
   const handleProcessApplication = (app: any) => {
@@ -351,6 +562,20 @@ export const StudentAdmission: React.FC = () => {
           setBaseSerial(num);
         }
       });
+
+      const admittedStudentDetails = {
+        name: fullName,
+        course: formData.course || 'Selected Course',
+        phone: formData.phone || '',
+        email: formData.email || '',
+        admissionNumber: formData.admissionNumber,
+        admissionDate: formData.admissionDate,
+        guardianName: formData.guardianName || '',
+        guardianPhone: formData.guardianPhone || '',
+        address: formData.address || 'Thika',
+        intakePeriod: formData.academicYear ? `${formData.academicYear} Intake` : '2026 Intake'
+      };
+      setLastAdmittedStudent(admittedStudentDetails);
 
       addToast("Student admitted successfully!", "success");
       // Reset form
@@ -764,6 +989,23 @@ export const StudentAdmission: React.FC = () => {
                             >
                               <Check size={13} />
                               <span>Admit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handlePrintAdmissionLetter({
+                                name: app.fullName || app.applicantName || 'Applicant Name',
+                                course: app.courseInterest || 'Selected Program',
+                                phone: app.phone || app.applicantPhone || '',
+                                email: app.email || app.applicantEmail || '',
+                                admissionNumber: app.admissionNumber || `APP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                                intakePeriod: app.intakePeriod || 'September 2026 Intake'
+                              })}
+                              className="py-1 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all border border-slate-200 h-9 shrink-0"
+                              title="Print Provisional Admission Letter"
+                            >
+                              <Printer size={13} />
+                              <span>Letter</span>
                             </button>
 
                             {app.status !== 'processed' && (
@@ -1413,6 +1655,85 @@ export const StudentAdmission: React.FC = () => {
           )}
         </AnimatePresence>
       </form>
+      
+      {/* Admission Success & Print Letter Overlay Modal */}
+      {lastAdmittedStudent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-sans">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 text-left"
+          >
+            <div className="bg-gradient-to-br from-blue-700 to-indigo-950 p-8 text-white relative">
+              <button 
+                type="button" 
+                onClick={() => setLastAdmittedStudent(null)}
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white border-0 transition-colors"
+                title="Dismiss"
+              >
+                <XCircle size={18} />
+              </button>
+              <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white text-2xl mb-4 animate-bounce">
+                🎉
+              </div>
+              <h3 className="text-xl font-extrabold tracking-tight uppercase">Manual Admission Complete!</h3>
+              <p className="text-blue-100 text-xs mt-1">
+                The student has been successfully saved to the breakthrough records.
+              </p>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-100 text-xs text-slate-700">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Admission ID:</span>
+                  <span className="font-mono font-black text-blue-800 bg-blue-50/50 px-2.5 py-1 rounded text-xs select-all">
+                    {lastAdmittedStudent.admissionNumber}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Student Name:</span>
+                  <span className="font-black text-slate-900 text-right">{lastAdmittedStudent.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Academic Course:</span>
+                  <span className="font-extrabold text-slate-800 text-right max-w-[200px] truncate" title={lastAdmittedStudent.course}>
+                    {lastAdmittedStudent.course}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Mobile Contact:</span>
+                  <span className="font-bold text-slate-800">{lastAdmittedStudent.phone || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Email Address:</span>
+                  <span className="font-semibold text-slate-500 max-w-[180px] truncate" title={lastAdmittedStudent.email}>
+                    {lastAdmittedStudent.email || 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handlePrintAdmissionLetter(lastAdmittedStudent)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md transition-all border-0 font-sans"
+                >
+                  <Printer size={15} />
+                  <span>Print Admission Letter</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLastAdmittedStudent(null)}
+                  className="py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-widest border-0 font-sans"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <Toast messages={toasts} onRemove={removeToast} />
     </div>

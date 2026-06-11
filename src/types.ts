@@ -53,6 +53,17 @@ export interface User {
   guardianOccupation?: string;
   guardianAddress?: string;
   guardianEmail?: string;
+  // Attachment & Rotation Details
+  attachmentLetterUrl?: string;
+  attachmentLetterName?: string;
+  rotationHostOrg?: string;
+  rotationDepartment?: string;
+  rotationStartDate?: string;
+  rotationEndDate?: string;
+  rotationSupervisor?: string;
+  rotationSupervisorContact?: string;
+  rotationStatus?: 'none' | 'pending' | 'active' | 'completed';
+  rotationNotes?: string;
 }
 
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
