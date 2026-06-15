@@ -53,6 +53,26 @@ const unlockAudioContext = () => {
   } catch (e) {}
 };
 
+// Prime speech synthesis voices list on load to eliminate first-time latency
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  try {
+    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        try {
+          window.speechSynthesis.getVoices();
+        } catch (e) {}
+      });
+    } else {
+      (window.speechSynthesis as any).onvoiceschanged = () => {
+        try {
+          window.speechSynthesis.getVoices();
+        } catch (e) {}
+      };
+    }
+  } catch (e) {}
+}
+
 // Listen for first interaction anywhere to unlock audio pipelines
 if (typeof window !== 'undefined') {
   const unlock = () => {
@@ -67,13 +87,12 @@ if (typeof window !== 'undefined') {
 }
 
 const playBeep = () => {
-  if (!globalIsAdminOrSupervisor) return;
   try {
     const ctx = getSharedAudioContext();
     if (!ctx) return;
     
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      ctx.resume().catch(() => {});
     }
     
     const osc = ctx.createOscillator();
@@ -95,84 +114,140 @@ const playBeep = () => {
   }
 };
 
+const getPhoneticSpelling = (name: string): string => {
+  if (!name) return "";
+  
+  // Split to get the first name
+  const parts = name.split(/[\s,._-]+/);
+  const rawFirstName = parts[0] ? parts[0].trim() : name;
+  if (!rawFirstName) return "";
+
+  // Convert to clean Title Case to avoid text-to-speech engine letter-by-letter spelling of uppercase words
+  let clean = rawFirstName.toLowerCase();
+  
+  // Specific phonetic mapping rules for typical Kenyan / East African names
+  if (clean === 'daud') return 'Dah ood';
+  if (clean === 'daudi') return 'Dah oodee';
+  if (clean === 'muchiri') return 'Moo chee ree';
+  if (clean === 'mwangi') return 'Mwa ngee';
+  if (clean === 'maina') return 'My nah';
+  if (clean === 'kamau') return 'Kah mow';
+  if (clean === 'njoroge') return 'Njo ro geh';
+  if (clean === 'wanjiku') return 'Wan jee koo';
+  if (clean === 'wanjohi') return 'Wan jo hee';
+  if (clean === 'karanja') return 'Kah ran jah';
+  if (clean === 'kimani') return 'Kee mah nee';
+  if (clean === 'waweru') return 'Wah weh roo';
+  if (clean === 'mutua') return 'Moo too ah';
+  if (clean === 'muthoni') return 'Moo thoh nee';
+  if (clean === 'otieno') return 'Oh tee eh noh';
+  if (clean === 'onyango') return 'On yang go';
+  if (clean === 'ochieng' || clean === 'oching') return 'Oh chee eng';
+  if (clean === 'nduta') return 'N doo tah';
+  if (clean === 'mugo') return 'Moo go';
+  if (clean === 'mwaniki') return 'Mwa nee kee';
+  if (clean === 'keeprotich' || clean === 'kiprotich') return 'Keep ro teech';
+  if (clean === 'keeprop' || clean === 'kiprop') return 'Keep rop';
+  if (clean === 'keepkorir' || clean === 'kipkorir') return 'Keep ko reer';
+  if (clean === 'keepkemboi' || clean === 'kipkemboi') return 'Keep kem boy';
+  if (clean === 'ngetich') return 'Nge teech';
+  if (clean === 'cheruiyot') return 'Che ruy ot';
+  if (clean === 'odhiambo') return 'Oh dhee ahm bo';
+  if (clean === 'adams') return 'Add ams';
+  if (clean === 'alicia') return 'Ah lee syah';
+  
+  // Syllabify the "Kip" prefix to sound natural (Kiprotich -> Keeprotich)
+  if (rawFirstName.toLowerCase().startsWith('kip')) {
+    return 'Keep' + rawFirstName.slice(3);
+  }
+  
+  // Return the title-cased name
+  return rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1).toLowerCase();
+};
+
 const speakAttendanceCompletion = (fullName: string, action: string) => {
-  if (!globalIsAdminOrSupervisor) return;
   try {
     if (!window.speechSynthesis) return;
     
-    // Clear any active queue. Canceling before speaking ensures immediate responsiveness
-    window.speechSynthesis.cancel();
-    
-    const firstName = fullName.split(/[\s,._]+/)[0] || fullName;
-    const cleanName = firstName.trim();
-    
-    let text = `Welcome to Breakthrough International, ${cleanName}`;
-    if (action === 'checkOut') {
-      text = `Goodbye ${cleanName}, check out recorded.`;
-    } else if (action === 'leaveOut') {
-      text = `Leave out approved. Goodbye ${cleanName}.`;
-    } else if (action === 'already_checkIn') {
-      text = `${cleanName} is already checked in.`;
-    } else if (action === 'already_checkOut') {
-      text = `${cleanName} is already checked out.`;
-    } else if (action === 'already_leaveOut') {
-      text = `${cleanName} already has leave recorded today.`;
+    const isSpeaking = window.speechSynthesis.speaking;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
     }
     
-    // We execute the speech on a brief 60ms delay. This accommodates different browser
-    // speech synthesis threads (such as Chrome on Windows, iOS and Android) allowing
-    // them to truly free up the speech channel from the cancel() invocation.
-    setTimeout(() => {
+    const cleanName = getPhoneticSpelling(fullName);
+    
+    // Snappy, fast, conversational sentences for instant verbal feedback
+    let text = `Welcome, ${cleanName}`;
+    if (action === 'checkOut') {
+      text = `Goodbye, ${cleanName}`;
+    } else if (action === 'leaveOut') {
+      text = `Goodbye, ${cleanName}`;
+    } else if (action === 'already_checkIn') {
+      text = `${cleanName}, already checked in`;
+    } else if (action === 'already_checkOut') {
+      text = `${cleanName}, already checked out`;
+    } else if (action === 'already_leaveOut') {
+      text = `${cleanName}, leave already recorded`;
+    } else if (action === 'unpaid_fees') {
+      text = `Access denied, unpaid fees`;
+    } else if (action === 'deactivated') {
+      text = `Access denied, profile inactive`;
+    }
+    
+    const runSpeak = () => {
       try {
         const utterance = new SpeechSynthesisUtterance(text);
         
-        // Prevent speech synthesis from stopping prematurely/hanging due to Javascript
-        // garbage-collecting the utterance object while it is actively playing.
+        // Prevent garbage collection while playing
         activeSpeechUtterances.add(utterance);
-        
         const removeRef = () => {
           activeSpeechUtterances.delete(utterance);
         };
         utterance.onend = removeRef;
         utterance.onerror = removeRef;
         
-        // Standard high-quality English pronunciation parameters.
-        // Rates around 0.98 - 1.0 sound continuous, pleasant, and natural.
-        utterance.rate = 1.00; 
-        utterance.pitch = 1.05; // Slightly elevated pitch for a warm, friendly, natural youthfulness
+        // Optimizing the vocal parameters for immediate, understandable audio delivery
+        utterance.rate = 1.05; // Slightly faster to feel immediate, snappy, and modern
+        utterance.pitch = 1.00; // Standard crisp, balanced voice pitch
         
         const voices = window.speechSynthesis.getVoices();
-        
-        // Select standard high-quality English (US/GB) or system default voice to sound natural and crisp
         let selectedVoice = null;
         
-        // Prioritize premium/natural/Google voices, and explicitly avoid Microsoft Zira (which can sound old or harsh)
-        selectedVoice = voices.find(v => v.lang.toLowerCase() === 'en-us' && v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('zira')) ||
-                        voices.find(v => v.lang.toLowerCase() === 'en-us' && v.name.toLowerCase().includes('natural') && !v.name.toLowerCase().includes('zira')) ||
+        // Prioritize clear English voices (US, GB, South Africa, Ireland or Premium Natural)
+        selectedVoice = voices.find(v => v.lang.toLowerCase() === 'en-gb' && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural'))) ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-us' && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural')) && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-za') || // beautiful South African English
+                        voices.find(v => v.lang.toLowerCase() === 'en-ie') ||
+                        voices.find(v => v.lang.toLowerCase() === 'en-gb') ||
                         voices.find(v => v.lang.toLowerCase() === 'en-us' && !v.name.toLowerCase().includes('zira')) ||
-                        voices.find(v => v.lang.toLowerCase() === 'en-us') ||
-                        voices.find(v => v.lang.toLowerCase().startsWith('en') && !v.name.toLowerCase().includes('zira')) ||
-                        voices.find(v => v.lang.toLowerCase().startsWith('en'));
+                        voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('zira')) ||
+                        voices.find(v => v.lang.startsWith('en'));
         
         if (selectedVoice) {
           utterance.voice = selectedVoice;
           utterance.lang = selectedVoice.lang;
-          console.log(`[TTS Speech Synthesis] Selected Voice Channel: ${selectedVoice.name} (${selectedVoice.lang})`);
         }
         
-        // Recover if speech synthesis engine gets in a paused state due to system wakes or interruptions
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
         
         window.speechSynthesis.speak(utterance);
       } catch (innerErr) {
-        console.error("SpeechSynthesis inner speak call failed:", innerErr);
+        console.error("SpeechSynthesis speak utterance setup failed:", innerErr);
       }
-    }, 60);
+    };
+
+    // If we canceled an active synthesising session, provide a tiny 25ms rest to allow browser thread to recycle channel,
+    // otherwise trigger instantly with zero delay!
+    if (isSpeaking) {
+      setTimeout(runSpeak, 25);
+    } else {
+      runSpeak();
+    }
     
   } catch (err) {
-    console.error("Speech synthesis failed", err);
+    console.error("Speech synthesis execution failed", err);
   }
 };
 
@@ -1602,9 +1677,10 @@ void loop() {
                       updates[`records.${student.uid}`] = 'present';
                     }
                     
+                    // Synthesize sound immediately to bypass database-writing network latency
+                    speakAttendanceCompletion(student.name, currentAct);
                     await updateDoc(docRef, updates);
                     addToast(`Recorded ${currentAct} for ${student.name}`);
-                    speakAttendanceCompletion(student.name, currentAct);
                     setLastEvent({
                       student,
                       action: currentAct,
@@ -1614,6 +1690,8 @@ void loop() {
                     });
                   }
                 } else {
+                  // Synthesize sound immediately to bypass database-writing network latency
+                  speakAttendanceCompletion(student.name, currentAct);
                   await addDoc(collection(db, 'attendance'), {
                     classId: currentClsId,
                     date: dateStr,
@@ -1625,7 +1703,6 @@ void loop() {
                     }
                   });
                   addToast(`Recorded ${currentAct} for ${student.name}`);
-                  speakAttendanceCompletion(student.name, currentAct);
                   setLastEvent({
                     student,
                     action: currentAct,
@@ -1723,6 +1800,7 @@ void loop() {
           async (decodedText) => {
             if (studentScanProcessingRef.current) return;
             studentScanProcessingRef.current = true;
+            playBeep();
             setIsSavingStudentQRCheckIn(true);
 
             try {
@@ -1817,6 +1895,7 @@ void loop() {
                 method: 'gate_qr' as const
               };
 
+              let hasSpoken = false;
               for (const classId of scannedClassIds) {
                 const q = query(
                   collection(db, 'attendance'),
@@ -1836,14 +1915,20 @@ void loop() {
                     const errMsg = `You are already checked in today.`;
                     addToast(errMsg, "error");
                     setStudentScanResult({ type: 'error', message: errMsg });
-                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_checkIn`);
+                    if (!hasSpoken) {
+                      speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_checkIn`);
+                      hasSpoken = true;
+                    }
                     return;
                   } else if (existingLogs[currentAct]) {
                     const actName = currentAct === 'checkIn' ? 'Check-In' : 'Check-Out';
                     const errMsg = `You already have a ${actName} recorded today.`;
                     addToast(errMsg, "error");
                     setStudentScanResult({ type: 'error', message: errMsg });
-                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_${currentAct}`);
+                    if (!hasSpoken) {
+                      speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', `already_${currentAct}`);
+                      hasSpoken = true;
+                    }
                     return;
                   }
 
@@ -1859,11 +1944,19 @@ void loop() {
                     }
                   };
 
+                  if (!hasSpoken) {
+                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', currentAct);
+                    hasSpoken = true;
+                  }
                   await updateDoc(doc(db, 'attendance', todayRecord.id), {
                     records: updatedRecords,
                     biometricLogs: updatedLogs
                   });
                 } else {
+                  if (!hasSpoken) {
+                    speakAttendanceCompletion(userDataRef.current?.name || currentUser.displayName || 'Student', currentAct);
+                    hasSpoken = true;
+                  }
                   await addDoc(collection(db, 'attendance'), {
                     classId: classId,
                     date: dateStr,
