@@ -177,7 +177,7 @@ const speakAttendanceCompletion = (fullName: string, action: string) => {
     const cleanName = getPhoneticSpelling(fullName);
     
     // Snappy, fast, conversational sentences for instant verbal feedback
-    let text = `Welcome, ${cleanName}`;
+    let text = `Welcome to Breakthrough International, ${cleanName}`;
     if (action === 'checkOut') {
       text = `Goodbye, ${cleanName}`;
     } else if (action === 'leaveOut') {
