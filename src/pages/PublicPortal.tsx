@@ -2263,7 +2263,7 @@ export function PublicPortal() {
           10. FLOATING WHATSAPP CTA WIDGET
           ───────────────────────────────────────────────────────────────── */}
       <a
-        href="https://wa.me/254727114355?text=Hello%20Breakthrough%20International%20Training%20College%20-%20I%2520am%2520inquiring%2520about%2520September%2525202026%252520Intakes."
+        href="https://wa.me/254727114355?text=Hello I want to know more about Breakthrough and the Courses you offer."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-40 p-4 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 group cursor-pointer"
