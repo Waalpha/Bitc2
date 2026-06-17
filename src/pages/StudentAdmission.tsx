@@ -14,6 +14,7 @@ import {
   FileDown, 
   Camera,
   ChevronRight,
+  ChevronDown,
   Info,
   Heart,
   Phone,
@@ -34,24 +35,36 @@ import { Toast, ToastMessage } from '../components/Toast';
 
 const TABS = [
   { id: 'online-apps', name: 'ONLINE APPLICATIONS INBOX', icon: Inbox },
-  { id: 'personal', name: 'PERSONAL INFO', icon: UserIcon },
-  { id: 'parents', name: 'PARENTS & GUARDIAN INFO', icon: Users },
-  { id: 'document', name: 'DOCUMENT INFO', icon: Upload },
-  { id: 'previous', name: 'PREVIOUS SCHOOL INFORMATION', icon: BookOpen },
-  { id: 'other', name: 'OTHER INFO', icon: Info },
-  { id: 'custom', name: 'CUSTOM FIELD', icon: Layout },
+  { id: 'personal', name: 'DIRECT ADMISSION FORM', icon: UserIcon },
 ];
 
 import { uploadFile } from '../services/uploadService';
 
+const SYSTEM_COURSES = [
+  "Diploma in Beauty Therapy, Skincare & Professional Makeup",
+  "Certificate in Hairdressing, Advanced Styling & Barbering",
+  "Diploma in Software Engineering & Web Development",
+  "Certificate in Computer Packages & Digital Commerce Systems",
+  "Certificate in Community Health & Professional Caregiver Studies",
+  "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
+  "Certificate in Professional Cookery, General Baking & Cake Decoration",
+  "Diploma in Catering & Hospitality Management",
+  "Certificate in Solar PV Technology & Electrical Wiring",
+  "Diploma in Domestic & Industrial Electrical Engineering",
+  "Certificate in Theology & Biblical Studies",
+  "Diploma in Theology & Christian Ministry"
+];
+
 export const StudentAdmission: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [activeTab, setActiveTab] = useState('online-apps');
   const [classes, setClasses] = useState<Class[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [baseSerial, setBaseSerial] = useState(355);
+  const [inboxExpanded, setInboxExpanded] = useState(true);
   const [lastAdmittedStudent, setLastAdmittedStudent] = useState<{
     name: string;
     course: string;
@@ -170,9 +183,9 @@ export const StudentAdmission: React.FC = () => {
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
             body { 
               font-family: 'Inter', sans-serif; 
-              line-height: 1.6; 
+              line-height: 1.45; 
               color: #1a202c; 
-              padding: 40px;
+              padding: 25px;
               max-width: 800px;
               margin: 0 auto;
               background: white;
@@ -180,79 +193,79 @@ export const StudentAdmission: React.FC = () => {
             .header { 
               text-align: center; 
               border-bottom: 2px double #cbd5e1; 
-              padding-bottom: 15px; 
-              margin-bottom: 25px; 
+              padding-bottom: 10px; 
+              margin-bottom: 15px; 
             }
-            .logo { max-height: 80px; margin-bottom: 10px; }
-            .school-name { font-size: 22px; font-weight: 800; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
-            .school-info { font-size: 11px; color: #475569; margin: 3px 0; font-weight: 500; }
+            .logo { max-height: 65px; margin-bottom: 6px; }
+            .school-name { font-size: 20px; font-weight: 800; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 10px; color: #475569; margin: 2px 0; font-weight: 500; }
             
-            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; }
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 11px; }
             .date { font-weight: 700; color: #1e293b; }
-            .ref-no { font-size: 11px; color: #64748b; font-family: monospace; }
+            .ref-no { font-size: 10.5px; color: #64748b; font-family: monospace; }
             
-            .recipient { margin-bottom: 25px; border-left: 3px solid #3b82f6; padding-left: 15px; background: #f8fafc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
-            .recipient p { margin: 4px 0; color: #1e293b; font-size: 13px; }
-            .recipient-label { font-size: 10px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; display: inline-block; width: 120px; }
+            .recipient { margin-bottom: 15px; border-left: 3px solid #3b82f6; padding-left: 12px; background: #f8fafc; padding-top: 6px; padding-bottom: 6px; border-radius: 0 8px 8px 0; }
+            .recipient p { margin: 2px 0; color: #1e293b; font-size: 12px; }
+            .recipient-label { font-size: 9.5px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; display: inline-block; width: 110px; }
             .recipient-value { font-weight: 700; }
             
             .subject { 
               font-weight: 800; 
               text-decoration: underline; 
               text-transform: uppercase; 
-              margin-bottom: 25px;
-              font-size: 15px;
+              margin-bottom: 15px;
+              font-size: 13.5px;
               text-align: center;
               color: #1e3a8a;
             }
             
-            .content { font-size: 13.5px; text-align: justify; }
-            .content p { margin-bottom: 15px; }
+            .content { font-size: 12.5px; text-align: justify; }
+            .content p { margin-bottom: 10px; }
             .requirements-list {
               background: #f0fdf4;
               border: 1px solid #bbf7d0;
               border-left: 4px solid #22c55e;
-              padding: 15px 20px;
-              margin: 20px 0;
+              padding: 10px 15px;
+              margin: 12px 0;
               border-radius: 6px;
             }
             .requirements-title {
               font-weight: 800;
               color: #14532d;
-              margin-bottom: 8px;
-              font-size: 13px;
+              margin-bottom: 4px;
+              font-size: 12px;
               text-transform: uppercase;
               letter-spacing: 0.5px;
             }
             .requirements-list ul {
               margin: 0;
-              padding-left: 20px;
+              padding-left: 18px;
             }
             .requirements-list li {
-              margin-bottom: 6px;
+              margin-bottom: 3px;
               color: #166534;
               font-weight: 500;
             }
             
-            .closing { margin-top: 40px; page-break-inside: avoid; }
-            .signature-space { height: 60px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -15px; left: 15px; max-height: 85px; opacity: 0.85; mix-blend-mode: multiply; }
-            .signature-line { border-top: 1px solid #475569; width: 220px; margin-top: 10px; }
-            .signatory-name { font-weight: 800; margin-top: 5px; font-size: 13px; color: #1e293b; }
-            .signatory-title { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+            .closing { margin-top: 20px; page-break-inside: avoid; }
+            .signature-space { height: 45px; margin-top: 10px; position: relative; }
+            .stamp { position: absolute; top: -12px; left: 15px; max-height: 70px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
+            .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
+            .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
             
             .footer { 
-              margin-top: 50px; 
-              font-size: 9px; 
+              margin-top: 20px; 
+              font-size: 8.5px; 
               border-top: 1px solid #e2e8f0; 
-              padding-top: 15px;
+              padding-top: 10px;
               text-align: center;
               color: #94a3b8;
               font-style: italic;
             }
-
+ 
             @media print {
-              body { padding: 25px; margin: 0; }
+              body { padding: 15px; margin: 0; }
               .no-print { display: none; }
             }
           </style>
@@ -264,12 +277,12 @@ export const StudentAdmission: React.FC = () => {
             <p class="school-info">${schoolAddress}</p>
             <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
           </div>
-
+ 
           <div class="letter-meta">
             <div class="date">DATE: ${studentData.admissionDate ? new Date(studentData.admissionDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' }) : today}</div>
             <div class="ref-no">REF: BITC/ADM/${studentData.admissionNumber || 'REG-' + secureId}</div>
           </div>
-
+ 
           <div class="recipient">
             <p><span class="recipient-label">TO STUDENT:</span> <span class="recipient-value">${studentData.name.toUpperCase()}</span></p>
             <p><span class="recipient-label">ADMISSION NO:</span> <span class="recipient-value" style="color: #1e3a8a;">${studentData.admissionNumber}</span></p>
@@ -278,33 +291,39 @@ export const StudentAdmission: React.FC = () => {
             <p><span class="recipient-label">COURSE OFFERED:</span> <span class="recipient-value">${studentData.course.toUpperCase()}</span></p>
             <p><span class="recipient-label">INTAKE PERIOD:</span> <span>${studentData.intakePeriod || 'September 2026 Intake'}</span></p>
           </div>
-
+ 
           <div class="subject">
             RE: OFFICIAL OFFER OF ADMISSION
           </div>
-
+ 
           <div class="content">
             <p>Dear ${studentData.name.split(' ')[0]},</p>
             
-            <p>Following your application for admission to Breakthrough International Training College (BITC), we are pleased to inform you that you have been offered admission to pursue a <strong>${studentData.course}</strong> program starting in our <strong>${studentData.intakePeriod || 'September 2026 Intake'}</strong>.</p>
+            <p>Following your application, we are pleased to inform you that you have been offered admission to Breakthrough International Training College (BITC) for the <strong>${studentData.course}</strong> program starting in our <strong>${studentData.intakePeriod || 'September 2026 Intake'}</strong>.</p>
             
-            <p>Our college is fully dedicated to producing high-quality practitioners who excel inside professional laboratories and modern job fields. Your official registration number is <strong>${studentData.admissionNumber}</strong>, which you should quote in all correspondence with the college administration.</p>
+            <p>Your official registration number is <strong>${studentData.admissionNumber}</strong>, which you should quote in all correspondence with the college administration.</p>
             
-            <div class="requirements-list">
-              <div class="requirements-title">Official Reporting Checklist</div>
-              <ul>
-                <li>Original and copies of KCSE Result Slip/Certificate</li>
-                <li>National ID Card or Birth Certificate copy</li>
-                <li>Two recent passport-size color photographs</li>
-                <li>Fees deposit payment slip as specified in your syllabus package</li>
-              </ul>
-            </div>
+            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+              <tr>
+                <td style="width: 100%;">
+                  <div class="requirements-list">
+                    <div class="requirements-title">Official Reporting Checklist</div>
+                    <ul>
+                      <li>Original and copies of KCSE Result Slip/Certificate</li>
+                      <li>National ID Card or Birth Certificate copy</li>
+                      <li>Two recent passport-size color photographs</li>
+                      <li>Fees deposit payment slip as specified in your syllabus package</li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            </table>
             
-            <p>Please report to the Registrar of Admissions desk to clear any pending syllabus fees, secure hostel rooms guidelines where applicable, and pick up your lecture timetable and orientation pack.</p>
+            <p>Please report to the Registrar of Admissions desk to clear any pending fees, secure hostel rooms if applicable, and collect your timetable & orientation pack.</p>
             
-            <p>Congratulations on your admission! We wish you a peaceful, successful, and inspiring course of study at our institution.</p>
+            <p>Congratulations! We wish you a peaceful, successful, and inspiring course of study at our institution.</p>
           </div>
-
+ 
           <div class="closing">
             <p>Yours faithfully,</p>
             <div class="signature-space">
@@ -314,7 +333,7 @@ export const StudentAdmission: React.FC = () => {
             <div class="signatory-name">Admissions Registrar</div>
             <div class="signatory-title">Breakthrough International Training College</div>
           </div>
-
+ 
           <div class="footer">
             Breakthrough International Training College Registrar Portal. Generated securely on ${today}.
           </div>
@@ -355,8 +374,11 @@ export const StudentAdmission: React.FC = () => {
       course: app.courseInterest || "",
     }));
 
-    setActiveTab('personal');
     addToast(`Pre-loaded details for ${fullName}! Choose classes and click Save Student.`, 'success');
+    
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
   };
 
   // Change online application status
@@ -760,75 +782,73 @@ export const StudentAdmission: React.FC = () => {
           </nav>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Student Admission</h1>
         </div>
-        <div className="flex items-center gap-3">
-          {activeTab !== 'online-apps' && (
-            <>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".csv"
-                className="hidden"
-              />
-              <button 
-                type="button"
-                onClick={handleImportClick}
-                disabled={loading}
-                className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
-              >
-                <FileDown size={18} />
-                {loading ? 'IMPORTING...' : 'IMPORT STUDENT'}
-              </button>
-              <button 
-                type="submit" 
-                form="admission-form"
-                disabled={loading || isUploading}
-                className="flex items-center gap-2 bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
-              >
-                <Save size={18} />
-                {isUploading ? 'UPLOADING...' : loading ? 'SAVING...' : 'SAVE STUDENT'}
-              </button>
-            </>
-          )}
+        <div className="flex items-center gap-3 font-sans">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".csv"
+            className="hidden"
+          />
+          <button 
+            type="button"
+            onClick={handleImportClick}
+            disabled={loading}
+            className="flex items-center gap-2 bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-purple-100 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <FileDown size={16} />
+            {loading ? 'IMPORTING...' : 'IMPORT STUDENT'}
+          </button>
+          <button 
+            type="submit" 
+            form="admission-form"
+            disabled={loading || isUploading}
+            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-blue-105 hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <Save size={16} />
+            {isUploading ? 'UPLOADING...' : loading ? 'SAVING...' : 'SAVE STUDENT'}
+          </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-2 overflow-x-auto no-scrollbar">
-        {TABS.map((tab) => {
-          const pendingCount = onlineApplications.filter(app => app.status !== 'processed' && app.status !== 'archived').length;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-100 shadow-sm'
-                  : 'text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              <tab.icon size={16} />
-              <span>{tab.name}</span>
-              {tab.id === 'online-apps' && pendingCount > 0 && (
-                <span className="ml-1 px-2 py-0.5 text-[10px] font-black bg-rose-500 text-white rounded-full animate-pulse">
-                  {pendingCount} NEW
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* 1. ONLINE APPLICATIONS INBOX SECTION */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setInboxExpanded(!inboxExpanded)}
+          className="w-full flex items-center justify-between p-6 bg-gray-50/50 hover:bg-gray-100/70 transition-all border-b border-gray-100 cursor-pointer text-left font-sans select-none"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-50 p-2.5 rounded-2xl text-blue-600">
+              <Inbox size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-gray-950 uppercase tracking-tight flex items-center gap-2 leading-none">
+                Online Applications Inbox
+                {onlineApplications.filter(app => app.status !== 'processed' && app.status !== 'archived').length > 0 && (
+                  <span className="px-2 py-0.5 text-[9px] font-black bg-rose-500 text-white rounded-full animate-pulse tracking-normal">
+                    {onlineApplications.filter(app => app.status !== 'processed' && app.status !== 'archived').length} NEW
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-gray-400 font-bold tracking-wider uppercase mt-1">Review and process internet-submitted applications</p>
+            </div>
+          </div>
+          <div className="text-gray-400 font-bold text-xs uppercase flex items-center gap-2">
+            <span>{inboxExpanded ? 'Hide Inbox' : 'Show Inbox'}</span>
+            <ChevronDown size={14} className={`transition-transform duration-300 ${inboxExpanded ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
 
-      <form id="admission-form" onSubmit={handleSubmit} className="space-y-8">
-        <AnimatePresence mode="wait">
-          {activeTab === 'online-apps' && (
+        <AnimatePresence initial={false}>
+          {inboxExpanded && (
             <motion.div
-              key="online-apps"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
+              <div className="p-6 border-t border-gray-50 space-y-6">
               {/* Filter controls panel */}
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-wrap gap-2">
@@ -1045,17 +1065,25 @@ export const StudentAdmission: React.FC = () => {
                   </div>
                 );
               })()}
+              </div>
             </motion.div>
           )}
+        </AnimatePresence>
+      </div>
 
-          {activeTab === 'personal' && (
-            <motion.div
-              key="personal"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
-            >
+      {/* 2. DIRECT ADMISSION FORM SECTION */}
+      <div className="flex items-center gap-4 pt-10">
+        <div className="bg-[#7c3aed]/10 p-3 rounded-2xl text-[#7c3aed]">
+          <UserIcon size={22} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-extrabold text-[#7c3aed] uppercase tracking-tight">Direct Manual Student Admission</h2>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Enroll a new student directly into the academic registry</p>
+        </div>
+      </div>
+
+      <form id="admission-form" ref={formRef} onSubmit={handleSubmit} className="space-y-8 font-sans">
+        <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Academic Information Section */}
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
@@ -1118,15 +1146,16 @@ export const StudentAdmission: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Unit</label>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Course <span className="text-red-500">*</span></label>
                       <select 
                         name="course"
                         value={formData.course || ''}
                         onChange={handleChange}
+                        required
                         className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 focus:ring-4 focus:ring-blue-100 transition-all uppercase"
                       >
-                        <option value="">Select Unit</option>
-                        {availableUnits.map((c, idx) => (
+                        <option value="">Select Course</option>
+                        {SYSTEM_COURSES.map((c, idx) => (
                           <option key={idx} value={c}>{c}</option>
                         ))}
                       </select>
@@ -1416,17 +1445,19 @@ export const StudentAdmission: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
-          
-          {activeTab === 'parents' && (
-            <motion.div
-              key="parents"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
-            >
+
+              {/* Parents & Guardian Information Section Header */}
+              <div className="flex items-center gap-3 pt-8 pb-2 border-t border-gray-150">
+                <div className="bg-amber-55 p-2.5 rounded-2xl text-amber-600 bg-amber-50">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 uppercase tracking-tight">Parents & Guardian Info</h2>
+                  <p className="text-xs text-gray-400 font-bold tracking-wider uppercase">Contact-details and emergency info</p>
+                </div>
+              </div>
+
+              <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Father Information */}
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
@@ -1581,15 +1612,19 @@ export const StudentAdmission: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
 
-          {activeTab === 'document' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6"
-            >
+              {/* Document Info Section Header */}
+              <div className="flex items-center gap-3 pt-8 pb-2 border-t border-gray-150">
+                <div className="bg-purple-50 p-2.5 rounded-2xl text-purple-600 bg-purple-50">
+                  <Upload size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 uppercase tracking-tight">Required Documents</h2>
+                  <p className="text-xs text-gray-400 font-bold tracking-wider uppercase">Attach identification documents and certificates</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-gray-50 mb-4">
                 <div className="flex items-center gap-3">
                   <div className="bg-purple-50 p-2 rounded-lg">
@@ -1632,29 +1667,23 @@ export const StudentAdmission: React.FC = () => {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
 
-          {activeTab !== 'personal' && activeTab !== 'parents' && activeTab !== 'document' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-white p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 text-center"
-            >
-              <Layout size={48} className="mx-auto text-blue-600 mb-6" />
-              <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-tight mb-2">Section Under Development</h2>
-              <p className="text-gray-500 font-medium max-w-sm mx-auto">This section is coming soon. Please complete the Personal Info to admit the student.</p>
-              <button 
-                type="button"
-                onClick={() => setActiveTab('personal')}
-                className="mt-8 text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline"
-              >
-                Go back to Personal Info
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </form>
+              {/* Bottom Actions inside form */}
+              <div className="flex justify-end gap-4 pt-8">
+                <button 
+                  type="submit" 
+                  disabled={loading || isUploading}
+                  className="flex items-center gap-2 bg-[#7c3aed] text-white px-8 py-4 rounded-xl font-black text-sm shadow-lg shadow-purple-150 hover:bg-[#6d28d9] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 uppercase tracking-widest cursor-pointer font-sans"
+                >
+                  <Save size={18} />
+                  {isUploading ? 'UPLOADING...' : loading ? 'SAVING...' : 'SAVE & ADMIT STUDENT'}
+                </button>
+              </div>
+
+              </div>
+              </div>
+            </div>
+          </form>
       
       {/* Admission Success & Print Letter Overlay Modal */}
       {lastAdmittedStudent && (

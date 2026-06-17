@@ -648,6 +648,199 @@ export const Students: React.FC = () => {
     printWindow.document.close();
   };
 
+  const handlePrintAdmissionLetter = (student: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Popup blocker is preventing opening the print window. Please allow popups for active print-outs.");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'Main Highway, P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
+    const logoHtml = settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : '';
+    const stampHtml = settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" alt="Stamp" />` : '';
+    const secureId = Math.random().toString(36).substring(2, 9).toUpperCase();
+
+    const html = `
+      <html>
+        <head>
+          <title>Admission Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.45; 
+              color: #1a202c; 
+              padding: 25px;
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #cbd5e1; 
+              padding-bottom: 10px; 
+              margin-bottom: 15px; 
+            }
+            .logo { max-height: 65px; margin-bottom: 6px; }
+            .school-name { font-size: 20px; font-weight: 800; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 1.2px; }
+            .school-info { font-size: 10px; color: #475569; margin: 2px 0; font-weight: 500; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 11px; }
+            .date { font-weight: 700; color: #1e293b; }
+            .ref-no { font-size: 10.5px; color: #64748b; font-family: monospace; }
+            
+            .recipient { margin-bottom: 15px; border-left: 3px solid #3b82f6; padding-left: 12px; background: #f8fafc; padding-top: 6px; padding-bottom: 6px; border-radius: 0 8px 8px 0; }
+            .recipient p { margin: 2px 0; color: #1e293b; font-size: 12px; }
+            .recipient-label { font-size: 9.5px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; display: inline-block; width: 110px; }
+            .recipient-value { font-weight: 700; }
+            
+            .subject { 
+              font-weight: 800; 
+              text-decoration: underline; 
+              text-transform: uppercase; 
+              margin-bottom: 15px;
+              font-size: 13.5px;
+              text-align: center;
+              color: #1e3a8a;
+            }
+            
+            .content { font-size: 12.5px; text-align: justify; }
+            .content p { margin-bottom: 10px; }
+            .requirements-list {
+              background: #f0fdf4;
+              border: 1px solid #bbf7d0;
+              border-left: 4px solid #22c55e;
+              padding: 10px 15px;
+              margin: 12px 0;
+              border-radius: 6px;
+            }
+            .requirements-title {
+              font-weight: 800;
+              color: #14532d;
+              margin-bottom: 4px;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .requirements-list ul {
+              margin: 0;
+              padding-left: 18px;
+            }
+            .requirements-list li {
+              margin-bottom: 3px;
+              color: #166534;
+              font-weight: 500;
+            }
+            
+            .closing { margin-top: 20px; page-break-inside: avoid; }
+            .signature-space { height: 45px; margin-top: 10px; position: relative; }
+            .stamp { position: absolute; top: -12px; left: 15px; max-height: 70px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
+            .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
+            .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+            
+            .footer { 
+              margin-top: 20px; 
+              font-size: 8.5px; 
+              border-top: 1px solid #e2e8f0; 
+              padding-top: 10px;
+              text-align: center;
+              color: #94a3b8;
+              font-style: italic;
+            }
+ 
+            @media print {
+              body { padding: 15px; margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${logoHtml}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+ 
+          <div class="letter-meta">
+            <div class="date">DATE: ${student.admissionDate ? new Date(student.admissionDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' }) : today}</div>
+            <div class="ref-no">REF: BITC/ADM/${student.admissionNumber || 'REG-' + secureId}</div>
+          </div>
+ 
+          <div class="recipient">
+            <p><span class="recipient-label">TO STUDENT:</span> <span class="recipient-value">${student.name.toUpperCase()}</span></p>
+            <p><span class="recipient-label">ADMISSION NO:</span> <span class="recipient-value" style="color: #1e3a8a;">${student.admissionNumber || 'N/A'}</span></p>
+            <p><span class="recipient-label">EMAIL:</span> <span>${student.email || 'N/A'}</span></p>
+            <p><span class="recipient-label">PHONE:</span> <span>${student.phone || 'N/A'}</span></p>
+            <p><span class="recipient-label">COURSE OFFERED:</span> <span class="recipient-value">${(student.course || '').toUpperCase()}</span></p>
+            <p><span class="recipient-label">INTAKE PERIOD:</span> <span>September 2026 Intake</span></p>
+          </div>
+ 
+          <div class="subject">
+            RE: OFFICIAL OFFER OF ADMISSION
+          </div>
+ 
+          <div class="content">
+            <p>Dear ${student.name.split(' ')[0]},</p>
+            
+            <p>Following your application, we are pleased to inform you that you have been offered admission to Breakthrough International Training College (BITC) for the <strong>${student.course || 'Selected Program'}</strong> program starting in our <strong>September 2026 Intake</strong>.</p>
+            
+            <p>Your official registration number is <strong>${student.admissionNumber || 'Pending'}</strong>, which you should quote in all correspondence with the college administration.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+              <tr>
+                <td style="width: 100%;">
+                  <div class="requirements-list">
+                    <div class="requirements-title">Official Reporting Checklist</div>
+                    <ul>
+                      <li>Original and copies of KCSE Result Slip/Certificate</li>
+                      <li>National ID Card or Birth Certificate copy</li>
+                      <li>Two recent passport-size color photographs</li>
+                      <li>Fees deposit payment slip as specified in your syllabus package</li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            
+            <p>Please report to the Registrar of Admissions desk to clear any pending fees, secure hostel rooms if applicable, and collect your timetable & orientation pack.</p>
+            
+            <p>Congratulations! We wish you a peaceful, successful, and inspiring course of study at our institution.</p>
+          </div>
+ 
+          <div class="closing">
+            <p>Yours faithfully,</p>
+            <div class="signature-space">
+              ${stampHtml}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">Admissions Registrar</div>
+            <div class="signatory-title">Breakthrough International Training College</div>
+          </div>
+ 
+          <div class="footer">
+            Breakthrough International Training College Registrar Portal. Generated securely on ${today}.
+          </div>
+ 
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handlePrintModifiedLetter = (student: User, config: typeof letterConfig) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -3284,6 +3477,13 @@ export const Students: React.FC = () => {
                   >
                     <Briefcase size={20} />
                   </button>
+                  <button
+                    onClick={() => handlePrintAdmissionLetter(student)}
+                    className="text-gray-400 hover:text-purple-600 transition-colors"
+                    title="Print Admission Letter"
+                  >
+                    <Printer size={20} />
+                  </button>
                   {isAdmin && (
                     <>
                       <button
@@ -3589,6 +3789,19 @@ export const Students: React.FC = () => {
                 >
                   <FileText size={18} />
                   Print Rotation Letter
+                </button>
+                <button
+                  onClick={() => {
+                    if (viewingStudent) {
+                      handlePrintAdmissionLetter(viewingStudent);
+                      setViewingStudent(null);
+                    }
+                  }}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-lg shadow-purple-100 flex items-center gap-2"
+                  title="Print Student Offer of Admission Letter"
+                >
+                  <Printer size={18} />
+                  Print Admission Letter
                 </button>
                 <button
                   onClick={() => {
