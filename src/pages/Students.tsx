@@ -73,6 +73,7 @@ export const Students: React.FC = () => {
     file: null as File | null
   });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [feeBalances, setFeeBalances] = useState<any[]>([]);
 
   // Student ID Card Custom States
   const [selectedIdCardStudent, setSelectedIdCardStudent] = useState<User | null>(null);
@@ -737,8 +738,8 @@ export const Students: React.FC = () => {
             }
             
             .closing { margin-top: 20px; page-break-inside: avoid; }
-            .signature-space { height: 45px; margin-top: 10px; position: relative; }
-            .stamp { position: absolute; top: -12px; left: 15px; max-height: 70px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-space { height: 80px; margin-top: 10px; position: relative; }
+            .stamp { position: absolute; top: -25px; left: 15px; max-height: 135px; opacity: 0.95; mix-blend-mode: multiply; }
             .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
             .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
             .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
@@ -831,6 +832,334 @@ export const Students: React.FC = () => {
             window.onload = function() {
               window.print();
               setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handlePrintFeesInvoice = (student: User, balance: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Popup blocker is preventing opening the print window. Please allow popups for active print-outs.");
+      return;
+    }
+
+    const studentClasses = classes.filter(c => student.classIds?.includes(c.id)).map(c => c.name).join(', ') || 'N/A';
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${(student.admissionNumber || Math.random().toString(36).substring(2, 6).toUpperCase()).replace(/\//g, '-')}`;
+    
+    const formatDate = (dateValue: any) => {
+      try {
+        return new Date(dateValue).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      } catch (e) {
+        return 'N/A';
+      }
+    };
+
+    const formatDateShort = (dateValue: any) => {
+      try {
+        return new Date(dateValue).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (e) {
+        return 'N/A';
+      }
+    };
+
+    const todayStr = formatDate(new Date());
+    const dueDateStr = formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days later
+
+    // Get only the CHARGES (actual invoice items)
+    const chargeItems = balance.history?.filter((item: any) => item.type === 'charge') || [];
+
+    const totalInvoiced = balance.totalAmount || 0;
+    const totalPaid = balance.paidAmount || 0;
+    const outstanding = balance.balance !== undefined ? balance.balance : (totalInvoiced - totalPaid);
+
+    const html = `
+      <html>
+        <head>
+          <title>Fees Invoice - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 25px 35px; 
+              color: #1e293b; 
+              line-height: 1.5; 
+              background-color: #ffffff;
+              font-size: 11px;
+            }
+            .invoice-container { 
+              max-width: 800px; 
+              margin: 0 auto; 
+            }
+            .header-flex {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 12px;
+              margin-bottom: 20px;
+            }
+            .school-info h1 {
+              font-size: 20px;
+              font-weight: 800;
+              color: #1e3a8a;
+              margin: 0;
+              text-transform: uppercase;
+              letter-spacing: -0.01em;
+            }
+            .school-info p {
+              font-size: 10px;
+              font-weight: 500;
+              color: #64748b;
+              margin: 3px 0 0 0;
+            }
+            .doc-title {
+              text-align: right;
+            }
+            .doc-title h2 {
+              font-size: 22px;
+              font-weight: 900;
+              color: #0f172a;
+              margin: 0;
+              letter-spacing: -0.02em;
+              text-transform: uppercase;
+            }
+            .doc-title .invoice-no {
+              font-size: 12px;
+              font-family: monospace;
+              font-weight: bold;
+              color: #1e3a8a;
+              margin: 4px 0 0 0;
+            }
+            
+            .meta-details {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+              background-color: #f8fafc;
+              padding: 12px 18px;
+              border-radius: 12px;
+              border: 1px solid #e2e8f0;
+            }
+            .meta-col {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+            }
+            .meta-col h3 {
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #475569;
+              margin: 0 0 4px 0;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 4px;
+              letter-spacing: 0.05em;
+            }
+            .meta-col p {
+              margin: 0;
+              font-size: 11px;
+              color: #334155;
+            }
+            .meta-col p strong {
+              color: #0f172a;
+              font-weight: 600;
+            }
+
+            .invoice-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            .invoice-table th {
+              background-color: #1e3a8a;
+              color: #ffffff;
+              padding: 8px 12px;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              text-align: left;
+            }
+            .invoice-table td {
+              padding: 10px 12px;
+              font-size: 11px;
+              border-bottom: 1px solid #e2e8f0;
+              color: #334155;
+            }
+            .invoice-table tr:nth-child(even) {
+              background-color: #f8fafc;
+            }
+            .amount-col {
+              text-align: right;
+            }
+
+            .totals-section {
+              margin-left: auto;
+              width: 250px;
+              margin-bottom: 30px;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 11px;
+              color: #475569;
+            }
+            .total-row.grand-total {
+              font-size: 14px;
+              font-weight: 800;
+              color: #0f172a;
+              border-top: 2px solid #e2e8f0;
+              padding-top: 6px;
+              margin-top: 4px;
+            }
+
+            .stamp-section {
+              margin-top: 30px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              position: relative;
+            }
+            .stamp-container { 
+              position: absolute; 
+              right: 40px;
+              bottom: 10px;
+              opacity: 0.95; 
+              pointer-events: none; 
+              z-index: 50; 
+            }
+            .stamp { max-height: 135px; min-height: 100px; width: auto; object-fit: contain; transform: rotate(-3deg); }
+
+            .invoice-footer {
+              text-align: center;
+              font-size: 9px;
+              color: #94a3b8;
+              margin-top: 40px;
+              font-weight: 500;
+              border-top: 1px dashed #e2e8f0;
+              padding-top: 15px;
+            }
+
+            @media print {
+              .no-print { display: none; }
+              body { padding: 15px; background-color: #ffffff; }
+              .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              tr { page-break-inside: avoid; }
+              @page { size: portrait; margin: 0.4in; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            <div class="header-flex">
+              <div class="school-info">
+                ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 60px; width: auto; margin-bottom: 8px;" />` : ''}
+                <h1>${settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College'}</h1>
+                <p>${settings?.publicAddress || 'Main Highway, P.O. Box 1234-01000, Thika, Kenya'}</p>
+                <p>TEL: ${settings?.publicPhone || '+254 7XX XXX XXX'} | EMAIL: ${settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+              </div>
+              <div class="doc-title">
+                <h2>FEES INVOICE</h2>
+                <div class="invoice-no">${invoiceNumber}</div>
+                <p style="margin-top: 4px;"><strong>Date:</strong> ${todayStr}</p>
+                <p><strong>Due Date:</strong> ${dueDateStr}</p>
+              </div>
+            </div>
+
+            <div class="meta-details">
+              <div class="meta-col" style="width: 48%;">
+                <h3>BILL TO (STUDENT)</h3>
+                <p><strong>Name:</strong> ${student.name.toUpperCase()}</p>
+                ${student.admissionNumber ? `<p><strong>Admission No:</strong> ${student.admissionNumber}</p>` : ''}
+                ${student.email ? `<p><strong>Email:</strong> ${student.email}</p>` : ''}
+                ${student.phone ? `<p><strong>Phone:</strong> ${student.phone}</p>` : ''}
+              </div>
+              <div class="meta-col" style="width: 48%;">
+                <h3>ACADEMIC DETAILS</h3>
+                <p><strong>Course Offered:</strong> ${student.course || 'Selected Program'}</p>
+                <p><strong>Class:</strong> ${studentClasses}</p>
+                ${student.guardianName ? `<p><strong>Guardian:</strong> ${student.guardianName}</p>` : ''}
+                <p><strong>Account Status:</strong> <span style="font-weight: 700; color: #1e3a8a;">REGULAR STUDENT</span></p>
+              </div>
+            </div>
+
+            <h3 style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.05em; margin-bottom: 8px;">Detailed Charge Items</h3>
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th width="15%">Date</th>
+                  <th width="65%">Fee Item / Description</th>
+                  <th width="20%" style="text-align: right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${chargeItems.map((item: any) => `
+                  <tr>
+                    <td>${formatDateShort(item.date)}</td>
+                    <td style="font-weight: 500; color: #0f172a;">${item.description}</td>
+                    <td class="amount-col" style="font-weight: 600;">Ksh ${item.amount.toLocaleString()}</td>
+                  </tr>
+                `).join('')}
+                ${chargeItems.length === 0 ? `
+                  <tr>
+                    <td>${todayStr}</td>
+                    <td style="font-weight: 500; color: #0f172a;">Tuition Fees Invoice (Default Record)</td>
+                    <td class="amount-col" style="font-weight: 600;">Ksh ${totalInvoiced.toLocaleString()}</td>
+                  </tr>
+                ` : ''}
+              </tbody>
+            </table>
+
+            <div class="totals-section">
+              <div class="total-row">
+                <span>Total Fee Invoiced:</span>
+                <span style="font-weight: 600;">Ksh ${totalInvoiced.toLocaleString()}</span>
+              </div>
+              <div class="total-row" style="color: #10b981;">
+                <span>Total Paid to Date:</span>
+                <span style="font-weight: 600;">- Ksh ${totalPaid.toLocaleString()}</span>
+              </div>
+              <div class="total-row grand-total">
+                <span>Outstanding Balance:</span>
+                <span>Ksh ${outstanding.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div class="stamp-section">
+              <div>
+                <p style="font-size: 12px; margin: 0; font-weight: 600; color: #475569;">Issued By: Finance Office Registrar</p>
+                <div style="border-bottom: 1px dashed #cbd5e1; width: 220px; height: 40px;"></div>
+                <p style="font-size: 10px; margin-top: 6px; color: #94a3b8;">Breakthrough International Training College</p>
+              </div>
+
+              <div class="stamp-container">
+                ${settings?.stampUrl 
+                  ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" />` 
+                  : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" />`
+                }
+              </div>
+            </div>
+
+            <div class="invoice-footer">
+              <p>Please note that all fee payments are governed by the college financial blueprint guidelines. Always retain official printed invoices & receipts for verification.</p>
+              <p style="margin-top: 8px; font-weight: bold; color: #1e3a8a;">Breakthrough International Training College • Registrar Finances Portal</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
             }
           </script>
         </body>
@@ -2896,6 +3225,10 @@ export const Students: React.FC = () => {
       const classesQ = query(collection(db, 'classes'));
       const classSnap = await getDocs(classesQ);
       setClasses(classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+
+      // Fetch all fee balances
+      const balancesSnap = await getDocs(collection(db, 'fee_balances'));
+      setFeeBalances(balancesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'data');
     } finally {
@@ -3484,6 +3817,24 @@ export const Students: React.FC = () => {
                   >
                     <Printer size={20} />
                   </button>
+                  <button
+                    onClick={() => {
+                      const balance = feeBalances.find(b => b.studentId === student.uid) || {
+                        id: student.uid || '',
+                        studentId: student.uid || '',
+                        totalAmount: 45000,
+                        paidAmount: 0,
+                        balance: 45000,
+                        lastUpdated: new Date().toISOString(),
+                        history: []
+                      };
+                      handlePrintFeesInvoice(student, balance);
+                    }}
+                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Print Fees Invoice"
+                  >
+                    <CreditCard size={20} />
+                  </button>
                   {isAdmin && (
                     <>
                       <button
@@ -3789,6 +4140,28 @@ export const Students: React.FC = () => {
                 >
                   <FileText size={18} />
                   Print Rotation Letter
+                </button>
+                <button
+                  onClick={() => {
+                    if (viewingStudent) {
+                      const balance = feeBalances.find(b => b.studentId === viewingStudent.uid) || {
+                        id: viewingStudent.uid || '',
+                        studentId: viewingStudent.uid || '',
+                        totalAmount: 45000,
+                        paidAmount: 0,
+                        balance: 45000,
+                        lastUpdated: new Date().toISOString(),
+                        history: []
+                      };
+                      handlePrintFeesInvoice(viewingStudent, balance);
+                      setViewingStudent(null);
+                    }
+                  }}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-lg shadow-blue-100 flex items-center gap-2"
+                  title="Print Fees Invoice"
+                >
+                  <CreditCard size={18} />
+                  Print Fees Invoice
                 </button>
                 <button
                   onClick={() => {

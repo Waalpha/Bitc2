@@ -45,7 +45,7 @@ const SYSTEM_COURSES = [
   "Certificate in Hairdressing, Advanced Styling & Barbering",
   "Diploma in Software Engineering & Web Development",
   "Certificate in Computer Packages & Digital Commerce Systems",
-  "Certificate in Community Health & Professional Caregiver Studies",
+  "Certificate in Healthcare Support Services & Caregiver",
   "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
   "Certificate in Professional Cookery, General Baking & Cake Decoration",
   "Diploma in Catering & Hospitality Management",
@@ -248,8 +248,8 @@ export const StudentAdmission: React.FC = () => {
             }
             
             .closing { margin-top: 20px; page-break-inside: avoid; }
-            .signature-space { height: 45px; margin-top: 10px; position: relative; }
-            .stamp { position: absolute; top: -12px; left: 15px; max-height: 70px; opacity: 0.85; mix-blend-mode: multiply; }
+            .signature-space { height: 80px; margin-top: 10px; position: relative; }
+            .stamp { position: absolute; top: -25px; left: 15px; max-height: 135px; opacity: 0.95; mix-blend-mode: multiply; }
             .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
             .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
             .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
@@ -426,7 +426,7 @@ export const StudentAdmission: React.FC = () => {
     if (lower.includes('hairdressing') || lower.includes('styling')) return 'CHD';
     if (lower.includes('software') || lower.includes('engineering') || lower.includes('web')) return 'DSE';
     if (lower.includes('packages') || lower.includes('computer')) return 'CCP';
-    if (lower.includes('caregiver') || lower.includes('community health')) return 'CNA';
+    if (lower.includes('caregiver') || lower.includes('community health') || lower.includes('healthcare support') || lower.includes('healthcare service')) return 'CNA';
     if (lower.includes('nursing') || lower.includes('aide')) return 'DNA';
     if (lower.includes('cookery') || lower.includes('baking') || lower.includes('cake')) return 'CPC';
     if (lower.includes('catering') || lower.includes('hospitality')) return 'DCH';

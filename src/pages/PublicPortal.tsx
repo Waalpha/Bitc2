@@ -110,7 +110,7 @@ const COURSES: Course[] = [
   },
   {
     id: 'heal-1',
-    name: 'Certificate in Community Health & Professional Caregiver Studies',
+    name: 'Certificate in Healthcare Support Services & Caregiver',
     category: 'healthcare',
     duration: '12 Months',
     requirements: 'KCSE D- minus and above',
@@ -2011,7 +2011,7 @@ export function PublicPortal() {
                             <option value="Certificate in Computer Packages & Digital Commerce Systems">Certificate in Computer Packages</option>
                           </optgroup>
                           <optgroup label="Healthcare Caregiver School">
-                            <option value="Certificate in Community Health & Professional Caregiver Studies">Certificate in Caregiver Health</option>
+                            <option value="Certificate in Healthcare Support Services & Caregiver">Certificate in Healthcare Support & Caregiver</option>
                             <option value="Diploma in Nursing Aide, Anatomy & Patient Nutrition">Diploma in Nursing Aide & Clinic Support</option>
                           </optgroup>
                           <optgroup label="Hospitality School">
