@@ -26,6 +26,7 @@ import { WhatsApp } from './pages/WhatsApp';
 import { Timetable } from './pages/Timetable';
 import { Profile } from './pages/Profile';
 import { PublicPortal } from './pages/PublicPortal';
+import { Transcripts } from './pages/Transcripts';
 
 const ProtectedRoute = ({ 
   children, 
@@ -126,6 +127,7 @@ export default function App() {
             <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute><Timetable /></ProtectedRoute>} />
+            <Route path="/transcripts" element={<ProtectedRoute><Transcripts /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NavigateWrapper />} />
           </Routes>

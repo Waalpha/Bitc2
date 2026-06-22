@@ -149,6 +149,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       items: [
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: null },
         { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, showForStudentOnly: true },
+        { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: null },
       ]
     },
     {

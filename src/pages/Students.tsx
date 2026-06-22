@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
@@ -46,6 +47,7 @@ const headerMapping: Record<string, string> = {
 };
 
 export const Students: React.FC = () => {
+  const navigate = useNavigate();
   const { user, userData, hasPermission, settings } = useAuth();
   const [students, setStudents] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -4185,6 +4187,19 @@ export const Students: React.FC = () => {
                 >
                   <QrCode size={18} />
                   Print ID Card
+                </button>
+                <button
+                  onClick={() => {
+                    if (viewingStudent) {
+                      navigate(`/transcripts?studentId=${viewingStudent.uid}`);
+                      setViewingStudent(null);
+                    }
+                  }}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-lg shadow-emerald-100 flex items-center gap-2"
+                  title="Generate Official Academic Transcript"
+                >
+                  <FileText size={18} />
+                  Generate Transcript
                 </button>
                 {isAdmin && (
                   <button 
