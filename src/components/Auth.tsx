@@ -428,47 +428,7 @@ export const Auth: React.FC = () => {
             <span>Sign In with Google</span>
           </button>
 
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-slate-200" />
-            <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Or Select Demo Account</span>
-            <div className="flex-grow border-t border-slate-200" />
-          </div>
 
-          <div className="space-y-3">
-            {loadingProfiles ? (
-              <div className="flex items-center justify-center py-4 gap-2 text-xs text-slate-400 font-medium">
-                <Loader2 className="animate-spin text-slate-500" size={14} />
-                <span>Scanning active demo profiles...</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
-                {getDemoAccountsToRender().map((profile) => (
-                  <button
-                    key={profile.uid}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleDemoLogin(profile.uid, profile)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200/60 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300/80 transition-all text-left group cursor-pointer active:scale-[0.99]"
-                  >
-                    <div className="min-w-0 flex-1 pr-2">
-                      <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate transition-colors">
-                        {profile.name}
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">
-                        {profile.email} {profile.admissionNumber ? `• ${profile.admissionNumber}` : ''}
-                      </p>
-                    </div>
-                    <span className={`text-[9px] font-extrabold uppercase px-2 py-1 rounded bg-white border border-slate-100 group-hover:border-slate-200 ${theme?.colorClass} transition-colors shrink-0`}>
-                      Log In
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <p className="text-[10px] text-center text-slate-400 font-medium mt-1">
-              Select any profile to log in instantly.
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>

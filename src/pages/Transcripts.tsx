@@ -50,6 +50,9 @@ export const Transcripts: React.FC = () => {
   const [addressOverride, setAddressOverride] = useState('');
   const [phoneOverride, setPhoneOverride] = useState('');
   const [emailOverride, setEmailOverride] = useState('');
+  const [registrarNameOverride, setRegistrarNameOverride] = useState(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
+  const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
+  const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
 
   // Custom grades override state
   const [customResults, setCustomResults] = useState<any[] | null>(null);
@@ -190,6 +193,9 @@ export const Transcripts: React.FC = () => {
       setPhoneOverride(localStorage.getItem('transcript_phone') || settings.publicPhone || '+254 727 114 355 / +254 707 760 239');
       setEmailOverride(localStorage.getItem('transcript_email') || settings.publicEmail || 'info@breakthrough.ac.ke');
     }
+    setRegistrarNameOverride(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
+    setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
+    setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
   }, [settings]);
 
   // Load custom results when selectedStudent changes
@@ -397,6 +403,15 @@ export const Transcripts: React.FC = () => {
     } else if (field === 'email') {
       setEmailOverride(value);
       localStorage.setItem('transcript_email', value);
+    } else if (field === 'registrarName') {
+      setRegistrarNameOverride(value);
+      localStorage.setItem('transcript_registrarName', value);
+    } else if (field === 'registrarTitle') {
+      setRegistrarTitleOverride(value);
+      localStorage.setItem('transcript_registrarTitle', value);
+    } else if (field === 'signatureUrl') {
+      setSignatureUrlOverride(value);
+      localStorage.setItem('transcript_signatureUrl', value);
     }
   };
 
@@ -407,13 +422,25 @@ export const Transcripts: React.FC = () => {
       setAddressOverride(settings.publicAddress || 'P O BOX 5110 – 01002 Madaraka Thika');
       setPhoneOverride(settings.publicPhone || '+254 727 114 355 / +254 707 760 239');
       setEmailOverride(settings.publicEmail || 'info@breakthrough.ac.ke');
-      
-      localStorage.removeItem('transcript_schoolName');
-      localStorage.removeItem('transcript_logoUrl');
-      localStorage.removeItem('transcript_address');
-      localStorage.removeItem('transcript_phone');
-      localStorage.removeItem('transcript_email');
+    } else {
+      setSchoolNameOverride('BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE');
+      setLogoUrlOverride('');
+      setAddressOverride('P O BOX 5110 – 01002 Madaraka Thika');
+      setPhoneOverride('+254 727 114 355 / +254 707 760 239');
+      setEmailOverride('info@breakthrough.ac.ke');
     }
+    setRegistrarNameOverride('PROF. J. K. KIBICHO, PHD');
+    setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');
+    setSignatureUrlOverride('');
+    
+    localStorage.removeItem('transcript_schoolName');
+    localStorage.removeItem('transcript_logoUrl');
+    localStorage.removeItem('transcript_address');
+    localStorage.removeItem('transcript_phone');
+    localStorage.removeItem('transcript_email');
+    localStorage.removeItem('transcript_registrarName');
+    localStorage.removeItem('transcript_registrarTitle');
+    localStorage.removeItem('transcript_signatureUrl');
   };
 
   const results = customResults !== null ? customResults : getTranscriptResults();
@@ -690,6 +717,47 @@ export const Transcripts: React.FC = () => {
                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           />
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Registrar & Signature Details */}
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-3">
+                      <span>Registrar & Custom Signature</span>
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Registrar Name</label>
+                        <input
+                          id="registrar-name-input"
+                          type="text"
+                          value={registrarNameOverride}
+                          onChange={(e) => handleSchoolDetailChange('registrarName', e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Registrar Title / Office</label>
+                        <input
+                          id="registrar-title-input"
+                          type="text"
+                          value={registrarTitleOverride}
+                          onChange={(e) => handleSchoolDetailChange('registrarTitle', e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Signature Image URL (Optional)</label>
+                        <input
+                          id="signature-url-input"
+                          type="text"
+                          value={signatureUrlOverride}
+                          onChange={(e) => handleSchoolDetailChange('signatureUrl', e.target.value)}
+                          placeholder="Paste PNG/JPG/SVG signature URL"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated registrar signature.</span>
                       </div>
                     </div>
                   </div>
@@ -1165,18 +1233,27 @@ export const Transcripts: React.FC = () => {
                   {/* Digital Signature */}
                   <div className="md:col-span-5 text-left">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
-                    <div className="h-14 flex items-center justify-start py-2 relative">
-                      {/* Realistic Registrar Autograph SVG */}
+                    <div className="h-14 flex items-center justify-start py-2 relative text-blue-800">
                       {isSignoffPrinted && (
-                        <svg className="h-12 w-auto text-blue-800 opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                          <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                        </svg>
+                        signatureUrlOverride ? (
+                          <img 
+                            src={signatureUrlOverride} 
+                            alt="Signature" 
+                            className="h-12 w-auto object-contain max-h-12" 
+                            referrerPolicy="no-referrer" 
+                          />
+                        ) : (
+                          /* Realistic Registrar Autograph SVG */
+                          <svg className="h-12 w-auto opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          </svg>
+                        )
                       )}
                     </div>
-                    <div className="border-t border-slate-200 pt-2.5 max-w-[240px]">
-                      <p className="text-xs font-black text-slate-900 uppercase">PROF. J. K. KIBICHO, PHD</p>
-                      <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1">REGISTRAR OF ACADEMIC AFFAIRS</p>
+                    <div className="border-t border-slate-200 pt-2.5 max-w-[240px] print:border-black">
+                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{registrarNameOverride}</p>
+                      <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1 print:text-black">{registrarTitleOverride}</p>
                     </div>
                   </div>
 
@@ -1332,15 +1409,24 @@ export const Transcripts: React.FC = () => {
                       {/* Right: Autograph and Signatory info */}
                       <div className="md:col-span-4 text-center md:text-right flex flex-col items-center md:items-end">
                         <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
-                        <div className="h-10 flex items-center justify-end py-1 relative">
-                          <svg className="h-9 w-auto text-blue-800 opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                            <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                          </svg>
+                        <div className="h-10 flex items-center justify-end py-1 relative text-blue-800">
+                          {signatureUrlOverride ? (
+                            <img 
+                              src={signatureUrlOverride} 
+                              alt="Signature" 
+                              className="h-9 w-auto object-contain max-h-9" 
+                              referrerPolicy="no-referrer" 
+                            />
+                          ) : (
+                            <svg className="h-9 w-auto opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                              <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                            </svg>
+                          )}
                         </div>
                         <div className="border-t border-slate-200 pt-1.5 w-full max-w-[180px]">
-                          <p className="text-[9.5px] font-black text-slate-900 uppercase">PROF. J. K. KIBICHO, PHD</p>
-                          <p className="text-[7.5px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">REGISTRAR OF ACADEMIC AFFAIRS</p>
+                          <p className="text-[9.5px] font-black text-slate-900 uppercase">{registrarNameOverride}</p>
+                          <p className="text-[7.5px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">{registrarTitleOverride}</p>
                         </div>
                       </div>
 
