@@ -179,7 +179,7 @@ export function seedDatabase() {
       "sessionTimeoutSeconds": 3600,
       "publicAddress": "P O BOX 5110 – 01002 Madaraka Thika",
       "publicPhone": "+254 727 114 355 /+254 707 760 239",
-      "publicEmail": "info@breakthrough.ac.ke",
+      "publicEmail": "info@bitc.ac.ke",
       "publicHeroTitle": "Transforming Education with Technology",
       "publicHeroDescription": "Welcome to BITC's modern digital learning experience portal.",
       "publicHeroImageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200"

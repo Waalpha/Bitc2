@@ -1596,7 +1596,7 @@ export function PublicPortal() {
                   </div>
                   <div className="flex gap-4 items-center">
                     <Mail size={15} className="text-blue-600" />
-                    <span>{settings?.publicEmail || "info@breakthrough.ac.ke"}</span>
+                    <span>{settings?.publicEmail || "info@bitc.ac.ke"}</span>
                   </div>
                   <div className="flex gap-4 items-center">
                     <Clock size={15} className="text-blue-600" />
@@ -2232,7 +2232,7 @@ export function PublicPortal() {
             <div className="flex flex-col gap-2.5 text-[11px] text-slate-400">
               <p>Primary Office: Thika Kiganjo Corner 2</p>
               <p>Mobile: 0727 114 355 / 0707 760 239</p>
-              <p>Secondary: info@breakthrough.ac.ke</p>
+              <p>Secondary: info@bitc.ac.ke</p>
               
               {/* Social media icons */}
               <div className="pt-2 flex gap-3 text-white">

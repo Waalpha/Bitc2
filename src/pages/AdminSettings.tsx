@@ -83,7 +83,7 @@ export const AdminSettings: React.FC = () => {
     schoolClosedReason: '',
     publicAddress: 'Thika Kiganjo Corner 2, Kenya',
     publicPhone: '+254 700 000 000',
-    publicEmail: 'info@breakthrough.ac.ke',
+    publicEmail: 'info@bitc.ac.ke',
     publicLocationEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.118404095059!2d37.09775020000001!3d-1.0732241999999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4fbf02a24a19%3A0x462a484c79a9d615!2sBreakthrough%20International%20Training%20College%2C%20Kiganjo!5e0!3m2!1sen!2ske!4v1781197480024!5m2!1sen!2ske',
     publicHeroTitle: 'Empowering Professionals, Shaping Futures',
     publicHeroDescription: 'Breakthrough International Training College offers world-class professional training in Thika, focusing on practical skills and career readiness.',
