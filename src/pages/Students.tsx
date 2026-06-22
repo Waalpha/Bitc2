@@ -5045,8 +5045,8 @@ export const Students: React.FC = () => {
                       <QRCodeCanvas
                         key={student.uid}
                         id={`qr-canvas-${student.uid}`}
-                        value={student.uid}
-                        size={128}
+                        value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${student.admissionNumber || student.uid}`}
+                        size={256}
                         level="H"
                         includeMargin={false}
                       />
@@ -5109,93 +5109,108 @@ export const Students: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          /* PORTRAIT FRONT */
-                          <div className="w-full h-full flex flex-col justify-between relative bg-white">
-                            <div className={`p-3.5 flex items-center gap-2 border-b-2 border-black/10 text-white ${
-                              activeScheme === 'blue' ? 'bg-blue-600' :
-                              activeScheme === 'emerald' ? 'bg-emerald-600' :
-                              activeScheme === 'rose' ? 'bg-rose-600' :
-                              activeScheme === 'amber' ? 'bg-amber-600' :
-                              activeScheme === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                          /* PORTRAIT FRONT - BREAKTHROUGH INTERNATIONAL BIBLE COLLEGE DESIGN */
+                          <div className="w-full h-full flex flex-col justify-between relative bg-white border border-slate-200">
+                            {/* Card Letterhead Top */}
+                            <div className={`p-4 text-white text-center flex flex-col items-center justify-center ${
+                              activeScheme === 'blue' ? 'bg-[#0d1b94]' :
+                              activeScheme === 'emerald' ? 'bg-[#004d40]' :
+                              activeScheme === 'rose' ? 'bg-[#880e4f]' :
+                              activeScheme === 'amber' ? 'bg-[#e65100]' :
+                              activeScheme === 'slate' ? 'bg-[#1e293b]' : 'bg-[#311b92]'
                             }`}>
-                              <div className="w-8 h-8 rounded-lg bg-white shrink-0 flex items-center justify-center p-1 overflow-hidden font-bold text-slate-800 text-xs">
-                                {settings?.logoUrl ? <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" /> : '★'}
-                              </div>
-                              <div className="text-left min-w-0">
-                                <h4 className="text-[9px] font-black uppercase tracking-wide leading-tight truncate">
-                                  {settings?.schoolName || 'BREAKTHROUGH COLLEGE'}
-                                </h4>
-                                <p className="text-[6px] font-bold text-white/80 uppercase tracking-widest mt-0.5">EXCELLENCE & CREATIVITY</p>
-                              </div>
+                              <span className="text-[12px] font-black uppercase tracking-tight leading-none block">
+                                {settings?.schoolName?.toUpperCase().includes('TRAINING') ? 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE' : 'BREAKTHROUGH INTERNATIONAL BIBLE COLLEGE'}
+                              </span>
+                              <span className="text-[7.5px] tracking-[0.15em] font-black uppercase text-yellow-400 mt-1 block">
+                                OFFICIAL STUDENT ID CARD
+                              </span>
                             </div>
 
-                            <div className={`text-[8px] font-black uppercase tracking-widest block mx-auto py-1 px-4 rounded-full mt-2 border ${
-                              activeScheme === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                              activeScheme === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                              activeScheme === 'rose' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                              activeScheme === 'amber' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                              activeScheme === 'slate' ? 'bg-slate-100 text-slate-700 border-slate-200' :
-                              'bg-indigo-50 text-indigo-700 border-indigo-100'
-                            }`}>
-                              {idCardCustomRole.toUpperCase() || 'STUDENT'}
-                            </div>
-
-                            {/* Avatar Display */}
-                            <div className="flex justify-center mt-2.5">
-                              <div className={`w-20 h-20 rounded-full border-2 overflow-hidden bg-slate-50 flex items-center justify-center text-slate-800 ${
-                                activeScheme === 'blue' ? 'border-blue-600' :
-                                activeScheme === 'emerald' ? 'border-emerald-600' :
-                                activeScheme === 'rose' ? 'border-rose-600' :
-                                activeScheme === 'amber' ? 'border-amber-600' :
-                                activeScheme === 'slate' ? 'border-slate-800' : 'border-indigo-600'
-                              }`}>
-                                {previewStudent.photoUrl ? (
-                                  <img src={previewStudent.photoUrl} className="w-full h-full object-cover" />
-                                ) : (
-                                  <img src={defaultAvatar} className="w-full h-full object-cover" />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Info */}
-                            <div className="px-5 text-center flex-1 flex flex-col justify-center mt-2 space-y-1">
-                              <h3 className="text-sm font-black text-slate-900 uppercase truncate leading-snug">{previewStudent.name}</h3>
+                            {/* Main Details Body */}
+                            <div className="flex-1 px-4 py-3 flex flex-col justify-center items-center gap-3">
                               
-                              <div className="flex justify-between text-[8px] border-b border-gray-150 py-0.5 text-slate-400 font-bold">
-                                <span>ADM NO:</span>
-                                <span className="text-slate-800 uppercase font-black">{previewStudent.admissionNumber || 'PENDING'}</span>
+                              {/* Photo / ID Image Frame */}
+                              <div className="relative">
+                                <div className={`w-[95px] h-[100px] rounded-xl border-2 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-md ${
+                                  activeScheme === 'blue' ? 'border-[#0d1b94]/30' :
+                                  activeScheme === 'emerald' ? 'border-emerald-600/30' :
+                                  activeScheme === 'rose' ? 'border-rose-600/30' :
+                                  activeScheme === 'amber' ? 'border-amber-600/30' :
+                                  activeScheme === 'slate' ? 'border-slate-800/30' : 'border-indigo-600/30'
+                                }`}>
+                                  {previewStudent.photoUrl ? (
+                                    <img src={previewStudent.photoUrl} className="w-full h-full object-cover animate-fade-in" />
+                                  ) : (
+                                    <img src={defaultAvatar} className="w-full h-full object-cover opacity-80" />
+                                  )}
+                                </div>
+                                <div className="absolute -bottom-1.5 -right-1.5 bg-emerald-500 text-white rounded-full p-0.5 shadow border border-white">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
                               </div>
-                              <div className="flex justify-between text-[8px] border-b border-gray-150 py-0.5 text-slate-400 font-bold">
-                                <span>COURSE:</span>
-                                <span className="text-slate-800 truncate font-black w-40 text-right">{previewStudent.course || 'NOT SPECIFIED'}</span>
+
+                              {/* Student parameters */}
+                              <div className="w-full space-y-1.5 mt-1 select-text">
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-550 uppercase tracking-widest text-left text-[9px]">Name</span>
+                                  <span className="w-2 font-bold text-slate-400 text-center mr-1.5">:</span>
+                                  <span className="flex-1 font-black text-slate-900 truncate uppercase text-left">{previewStudent.name}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-550 uppercase tracking-widest text-left text-[9px]">Registration No</span>
+                                  <span className="w-2 font-bold text-slate-400 text-center mr-1.5">:</span>
+                                  <span className="flex-1 font-black text-slate-800 uppercase tracking-tight text-left">{previewStudent.admissionNumber || 'PENDING'}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-550 uppercase tracking-widest text-left text-[9px]">Course</span>
+                                  <span className="w-2 font-bold text-slate-400 text-center mr-1.5">:</span>
+                                  <span className="flex-1 font-black text-slate-800 truncate uppercase text-left">{previewStudent.course || 'NOT ASSIGNED'}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-550 uppercase tracking-widest text-left text-[9px]">Campus</span>
+                                  <span className="w-2 font-bold text-slate-400 text-center mr-1.5">:</span>
+                                  <span className="flex-1 font-black text-slate-800 uppercase text-left">{previewStudent.residence || 'THIKA MAIN CAMPUS'}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-550 uppercase tracking-widest text-left text-[9px]">Expiry Date</span>
+                                  <span className="w-2 font-bold text-slate-400 text-center mr-1.5">:</span>
+                                  <span className="flex-1 font-black text-[#ee1c24] uppercase text-left">{getValidUntil(previewStudent)}</span>
+                                </div>
                               </div>
-                              <div className="flex justify-between text-[8px] py-0.5 text-slate-400 font-bold">
-                                <span>CLASS:</span>
-                                <span className="text-slate-800 truncate font-black w-40 text-right">{classLabel}</span>
+
+                            </div>
+
+                            {/* QR Code Footer Block - QR scanned link directly matches user verification path */}
+                            <div className="bg-slate-50 border-t border-slate-150 p-2 flex items-center justify-between h-[78px] shrink-0">
+                              <div className="flex items-center gap-2">
+                                <div className="bg-white border p-1 rounded shadow-sm shrink-0">
+                                  <QRCodeCanvas
+                                    value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${previewStudent.admissionNumber || previewStudent.uid}`}
+                                    size={256}
+                                    level="H"
+                                    includeMargin={false}
+                                    style={{ width: '56px', height: '56px', display: 'block' }}
+                                  />
+                                </div>
+                                <div className="text-left leading-none">
+                                  <span className="text-[7.5px] font-black text-slate-900 block tracking-tight uppercase">SECURE HOLDER CHECK</span>
+                                  <span className="text-[6px] font-semibold text-slate-500 block mt-1 leading-snug">
+                                    {window.location.origin.includes('bitc.ac.ke') ? 'bitc.ac.ke' : window.location.host}/student/verify/{previewStudent.admissionNumber || previewStudent.uid.slice(0, 5).toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                <div className="h-6 w-18 border-b-2 border-slate-400 opacity-60 flex items-center justify-center">
+                                  {/* Placeholder cursive signature graphics */}
+                                  <span className="font-serif italic text-[11px] text-indigo-800 select-none">Registrar</span>
+                                </div>
+                                <span className="text-[5px] text-slate-400 uppercase font-bold tracking-wider mt-1">AUTHORIZED SIGNATURE</span>
                               </div>
                             </div>
 
-                            {/* QR Footer display */}
-                            <div className="border-t bg-slate-50 p-2.5 flex justify-between items-center h-20">
-                              <div className="flex flex-col items-center ml-2">
-                                <QRCodeCanvas
-                                  value={previewStudent.uid}
-                                  size={44}
-                                  level="H"
-                                />
-                                <span className={`text-[5px] font-extrabold uppercase mt-1 ${
-                                  activeScheme === 'blue' ? 'text-blue-600' :
-                                  activeScheme === 'emerald' ? 'text-emerald-600' :
-                                  activeScheme === 'rose' ? 'text-rose-600' :
-                                  activeScheme === 'amber' ? 'text-amber-600' :
-                                  activeScheme === 'slate' ? 'text-slate-800' : 'text-indigo-600'
-                                }`}>QR ID SCAN</span>
-                              </div>
-                              <div className="flex-1 flex flex-col items-center justify-center px-4">
-                                <div className="w-24 border-t border-slate-350" />
-                                <span className="text-[5px] text-slate-400 font-semibold uppercase mt-1">AUTHORIZED SIGNATURE</span>
-                              </div>
-                            </div>
                           </div>
                         )}
                       </div>
@@ -5245,25 +5260,33 @@ export const Students: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          /* LANDSCAPE FRONT - BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE STYLE */
-                          <div className="w-full h-full flex flex-col bg-[#FFFDF6] select-none text-slate-800">
+                          /* LANDSCAPE FRONT - BREAKTHROUGH INTERNATIONAL BIBLE COLLEGE STYLE */
+                          <div className="w-full h-full flex flex-col bg-[#FFFDF6] select-none text-slate-800 border border-slate-200">
                             {/* Top Header Banner */}
-                            <div className="bg-[#0d1b94] text-white py-1 pr-3.5 pl-[68px] flex items-center justify-center h-[58px] relative">
+                            <div className={`text-white py-1.5 pr-3.5 pl-[68px] flex items-center justify-center h-[58px] relative ${
+                              activeScheme === 'blue' ? 'bg-[#0d1b94]' :
+                              activeScheme === 'emerald' ? 'bg-[#004d40]' :
+                              activeScheme === 'rose' ? 'bg-[#880e4f]' :
+                              activeScheme === 'amber' ? 'bg-[#e65100]' :
+                              activeScheme === 'slate' ? 'bg-[#1e293b]' : 'bg-[#311b92]'
+                            }`}>
                               <div className="absolute left-[14px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] rounded bg-white flex items-center justify-center p-0.5 shrink-0 shadow-sm">
                                 {settings?.logoUrl ? (
                                   <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
                                 ) : (
                                   <svg className="w-full h-full" viewBox="0 0 100 100">
-                                    <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="#facc15" stroke="#ffffff" stroke-width="3"/>
+                                    <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="#facc15" stroke="#ffffff" strokeWidth="3"/>
                                     <polygon points="50,12 82,28 82,72 50,88 18,72 18,28" fill="#0d1b94"/>
-                                    <path d="M50,22 L65,37 M50,22 L35,37 M50,22 L50,78" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
-                                    <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="2"/>
+                                    <path d="M50,22 L65,37 M50,22 L35,37 M50,22 L50,78" stroke="#facc15" strokeWidth="4" strokeLinecap="round"/>
+                                    <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ffffff" strokeWidth="2"/>
                                   </svg>
                                 )}
                               </div>
                               <div className="text-center w-full flex flex-col justify-center items-center">
-                                <h4 className="text-[18px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">Breakthrough International Training</h4>
-                                <h5 className="text-[17.5px] font-black uppercase leading-none text-white tracking-wide mt-0.5 whitespace-nowrap">College</h5>
+                                <h4 className="text-[14.5px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">
+                                  {settings?.schoolName?.toUpperCase().includes('TRAINING') ? 'Breakthrough International Training' : 'Breakthrough International Bible'}
+                                </h4>
+                                <h5 className="text-[14px] font-black uppercase leading-none text-white tracking-wide mt-0.5 whitespace-nowrap">College</h5>
                               </div>
                             </div>
 
@@ -5271,19 +5294,20 @@ export const Students: React.FC = () => {
                             <div className="flex-1 flex p-3 justify-between">
                               {/* Left Column: Photo & Big QR Code */}
                               <div className="w-[105px] flex flex-col items-center justify-between h-[195px] shrink-0">
-                                <div className="w-[90px] h-[95px] rounded border border-indigo-100 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-sm">
+                                <div className="w-[90px] h-[95px] rounded-lg border border-indigo-150 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-sm">
                                   {previewStudent.photoUrl ? (
                                     <img src={previewStudent.photoUrl} className="w-full h-full object-cover" />
                                   ) : (
                                     <img src={defaultAvatar} className="w-full h-full object-cover" />
                                   )}
                                 </div>
-                                <div className="w-[78px] h-[78px] bg-white border border-gray-200 rounded p-1 flex items-center justify-center shadow-sm">
+                                <div className="w-[86px] h-[86px] bg-white border border-gray-200 rounded p-1 flex items-center justify-center shadow-sm">
                                   <QRCodeCanvas
-                                    value={previewStudent.uid}
-                                    size={70}
+                                    value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${previewStudent.admissionNumber || previewStudent.uid}`}
+                                    size={256}
                                     level="H"
                                     includeMargin={false}
+                                    style={{ width: '78px', height: '78px', display: 'block' }}
                                   />
                                 </div>
                               </div>
@@ -5298,33 +5322,44 @@ export const Students: React.FC = () => {
                                 </div>
 
                                 {/* Information Records */}
-                                <div className="flex-1 flex flex-col justify-center space-y-2 pl-1">
-                                  <div className="flex items-baseline text-[13px]">
-                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Name</span>
-                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
-                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[14.5px]">{previewStudent.name}</span>
+                                <div className="flex-1 flex flex-col justify-center space-y-1.5 pl-1 text-slate-850">
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[9.5px]">Name</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-centermr-1">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[13px]">{previewStudent.name}</span>
                                   </div>
-                                  <div className="flex items-baseline text-[13px]">
-                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Adm No</span>
-                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
-                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[14.5px]">{previewStudent.admissionNumber || 'PENDING'}</span>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[9.5px]">Reg No</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-centermr-1">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[13px]">{previewStudent.admissionNumber || 'PENDING'}</span>
                                   </div>
-                                  <div className="flex items-baseline text-[13px]">
-                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Course</span>
-                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
-                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[14.5px]">{previewStudent.course || 'COSMETOLOGY'}</span>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[9.5px]">Course</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-centermr-1">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-left text-[13px]">{previewStudent.course || 'NOT ASSIGNED'}</span>
                                   </div>
-                                  <div className="flex items-baseline text-[13px]">
-                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[12px]">Valid Until</span>
-                                    <span className="w-3 font-bold text-[#0b1654] text-center">:</span>
-                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[14.5px]">{getValidUntil(previewStudent)}</span>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[9.5px]">Campus</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-centermr-1">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase text-left text-[13px]">{previewStudent.residence || 'THIKA MAIN CAMPUS'}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-left text-[9.5px]">Expiry Date</span>
+                                    <span className="w-3 font-bold text-[#0b1654] text-centermr-1">:</span>
+                                    <span className="flex-1 font-black text-[#ee1c24] uppercase text-left text-[13px]">{getValidUntil(previewStudent)}</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
                             {/* Accent bottom border strip */}
-                            <div className="h-2 bg-[#0d1b94] w-full shrink-0" />
+                            <div className={`h-2 w-full shrink-0 ${
+                              activeScheme === 'blue' ? 'bg-[#0d1b94]' :
+                              activeScheme === 'emerald' ? 'bg-[#004d40]' :
+                              activeScheme === 'rose' ? 'bg-[#880e4f]' :
+                              activeScheme === 'amber' ? 'bg-[#e65100]' :
+                              activeScheme === 'slate' ? 'bg-[#1e293b]' : 'bg-[#311b92]'
+                            }`} />
                           </div>
                         )}
                       </div>

@@ -27,6 +27,8 @@ import { Timetable } from './pages/Timetable';
 import { Profile } from './pages/Profile';
 import { PublicPortal } from './pages/PublicPortal';
 import { Transcripts } from './pages/Transcripts';
+import { StudentVerification } from './pages/StudentVerification';
+import { CertificateVerification } from './pages/CertificateVerification';
 
 const ProtectedRoute = ({ 
   children, 
@@ -109,6 +111,9 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<PublicPortal />} />
+            <Route path="/student/verify/:queryId" element={<StudentVerification />} />
+            <Route path="/verify/certificate/:certNo" element={<CertificateVerification />} />
+            <Route path="/certificate/:certNo" element={<CertificateVerification />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />

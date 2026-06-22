@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, limit, addDoc, getDocs, writeBatch, doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, Unit, Exam, AttendanceRecord, AppNotification, FeeBalance, Submission, Expense, TimetableEntry, DayOfWeek } from '../types';
-import { Users, BookOpen, FileText, ClipboardCheck, ArrowRight, Bell, Share2, Copy, Check, Megaphone, Send, XCircle, Wallet, Paperclip, File as FileIcon, Image as ImageIcon, Loader2, PieChart as PieIcon, Plus, ChevronDown, ChevronRight, GraduationCap, TrendingUp, TrendingDown, Lock, Download, Calendar, Fingerprint, QrCode, Award, Clock, Sparkles, Video, MapPin, MessageSquare } from 'lucide-react';
+import { Users, BookOpen, FileText, ClipboardCheck, ArrowRight, Bell, Share2, Copy, Check, Megaphone, Send, XCircle, Wallet, Paperclip, File as FileIcon, Image as ImageIcon, Loader2, PieChart as PieIcon, Plus, ChevronDown, ChevronRight, GraduationCap, TrendingUp, TrendingDown, Lock, Download, Calendar, Fingerprint, QrCode, Award, Clock, Sparkles, Video, MapPin, MessageSquare, CreditCard } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Link } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, addMonths, subMonths, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isWeekend } from 'date-fns';
@@ -11,6 +11,8 @@ import { Toast, ToastMessage } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { NotificationBell } from '../components/NotificationBell';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Sector } from 'recharts';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 import { uploadFile } from '../services/uploadService';
 
@@ -52,6 +54,15 @@ export const Dashboard: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+
+  // Student ID Card Custom States for Student Portal
+  const [showStudentIDModal, setShowStudentIDModal] = useState(false);
+  const [idCardThemeColor, setIdCardThemeColor] = useState<'indigo' | 'blue' | 'emerald' | 'rose' | 'amber' | 'slate'>('indigo');
+  const [idCardOrientation, setIdCardOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [idCardCustomRole, setIdCardCustomRole] = useState('STUDENT');
+  const [idCardShowBack, setIdCardShowBack] = useState(false);
+  const [isSavingPng, setIsSavingPng] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
 
   const ShareAppCard = () => {
     const shareUrl = window.location.origin;
@@ -193,6 +204,951 @@ export const Dashboard: React.FC = () => {
     setCopied(true);
     addToast("Portal link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
+    // Save original cssText descriptor so we can restore it down the line
+    const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
+    
+    const memoizedColors: Record<string, string> = {};
+    const resolveOklchColor = (oklchStr: string): string => {
+      if (memoizedColors[oklchStr]) return memoizedColors[oklchStr];
+      try {
+        const tempSpan = document.createElement('span');
+        tempSpan.style.color = oklchStr;
+        tempSpan.style.display = 'none';
+        document.body.appendChild(tempSpan);
+        const resolved = window.getComputedStyle(tempSpan).color;
+        document.body.removeChild(tempSpan);
+        
+        if (!resolved || resolved.includes('oklch')) {
+          memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+        } else {
+          memoizedColors[oklchStr] = resolved;
+        }
+      } catch (err) {
+        memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+      }
+      return memoizedColors[oklchStr];
+    };
+
+    // Override cssText getter temporarily
+    Object.defineProperty(CSSRule.prototype, 'cssText', {
+      get: function() {
+        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
+        if (rawText && rawText.includes('oklch(')) {
+          try {
+            return rawText.replace(/oklch\([^)]+\)/g, (match) => {
+              return resolveOklchColor(match);
+            });
+          } catch (err) {
+            return rawText;
+          }
+        }
+        return rawText;
+      },
+      configurable: true
+    });
+
+    try {
+      const isPortrait = idCardOrientation === 'portrait';
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        width: isPortrait ? 310 : 480,
+        height: isPortrait ? 480 : 300
+      });
+      return canvas;
+    } finally {
+      // Always restore original cssText descriptor to avoid side effects
+      if (originalDescriptor) {
+        Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
+      } else {
+        delete (CSSRule.prototype as any).cssText;
+      }
+    }
+  };
+
+  const handleSaveAsPNG = async (student: any) => {
+    const cardEl = document.getElementById('id-card-preview-element-student');
+    if (!cardEl) {
+      addToast("ID Card preview element not found.", "error");
+      return;
+    }
+    setIsSavingPng(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const canvas = await executeHtml2CanvasWithPatch(cardEl);
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${student.name.trim().replace(/\s+/g, '_')}_ID_Card.png`;
+      link.href = dataUrl;
+      link.click();
+      addToast("ID Card saved as PNG!", "success");
+    } catch (error) {
+      console.error("Error generating PNG: ", error);
+      addToast("Failed to save as PNG.", "error");
+    } finally {
+      setIsSavingPng(false);
+    }
+  };
+
+  const handleSaveAsPDF = async (student: any) => {
+    const cardEl = document.getElementById('id-card-preview-element-student');
+    if (!cardEl) {
+      addToast("ID Card preview element not found.", "error");
+      return;
+    }
+    setIsSavingPdf(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const canvas = await executeHtml2CanvasWithPatch(cardEl);
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      const isPortrait = idCardOrientation === 'portrait';
+      const width = isPortrait ? 54 : 86;
+      const height = isPortrait ? 86 : 54;
+
+      const pdf = new jsPDF({
+        orientation: isPortrait ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [width, height]
+      });
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+      pdf.save(`${student.name.trim().replace(/\s+/g, '_')}_ID_Card.pdf`);
+      addToast("ID Card saved as PDF!", "success");
+    } catch (error) {
+      console.error("Error generating PDF: ", error);
+      addToast("Failed to save as PDF.", "error");
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
+
+  const getValidUntil = (student: any) => {
+    if (student.validUntil) return student.validUntil;
+    if (student.admissionNumber) {
+      const parts = student.admissionNumber.split('/');
+      const lastPart = parts[parts.length - 1];
+      if (lastPart && /^\d+$/.test(lastPart.trim())) {
+        const year = parseInt(lastPart.trim());
+        if (year > 2000 && year < 2100) {
+          return `JANUARY ${year + 1}`;
+        }
+      }
+    }
+    return 'JANUARY 2027';
+  };
+
+  const handlePrintIdCard = (student: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const schoolName = settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const schoolLogo = settings?.logoUrl || '';
+
+    const colors = {
+      indigo: { primary: '#4f46e5', text: '#ffffff', light: '#e0e7ff', border: '#c7d2fe' },
+      blue: { primary: '#2563eb', text: '#ffffff', light: '#dbeafe', border: '#bfdbfe' },
+      emerald: { primary: '#059669', text: '#ffffff', light: '#d1fae5', border: '#a7f3d0' },
+      rose: { primary: '#e11d48', text: '#ffffff', light: '#ffe4e6', border: '#fecdd3' },
+      amber: { primary: '#d97706', text: '#ffffff', light: '#fef3c7', border: '#fde68a' },
+      slate: { primary: '#1e293b', text: '#ffffff', light: '#f1f5f9', border: '#e2e8f0' },
+    };
+
+    const scheme = colors[idCardThemeColor] || colors.indigo;
+
+    const canvasEl = document.getElementById(`qr-canvas-student-${student.uid}`) as HTMLCanvasElement;
+    const qrDataUrl = canvasEl ? canvasEl.toDataURL() : '';
+
+    const photoPlaceholder = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(student.name)}&backgroundColor=cbd5e1`;
+    const photoSrc = student.photoUrl || photoPlaceholder;
+
+    const classLabel = (student.classIds?.[0] && classes.find(c => c.id === student.classIds[0])?.name) || student.course || 'ICT Department';
+
+    let cardHtml = '';
+    if (idCardOrientation === 'portrait') {
+      cardHtml = `
+        <div class="card-container portrait border-${idCardThemeColor}">
+          <div class="card-side front">
+            <div class="card-header" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+              <div class="school-logo-container">
+                ${schoolLogo ? `<img src="${schoolLogo}" class="school-logo-img" />` : `<div class="logo-fallback">★</div>`}
+              </div>
+              <div class="school-header-text">
+                <div class="school-name">${schoolName}</div>
+                <div class="school-motto">EXCELLENCE & CREATIVITY</div>
+              </div>
+            </div>
+            
+            <div class="id-badge-tag" style="background-color: ${scheme.light}; color: ${scheme.primary}; border: 1px solid ${scheme.border};">
+              ${idCardCustomRole.toUpperCase()}
+            </div>
+
+            <div class="student-photo-wrapper" style="border-color: ${scheme.primary}33;">
+              <img src="${photoSrc}" class="student-photo-img" />
+            </div>
+
+            <div class="student-info-section">
+              <div class="info-row">
+                <div class="info-label">NAME</div>
+                <div class="info-colon">:</div>
+                <div class="info-value name-value">${student.name.toUpperCase()}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">REG NO</div>
+                <div class="info-colon">:</div>
+                <div class="info-value font-mono">${student.admissionNumber || 'PENDING'}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">COURSE</div>
+                <div class="info-colon">:</div>
+                <div class="info-value truncate">${classLabel.toUpperCase()}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">EXPIRY</div>
+                <div class="info-colon">:</div>
+                <div class="info-value expiry-value">${getValidUntil(student)}</div>
+              </div>
+            </div>
+
+            <div class="badge-footer">
+              <div class="qr-code-block">
+                ${qrDataUrl ? `<img src="${qrDataUrl}" class="qr-image" />` : `<div class="qr-placeholder">QR</div>`}
+                <div class="qr-subtitle">
+                  <div class="qr-heading">HOLDER CHECK</div>
+                  <div class="qr-url font-mono">${window.location.host}/verify</div>
+                </div>
+              </div>
+              <div class="signature-block">
+                <div class="signature-line" style="border-bottom: 1px solid ${scheme.border};">
+                  <span class="signature-fallback">Registrar</span>
+                </div>
+                <div class="signature-label">AUTHORIZED</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="page-break-after: always;"></div>
+
+          <div class="card-side back">
+            <div class="back-accent-bar" style="background-color: ${scheme.primary};"></div>
+            <div class="back-header">
+              <div class="back-school-name">${schoolName}</div>
+              <div class="back-system-title">OFFICIAL IDENTIFICATION SYSTEM</div>
+            </div>
+            <div class="back-rules-list">
+              <div class="rules-heading">RULES & POLICIES</div>
+              <ul>
+                <li>This card is non-transferable and remains physical property of the institution.</li>
+                <li>Visibly display your badge inside classes or campus gates.</li>
+                <li>Report lost cards to the Registrar's Office immediately.</li>
+              </ul>
+            </div>
+            <div class="back-contact-info" style="border-top: 1px dashed ${scheme.border};">
+              <p>Email: ${schoolEmail}</p>
+              <p>Tel: ${schoolPhone}</p>
+              <p>Address: ${schoolAddress}</p>
+            </div>
+            <div class="back-footer-bar" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+              <span>EXCEL & GROW ALWAYS</span>
+              <span>ID: ${student.uid.slice(0, 8).toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      cardHtml = `
+        <div class="card-container landscape border-${idCardThemeColor}">
+          <div class="card-side front-landscape">
+            <div class="card-header-landscape" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+              <div class="school-logo-container-landscape">
+                ${schoolLogo ? `<img src="${schoolLogo}" class="school-logo-img-landscape" />` : `<div class="logo-fallback-landscape">★</div>`}
+              </div>
+              <div class="school-header-text-landscape">
+                <div class="school-name-landscape">${schoolName}</div>
+                <div class="school-motto-landscape">EXCELLENCE & CREATIVITY</div>
+              </div>
+            </div>
+
+            <div class="flex-landscape-body">
+              <div class="left-landscape-col">
+                <div class="student-photo-wrapper-landscape" style="border-color: ${scheme.primary}33;">
+                  <img src="${photoSrc}" class="student-photo-img" />
+                </div>
+                <div class="qr-code-block-landscape" style="border: 1px solid ${scheme.border};">
+                  ${qrDataUrl ? `<img src="${qrDataUrl}" class="qr-image" />` : `<div class="qr-placeholder">QR</div>`}
+                </div>
+              </div>
+
+              <div class="right-landscape-col">
+                <div class="id-badge-tag-landscape" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+                  ${idCardCustomRole.toUpperCase()}
+                </div>
+
+                <div class="student-info-section-landscape">
+                  <div class="info-row">
+                    <div class="info-label">NAME</div>
+                    <div class="info-colon">:</div>
+                    <div class="info-value name-value">${student.name.toUpperCase()}</div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-label">REG NO</div>
+                    <div class="info-colon">:</div>
+                    <div class="info-value font-mono">${student.admissionNumber || 'PENDING'}</div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-label">COURSE</div>
+                    <div class="info-colon">:</div>
+                    <div class="info-value truncate">${classLabel.toUpperCase()}</div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-label">EXPIRY</div>
+                    <div class="info-colon">:</div>
+                    <div class="info-value expiry-value">${getValidUntil(student)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="page-break-after: always;"></div>
+
+          <div class="card-side back-landscape">
+            <div class="back-header-landscape" style="background-color: ${scheme.primary}; color: ${scheme.text};">
+              <div class="back-school-name">${schoolName}</div>
+              <div class="back-system-title-landscape">OFFICIAL IDENTIFICATION SYSTEM</div>
+            </div>
+            
+            <div class="back-grid-landscape">
+              <div class="policies-col">
+                <div class="rules-heading">RULES & POLICIES</div>
+                <p>This badge identifies the verified holder. Please keep visual at all events. If lost, report to Administration immediately.</p>
+              </div>
+              <div class="contacts-col" style="border-left: 1px solid ${scheme.border};">
+                <p>Email: ${schoolEmail}</p>
+                <p>Phone: ${schoolPhone}</p>
+                <p>Address: ${schoolAddress}</p>
+              </div>
+            </div>
+
+            <div class="back-footer-bar-landscape" style="background-color: ${scheme.light}; color: ${scheme.primary}; border-top: 1px solid ${scheme.border};">
+              <span>FOUND THIS BADGE? RETURN TO REGISTRAR'S OFFICE</span>
+              <span class="font-mono">ID: ${student.uid.slice(0, 8).toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Student ID Badge - ${student.name}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@700&display=swap');
+          
+          body {
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          @media print {
+            body {
+              background-color: #ffffff;
+              padding: 0;
+              margin: 0;
+            }
+            .no-print {
+              display: none !important;
+            }
+            .card-container {
+              box-shadow: none !important;
+              margin: 0 !important;
+              border: none !important;
+            }
+          }
+
+          .no-print-header {
+            margin-bottom: 20px;
+            text-align: center;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          }
+
+          .print-btn {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-weight: 750;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            transition: all 0.2s;
+          }
+
+          .print-btn:hover {
+            background-color: #3730a3;
+          }
+
+          /* PORTRAIT STYLES */
+          .portrait {
+            width: 325px;
+            height: 500px;
+          }
+
+          .card-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+            position: relative;
+            background-color: #ffffff;
+          }
+
+          .card-side {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #ffffff;
+          }
+
+          .front {
+            padding-bottom: 0px;
+          }
+
+          .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+          }
+
+          .school-logo-container {
+            width: 36px;
+            height: 36px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+          }
+
+          .school-logo-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+
+          .logo-fallback {
+            font-size: 20px;
+            font-weight: 900;
+            color: #1e293b;
+          }
+
+          .school-header-text {
+            text-align: left;
+            flex: 1;
+            min-width: 0;
+          }
+
+          .school-name {
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+          }
+
+          .school-motto {
+            font-size: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.8;
+            margin-top: 2px;
+          }
+
+          .id-badge-tag {
+            text-align: center;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.25em;
+            margin: 10px auto 0;
+            border-radius: 9999px;
+            display: inline-block;
+          }
+
+          .student-photo-wrapper {
+            width: 110px;
+            height: 115px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+            margin: 12px auto 0;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            background-color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .student-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .student-info-section {
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex-grow: 1;
+            justify-content: center;
+          }
+
+          .info-row {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            line-height: 1.2;
+          }
+
+          .info-label {
+            width: 80px;
+            font-weight: 900;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            font-size: 8px;
+          }
+
+          .info-colon {
+            width: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+          }
+
+          .info-value {
+            font-weight: 900;
+            color: #1e293b;
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+          }
+
+          .name-value {
+            color: #0f172a;
+            font-size: 11.5px;
+          }
+
+          .expiry-value {
+            color: #dc2626;
+          }
+
+          .badge-footer {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+
+          .qr-code-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .qr-image {
+            width: 44px;
+            height: 44px;
+          }
+
+          .qr-subtitle {
+            text-align: left;
+            line-height: 1.1;
+          }
+
+          .qr-heading {
+            font-size: 7px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 0.05em;
+          }
+
+          .qr-url {
+            font-size: 6px;
+            font-weight: 700;
+            color: #4b5563;
+          }
+
+          .signature-block {
+            text-align: right;
+          }
+
+          .signature-line {
+            width: 75px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .signature-fallback {
+            font-family: cursive;
+            font-size: 10px;
+            color: #4338ca;
+            opacity: 0.7;
+          }
+
+          .signature-label {
+            font-size: 5px;
+            font-weight: 900;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+          }
+
+          /* PORTRAIT BACK */
+          .back {
+            padding: 16px;
+          }
+
+          .back-accent-bar {
+            height: 4px;
+            width: 100%;
+            border-radius: 2px;
+          }
+
+          .back-header {
+            text-align: center;
+            margin: 15px 0 25px;
+          }
+
+          .back-school-name {
+            font-size: 11px;
+            font-weight: 900;
+            color: #0f172a;
+            text-transform: uppercase;
+          }
+
+          .back-system-title {
+            font-size: 7px;
+            font-weight: 900;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-top: 4px;
+          }
+
+          .back-rules-list {
+            text-align: left;
+            padding: 0 10px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
+
+          .rules-heading {
+            font-size: 8px;
+            font-weight: 900;
+            color: #475569;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+          }
+
+          .back-rules-list ul {
+            padding-left: 12px;
+            margin: 0;
+            list-style-type: square;
+          }
+
+          .back-rules-list li {
+            font-size: 7.5px;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 8px;
+          }
+
+          .back-contact-info {
+            padding: 10px;
+            text-align: left;
+            font-size: 7px;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.4;
+          }
+
+          .back-contact-info p {
+            margin: 2px 0;
+          }
+
+          .back-footer-bar {
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 7px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+          }
+
+          /* LANDSCAPE STYLES */
+          .landscape {
+            width: 500px;
+            height: 325px;
+          }
+
+          .front-landscape {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+          }
+
+          .card-header-landscape {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .school-logo-container-landscape {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            box-sizing: border-box;
+          }
+
+          .school-logo-img-landscape {
+            max-width: 100%;
+            max-height: 100%;
+          }
+
+          .logo-fallback-landscape {
+            font-size: 16px;
+            font-weight: 950;
+            color: #1e293b;
+          }
+
+          .school-header-text-landscape {
+            text-align: left;
+          }
+
+          .school-name-landscape {
+            font-size: 12px;
+            font-weight: 950;
+            text-transform: uppercase;
+            line-height: 1.1;
+          }
+
+          .school-motto-landscape {
+            font-size: 5.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-top: 2px;
+          }
+
+          .flex-landscape-body {
+            display: flex;
+            flex: 1;
+            padding: 10px 16px;
+            gap: 16px;
+            box-sizing: border-box;
+          }
+
+          .left-landscape-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            width: 90px;
+            flex-shrink: 0;
+          }
+
+          .student-photo-wrapper-landscape {
+            width: 86px;
+            height: 90px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+          }
+
+          .qr-code-block-landscape {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            background: white;
+            padding: 3px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .right-landscape-col {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+
+          .id-badge-tag-landscape {
+            align-self: flex-end;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+          }
+
+          .student-info-section-landscape {
+            display: flex;
+            flex-direction: column;
+            gap: 4.5px;
+            justify-content: center;
+            flex-grow: 1;
+          }
+
+          /* BACK LANDSCAPE */
+          .back-landscape {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+
+          .back-header-landscape {
+            padding: 10px 16px;
+            text-align: center;
+          }
+
+          .back-system-title-landscape {
+            font-size: 6.5px;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-top: 3px;
+            opacity: 0.8;
+          }
+
+          .back-grid-landscape {
+            display: flex;
+            flex-grow: 1;
+            padding: 14px 16px;
+            box-sizing: border-box;
+            align-items: center;
+          }
+
+          .policies-col {
+            flex-grow: 1;
+            padding-right: 14px;
+            text-align: left;
+          }
+
+          .policies-col p {
+            font-size: 8px;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.45;
+            margin: 0;
+          }
+
+          .contacts-col {
+            width: 180px;
+            flex-shrink: 0;
+            padding-left: 14px;
+            text-align: left;
+            font-size: 7.5px;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.5;
+          }
+
+          .contacts-col p {
+            margin: 2px 0;
+          }
+
+          .back-footer-bar-landscape {
+            padding: 7px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 7.5px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+          }
+
+          .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+          }
+
+          .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="no-print no-print-header">
+          <button class="print-btn" onclick="window.print()">Print ID Badge</button>
+        </div>
+        ${cardHtml}
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const handleSendAnnouncement = async (e: React.FormEvent) => {
@@ -755,7 +1711,7 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
            <Link to="/fees" className="bg-[#1A1F2E] p-7 rounded-[32px] border border-white/5 space-y-6 hover:bg-white/5 transition-colors group shadow-lg">
              <div className="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
                <Wallet size={24} />
@@ -802,6 +1758,31 @@ export const Dashboard: React.FC = () => {
                <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.2em] mt-3">Monthly Attendance</p>
              </div>
            </Link>
+
+           <div 
+             onClick={() => setShowStudentIDModal(true)} 
+             className="bg-gradient-to-br from-[#1E2538] to-[#111726] p-7 rounded-[32px] border border-blue-500/20 space-y-6 hover:bg-white/5 cursor-pointer transition-all group shadow-lg ring-1 ring-blue-500/10 hover:shadow-blue-500/5 hover:-translate-y-1 duration-300"
+           >
+             <div className="flex items-center justify-between">
+               <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                 <QrCode size={24} />
+               </div>
+               <div>
+                 <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 tracking-wider">
+                   Secured ID
+                 </span>
+               </div>
+             </div>
+             <div>
+               <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                 ID Badge <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+               </h3>
+               <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.2em] mt-1.5 leading-relaxed">
+                 View Physical <br/>
+                 <span className="text-blue-400 font-extrabold">Student ID Badge</span>
+               </p>
+             </div>
+           </div>
         </div>
 
         {/* Notice Board Section for Students */}
@@ -964,6 +1945,475 @@ export const Dashboard: React.FC = () => {
 
         {/* Share App Section */}
         <ShareAppCard />
+
+        {/* Student ID Card Modal */}
+        <AnimatePresence>
+          {showStudentIDModal && displayStudent && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0"
+                onClick={() => setShowStudentIDModal(false)}
+              />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                className="relative bg-bg-card border border-white/10 rounded-[32px] p-6 sm:p-8 w-full max-w-4xl shadow-2xl flex flex-col md:flex-row gap-8 items-center md:items-start my-auto max-h-[calc(100vh-2rem)] overflow-y-auto custom-scrollbar"
+              >
+                {/* Customizer Panel */}
+                <div className="w-full md:w-80 space-y-6 flex-shrink-0 text-left">
+                  <div>
+                    <h2 className="text-xl font-bold text-white tracking-tight">Your Digital ID Card</h2>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">Customize and Download Badge</p>
+                  </div>
+
+                  {/* Orientation Settings */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] text-text-muted uppercase tracking-widest font-bold">Orientation</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          setIdCardOrientation('portrait');
+                          setIdCardShowBack(false);
+                        }}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                          idCardOrientation === 'portrait'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        }`}
+                      >
+                        Portrait
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIdCardOrientation('landscape');
+                          setIdCardShowBack(false);
+                        }}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                          idCardOrientation === 'landscape'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        }`}
+                      >
+                        Landscape
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Theme Color Settings */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] text-text-muted uppercase tracking-widest font-bold">Design Theme</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['indigo', 'blue', 'emerald', 'rose', 'amber', 'slate'] as const).map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setIdCardThemeColor(color)}
+                          className={`py-1.5 px-2 rounded-xl text-[10px] font-bold text-center capitalize transition-all border ${
+                            idCardThemeColor === color
+                              ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                              : 'border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
+                          }`}
+                        >
+                          {color}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card side Settings */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] text-text-muted uppercase tracking-widest font-bold">Badge Side</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setIdCardShowBack(false)}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                          !idCardShowBack
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        }`}
+                      >
+                        Front Side
+                      </button>
+                      <button
+                        onClick={() => setIdCardShowBack(true)}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                          idCardShowBack
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        }`}
+                      >
+                        Back Side
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Actions Package */}
+                  <div className="pt-4 border-t border-white/5 space-y-3">
+                    <button
+                      onClick={() => handleSaveAsPNG(displayStudent)}
+                      disabled={isSavingPng}
+                      className="w-full bg-blue-600 py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/10 disabled:opacity-50"
+                    >
+                      {isSavingPng ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      Save as PNG Image
+                    </button>
+                    <button
+                      onClick={() => handleSaveAsPDF(displayStudent)}
+                      disabled={isSavingPdf}
+                      className="w-full bg-[#1A1F2E] text-white hover:bg-white/5 border border-white/5 py-3 rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isSavingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                      Save as PDF Badge
+                    </button>
+                    <button
+                      onClick={() => handlePrintIdCard(displayStudent)}
+                      className="w-full bg-slate-800 text-white hover:bg-slate-700 py-3 rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={14} />
+                      Print Official Card
+                    </button>
+                    <button
+                      onClick={() => setShowStudentIDModal(false)}
+                      className="w-full text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white pt-2"
+                    >
+                      Close ID Badge Panel
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Canvas Visualizer Box */}
+                <div className="flex-1 flex flex-col items-center justify-center bg-slate-950/20 rounded-[32px] p-6 border border-white/5 min-h-[500px] w-full relative">
+                  {/* Decorative background grid elements */}
+                  <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-5 pointer-events-none" />
+
+                  {/* Hidden high-res canvas helper for background printing */}
+                  <div className="hidden">
+                    <QRCodeCanvas
+                      id={`qr-canvas-student-${displayStudent.uid}`}
+                      value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${displayStudent.admissionNumber || displayStudent.uid}`}
+                      size={200}
+                      level="H"
+                      includeMargin={false}
+                    />
+                  </div>
+
+                  <div className="scale-90 md:scale-100 transition-all">
+                    {idCardOrientation === 'portrait' ? (
+                      /* PORTRAIT PREVIEW CONTAINER */
+                      <div 
+                        id="id-card-preview-element-student" 
+                        className="relative animate-fade-in w-[310px] h-[480px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col justify-between overflow-hidden text-slate-800"
+                      >
+                        {idCardShowBack ? (
+                          /* PORTRAIT BACK */
+                          <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
+                            {/* Accent indicator */}
+                            <div className={`absolute top-0 left-0 w-full h-2 ${
+                              idCardThemeColor === 'blue' ? 'bg-blue-600' :
+                              idCardThemeColor === 'emerald' ? 'bg-emerald-600' :
+                              idCardThemeColor === 'rose' ? 'bg-rose-600' :
+                              idCardThemeColor === 'amber' ? 'bg-amber-600' :
+                              idCardThemeColor === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`} />
+                            
+                            <div className="text-center pt-4">
+                              <span className="text-[10px] font-black text-slate-800 block uppercase tracking-wider leading-tight">
+                                {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}
+                              </span>
+                              <span className="text-[7px] text-slate-400 font-extrabold uppercase block tracking-widest mt-1">
+                                Identification Badge System
+                              </span>
+                            </div>
+
+                            <div className="space-y-3 px-2 flex-1 justify-center flex flex-col">
+                              <p className="text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-2">Rules & Regulations</p>
+                              <ul className="list-disc text-[7.5px] leading-relaxed text-slate-400 space-y-1.5 pl-3 font-semibold text-left">
+                                <li>The badge is non-transferable and remains physical property of the institution.</li>
+                                <li>Visibly display your ID card inside the class or campus gates.</li>
+                                <li>Present barcode or QR ID for lecture check-in & school gate entry.</li>
+                                <li>Lost cards must be reported to the Registrar Office immediately.</li>
+                              </ul>
+                            </div>
+
+                            <div className="p-2 border-t border-dashed bg-slate-50 border-slate-200 text-left">
+                              <div className="text-[7.5px] text-slate-500 space-y-0.5 font-bold">
+                                <p><span className="text-slate-400 font-normal">Email:</span> {settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+                                <p><span className="text-slate-400 font-normal">Tel:</span> {settings?.publicPhone || '+254 7XX'}</p>
+                                <p><span className="text-slate-400 font-normal">Addr:</span> {settings?.publicAddress || 'Thika, Kenya'}</p>
+                              </div>
+                            </div>
+
+                            <div className={`-mx-4 -mb-4 px-4 py-2.5 flex items-center justify-between text-white text-[7.5px] font-extrabold uppercase mt-2 ${
+                              idCardThemeColor === 'blue' ? 'bg-blue-600' :
+                              idCardThemeColor === 'emerald' ? 'bg-emerald-600' :
+                              idCardThemeColor === 'rose' ? 'bg-rose-600' :
+                              idCardThemeColor === 'amber' ? 'bg-amber-600' :
+                              idCardThemeColor === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`}>
+                              <span>EXCEL & GROW ALWAYS</span>
+                              <span>ID: {displayStudent.uid.slice(0, 8).toUpperCase()}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* PORTRAIT FRONT */
+                          <div className="w-full h-full flex flex-col justify-between relative bg-white">
+                            {/* Card Letterhead Top */}
+                            <div className={`p-4 text-white text-center flex flex-col items-center justify-center h-[76px] shrink-0 ${
+                              idCardThemeColor === 'blue' ? 'bg-[#0d1b94]' :
+                              idCardThemeColor === 'emerald' ? 'bg-[#004d40]' :
+                              idCardThemeColor === 'rose' ? 'bg-[#880e4f]' :
+                              idCardThemeColor === 'amber' ? 'bg-[#e65100]' :
+                              idCardThemeColor === 'slate' ? 'bg-[#1e293b]' : 'bg-[#311b92]'
+                            }`}>
+                              <span className="text-[11px] font-black uppercase tracking-tight leading-none block">
+                                {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL BIBLE COLLEGE'}
+                              </span>
+                              <span className="text-[7px] tracking-[0.15em] font-black uppercase text-yellow-400 mt-1 block">
+                                OFFICIAL STUDENT ID CARD
+                              </span>
+                            </div>
+
+                            {/* Main Details Body */}
+                            <div className="flex-grow px-4 py-3 flex flex-col justify-center items-center gap-3">
+                              
+                              {/* Photo / ID Image Frame */}
+                              <div className="relative">
+                                <div className={`w-[95px] h-[100px] rounded-xl border-2 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-md ${
+                                  idCardThemeColor === 'blue' ? 'border-[#0d1b94]/30' :
+                                  idCardThemeColor === 'emerald' ? 'border-emerald-600/30' :
+                                  idCardThemeColor === 'rose' ? 'border-rose-600/30' :
+                                  idCardThemeColor === 'amber' ? 'border-amber-600/30' :
+                                  idCardThemeColor === 'slate' ? 'border-slate-800/30' : 'border-indigo-600/30'
+                                }`}>
+                                  {displayStudent.photoUrl ? (
+                                    <img src={displayStudent.photoUrl} className="w-full h-full object-cover animate-fade-in" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayStudent.name)}&backgroundColor=cbd5e1`} className="w-full h-full object-cover opacity-80" />
+                                  )}
+                                </div>
+                                <div className="absolute -bottom-1.5 -right-1.5 bg-emerald-500 text-white rounded-full p-0.5 shadow border border-white">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              </div>
+
+                              {/* Student parameters */}
+                              <div className="w-full space-y-1.5 mt-1 text-left">
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-500 uppercase tracking-widest text-[8.5px]">Name</span>
+                                  <span className="w-2 font-bold text-slate-450 mr-1">:</span>
+                                  <span className="flex-1 font-black text-slate-900 truncate uppercase">{displayStudent.name}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-500 uppercase tracking-widest text-[8.5px]">Reg No</span>
+                                  <span className="w-2 font-bold text-slate-450 mr-1">:</span>
+                                  <span className="flex-1 font-bold text-slate-800 uppercase tracking-tight">{displayStudent.admissionNumber || 'PENDING'}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-500 uppercase tracking-widest text-[8.5px]">Course</span>
+                                  <span className="w-2 font-bold text-slate-450 mr-1">:</span>
+                                  <span className="flex-1 font-bold text-slate-800 truncate uppercase">
+                                    {(displayStudent?.classIds?.[0] && classes.find(c => c.id === displayStudent.classIds[0])?.name) || displayStudent.course || 'NOT ASSIGNED'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-500 uppercase tracking-widest text-[8.5px]">Campus</span>
+                                  <span className="w-2 font-bold text-slate-450 mr-1">:</span>
+                                  <span className="flex-1 font-bold text-slate-800 uppercase">{displayStudent.residence || 'THIKA MAIN CAMPUS'}</span>
+                                </div>
+                                <div className="flex items-center text-[10.5px]">
+                                  <span className="w-[85px] font-black text-slate-500 uppercase tracking-widest text-[8.5px]">Expiry Date</span>
+                                  <span className="w-2 font-bold text-slate-450 mr-1">:</span>
+                                  <span className="flex-1 font-black text-rose-600 uppercase">{getValidUntil(displayStudent)}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* QR Code Footer Block */}
+                            <div className="bg-slate-50 border-t border-slate-150 p-2 flex items-center justify-between h-[78px] shrink-0">
+                              <div className="flex items-center gap-2">
+                                <div className="bg-white border p-1 rounded shadow-sm shrink-0">
+                                  <QRCodeCanvas
+                                    value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${displayStudent.admissionNumber || displayStudent.uid}`}
+                                    size={256}
+                                    level="H"
+                                    includeMargin={false}
+                                    style={{ width: '56px', height: '56px', display: 'block' }}
+                                  />
+                                </div>
+                                <div className="text-left leading-none">
+                                  <span className="text-[7px] font-black text-slate-900 block tracking-tight uppercase">SECURE HOLDER CHECK</span>
+                                  <span className="text-[5.5px] font-semibold text-slate-400 block mt-0.5 whitespace-nowrap overflow-hidden max-w-[130px]">
+                                    verify.bitc.ac.ke/student/{displayStudent.admissionNumber || displayStudent.uid.slice(0, 5).toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                <div className="h-5 w-16 border-b border-slate-300 opacity-60 flex items-center justify-center">
+                                  <span className="font-serif italic text-[10px] text-indigo-850 select-none">Registrar</span>
+                                </div>
+                                <span className="text-[5px] text-slate-400 uppercase font-bold tracking-wider mt-0.5">AUTH SIGNATURE</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* LANDSCAPE BADGE PREVIEW */
+                      <div 
+                        id="id-card-preview-element-student" 
+                        className="relative animate-fade-in w-[480px] h-[300px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col justify-between overflow-hidden text-slate-800"
+                      >
+                        {idCardShowBack ? (
+                          /* LANDSCAPE BACK */
+                          <div className="w-full h-full flex flex-col justify-between p-4 bg-white relative">
+                            <div className={`p-2 flex justify-between items-center text-white -mx-4 -mt-4 px-4 ${
+                              idCardThemeColor === 'blue' ? 'bg-blue-600' :
+                              idCardThemeColor === 'emerald' ? 'bg-emerald-600' :
+                              idCardThemeColor === 'rose' ? 'bg-rose-600' :
+                              idCardThemeColor === 'amber' ? 'bg-amber-600' :
+                              idCardThemeColor === 'slate' ? 'bg-slate-800' : 'bg-indigo-600'
+                            }`}>
+                              <span className="text-[8px] font-black uppercase tracking-wide">
+                                {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}
+                              </span>
+                              <span className="text-[7px] text-white/80 font-bold font-mono">ID: {displayStudent.uid.slice(0, 8).toUpperCase()}</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 flex-1 items-center mt-3">
+                              <div className="text-left space-y-1">
+                                <p className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">TERMS & POLICY</p>
+                                <p className="text-[7px] text-slate-400 font-semibold leading-relaxed">
+                                  This badge identifies the verified holder. Please keep visual at all school events. If lost, file report directly to Administration.
+                                </p>
+                              </div>
+                              <div className="text-right space-y-0.5 border-l pl-4 border-slate-200">
+                                <p className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">SUPPORT</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate text-right">Email: {settings?.publicEmail || 'info@bitc.ac.ke'}</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate text-right">Phone: {settings?.publicPhone || '+2547000'}</p>
+                                <p className="text-[7px] font-bold text-slate-600 truncate text-right">Campus: {settings?.publicAddress || 'Thika, Kenya'}</p>
+                              </div>
+                            </div>
+
+                            <div className={`text-center py-1.5 -mx-4 -mb-4 text-[7px] font-extrabold uppercase mt-2 ${
+                              idCardThemeColor === 'blue' ? 'bg-blue-50 text-blue-700 border-t border-blue-100' :
+                              idCardThemeColor === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-t border-emerald-100' :
+                              idCardThemeColor === 'rose' ? 'bg-rose-50 text-rose-700 border-t border-rose-100' :
+                              idCardThemeColor === 'amber' ? 'bg-amber-50 text-amber-700 border-t border-amber-100' :
+                              idCardThemeColor === 'slate' ? 'bg-slate-100 text-slate-700 border-t border-slate-200' :
+                              'bg-indigo-50 text-indigo-700 border-t border-indigo-100'
+                            }`}>
+                              FOUND THIS BADGE? PLEASE RETURN IT IMMEDIATELY TO THE REGISTRAR'S OFFICE
+                            </div>
+                          </div>
+                        ) : (
+                          /* LANDSCAPE FRONT */
+                          <div className="w-full h-full flex flex-col bg-[#FFFDF6] text-slate-800">
+                            {/* Top Header Banner */}
+                            <div className={`text-white py-1.5 pr-3.5 pl-[68px] flex items-center justify-center h-[58px] relative shrink-0 ${
+                              idCardThemeColor === 'blue' ? 'bg-[#0d1b94]' :
+                              idCardThemeColor === 'emerald' ? 'bg-[#004d40]' :
+                              idCardThemeColor === 'rose' ? 'bg-[#880e4f]' :
+                              idCardThemeColor === 'amber' ? 'bg-[#e65100]' :
+                              idCardThemeColor === 'slate' ? 'bg-[#1e293b]' : 'bg-[#311b92]'
+                            }`}>
+                              <div className="absolute left-[14px] top-1/2 -translate-y-1/2 w-[44px] h-[44px] rounded bg-white flex items-center justify-center p-0.5 shrink-0 shadow-sm">
+                                {settings?.logoUrl ? (
+                                  <img src={settings.logoUrl} className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                                    <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="#facc15" stroke="#ffffff" strokeWidth="3"/>
+                                    <polygon points="50,12 82,28 82,72 50,88 18,72 18,28" fill="#0d1b94"/>
+                                    <path d="M50,22 L65,37 M50,22 L35,37 M50,22 L50,78" stroke="#facc15" strokeWidth="4" strokeLinecap="round"/>
+                                    <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ffffff" strokeWidth="2"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="text-center w-full flex flex-col justify-center items-center">
+                                <h4 className="text-[13.5px] font-black uppercase leading-tight text-white tracking-tight whitespace-nowrap">
+                                  {settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL BIBLE COLLEGE'}
+                                </h4>
+                                <h5 className="text-[8px] font-black uppercase leading-none text-yellow-400 tracking-wide mt-1 whitespace-nowrap">OFFICIAL STUDENT BADGE</h5>
+                              </div>
+                            </div>
+
+                            {/* Main Body */}
+                            <div className="flex-grow flex p-3 justify-between items-center overflow-hidden">
+                              {/* Left Column: Photo & Big QR Code */}
+                              <div className="w-[105px] flex flex-col items-center justify-between h-full shrink-0">
+                                <div className="w-[90px] h-[95px] rounded-lg border border-indigo-150 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 shadow-sm">
+                                  {displayStudent.photoUrl ? (
+                                    <img src={displayStudent.photoUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayStudent.name)}&backgroundColor=cbd5e1`} className="w-full h-full object-cover" />
+                                  )}
+                                </div>
+                                <div className="w-[84px] h-[84px] bg-white border border-gray-200 rounded p-1 flex items-center justify-center shadow-sm -mt-1 shrink-0">
+                                  <QRCodeCanvas
+                                    value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://bitc.ac.ke' : window.location.origin}/student/verify/${displayStudent.admissionNumber || displayStudent.uid}`}
+                                    size={256}
+                                    level="H"
+                                    includeMargin={false}
+                                    style={{ width: '74px', height: '74px', display: 'block' }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Right Column: Category pill & details info */}
+                              <div className="flex-1 pl-4 flex flex-col justify-start relative select-text h-full">
+                                {/* Category pill tag */}
+                                <div className="flex justify-end -mr-3 mb-2 shrink-0">
+                                  <div className="bg-[#ee1c24] text-white text-[12px] font-black uppercase px-6 py-1 tracking-widest rounded-l-full shadow-sm text-right min-w-[200px]">
+                                    Student ID Card
+                                  </div>
+                                </div>
+
+                                {/* Information Records */}
+                                <div className="flex-grow flex flex-col justify-center space-y-1 pl-1 text-slate-800 text-left">
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-[9.5px]">Name</span>
+                                    <span className="w-3 font-bold text-[#0b1654] mr-1 text-center">:</span>
+                                    <span className="flex-1 font-black text-[#000c40] uppercase truncate text-[12px]">{displayStudent.name}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-[9.5px]">Reg No</span>
+                                    <span className="w-3 font-bold text-[#0b1654] mr-1 text-center">:</span>
+                                    <span className="flex-1 font-bold text-[#000c40] uppercase text-[12px]">{displayStudent.admissionNumber || 'PENDING'}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-[9.5px]">Course</span>
+                                    <span className="w-3 font-bold text-[#0b1654] mr-1 text-center">:</span>
+                                    <span className="flex-1 font-bold text-[#000c40] uppercase truncate text-[12px]">
+                                      {(displayStudent?.classIds?.[0] && classes.find(c => c.id === displayStudent.classIds[0])?.name) || displayStudent.course || 'NOT ASSIGNED'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-[9.5px]">Campus</span>
+                                    <span className="w-3 font-bold text-[#0b1654] mr-1 text-center">:</span>
+                                    <span className="flex-1 font-bold text-[#000c40] uppercase text-[12px]">{displayStudent.residence || 'THIKA MAIN CAMPUS'}</span>
+                                  </div>
+                                  <div className="flex items-baseline text-[11px]">
+                                    <span className="w-[88px] font-black text-[#0b1654] uppercase tracking-wide text-[9.5px]">Expiry Date</span>
+                                    <span className="w-3 font-bold text-[#0b1654] mr-1 text-center">:</span>
+                                    <span className="flex-1 font-black text-[#ee1c24] uppercase text-[12px]">{getValidUntil(displayStudent)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Submission, Exam, Unit, Class, Grade } from '../types';
 import { 
@@ -54,6 +54,12 @@ export const Transcripts: React.FC = () => {
   // Custom grades override state
   const [customResults, setCustomResults] = useState<any[] | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'students' | 'editor'>('students');
+  
+  // Digital Certificate states
+  const [previewDocType, setPreviewDocType] = useState<'transcript' | 'certificate'>('transcript');
+  const [customCertificateNo, setCustomCertificateNo] = useState('');
+  const [customAwardClass, setCustomAwardClass] = useState('First Class Honours / Pass with Distinction');
+  const [customCertificateDate, setCustomCertificateDate] = useState('June 22, 2026');
 
   const isAdminOrStaff = userData?.role === 'admin' || userData?.role === 'registrar' || userData?.role === 'teacher';
   
@@ -143,17 +149,22 @@ export const Transcripts: React.FC = () => {
           // Locked view for student and parent
           const myUserUid = studentContext?.uid || user?.uid;
           if (myUserUid) {
-            const studentRefSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'student')));
-            const studentList = studentRefSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-            const matched = studentList.find(s => s.uid === myUserUid);
-            if (matched) {
-              setSelectedStudent(matched);
-              setStudents([matched]);
-            } else if (userData) {
-              // fallback
-              const meAsStudent = { uid: user?.uid, ...userData } as User;
+            if (myUserUid === user?.uid && userData) {
+              const meAsStudent = { uid: myUserUid, ...userData } as User;
               setSelectedStudent(meAsStudent);
               setStudents([meAsStudent]);
+            } else {
+              const studentDocRef = doc(db, 'users', myUserUid);
+              const studentDocSnap = await getDoc(studentDocRef);
+              if (studentDocSnap.exists()) {
+                const matched = { uid: studentDocSnap.id, ...studentDocSnap.data() } as User;
+                setSelectedStudent(matched);
+                setStudents([matched]);
+              } else if (userData) {
+                const meAsStudent = { uid: user?.uid, ...userData } as User;
+                setSelectedStudent(meAsStudent);
+                setStudents([meAsStudent]);
+              }
             }
           }
         }
@@ -199,6 +210,25 @@ export const Transcripts: React.FC = () => {
       setCustomResults(null);
     }
   }, [selectedStudent]);
+
+  // Dynamically synchronize certificate overrides
+  useEffect(() => {
+    if (selectedStudent) {
+      const rList = getTranscriptResults();
+      const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
+      const enrollmentDateYear = selectedStudent.admissionDate ? selectedStudent.admissionDate.slice(0, 4) : '2026';
+      
+      const staticCertNo = `CERT-${enrollmentDateYear}-${selectedStudent.admissionNumber?.replace(/[^a-zA-Z0-9]/g, '') || selectedStudent.uid.slice(0, 5).toUpperCase()}`;
+      setCustomCertificateNo(localStorage.getItem(`cert_no_${selectedStudent.uid}`) || staticCertNo);
+      
+      const defaultAward = avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' :
+                           avg >= 60 ? 'Grade B - Pass WITH CREDIT' : 'Grade C - PASS';
+      setCustomAwardClass(localStorage.getItem(`cert_award_${selectedStudent.uid}`) || defaultAward);
+      
+      const defaultDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      setCustomCertificateDate(localStorage.getItem(`cert_date_${selectedStudent.uid}`) || defaultDate);
+    }
+  }, [selectedStudent, submissions, exams]);
 
   // Dynamically calculate grades for any selected student
   const getTranscriptResults = () => {
@@ -664,6 +694,76 @@ export const Transcripts: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Digital Certificate Overrides */}
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-5">
+                    <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-2 flex items-center justify-between">
+                      <span>Digital Certificate Layout</span>
+                      <button 
+                        onClick={() => {
+                          if (selectedStudent) {
+                            localStorage.removeItem(`cert_no_${selectedStudent.uid}`);
+                            localStorage.removeItem(`cert_award_${selectedStudent.uid}`);
+                            localStorage.removeItem(`cert_date_${selectedStudent.uid}`);
+                            const rList = getTranscriptResults();
+                            const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
+                            const enrollmentDateYear = selectedStudent.admissionDate ? selectedStudent.admissionDate.slice(0, 4) : '2026';
+                            setCustomCertificateNo(`CERT-${enrollmentDateYear}-${selectedStudent.admissionNumber?.replace(/[^a-zA-Z0-9]/g, '') || selectedStudent.uid.slice(0, 5).toUpperCase()}`);
+                            setCustomAwardClass(avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' : avg >= 60 ? 'Grade B - Pass WITH CREDIT' : 'Grade C - PASS');
+                            setCustomCertificateDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+                          }
+                        }}
+                        className="text-[10px] text-red-500 hover:underline capitalize font-bold"
+                      >
+                        Reset Defaults
+                      </button>
+                    </h4>
+                    <p className="text-[10px] text-slate-400 mb-3">These fields will be embedded into graduation certificates and verified online via QR codes.</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Certificate Number</label>
+                        <input
+                          type="text"
+                          value={customCertificateNo}
+                          onChange={(e) => {
+                            setCustomCertificateNo(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_no_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Award / Class Level</label>
+                        <input
+                          type="text"
+                          value={customAwardClass}
+                          onChange={(e) => {
+                            setCustomAwardClass(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_award_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Issue / Conferred Date</label>
+                        <input
+                          type="text"
+                          value={customCertificateDate}
+                          onChange={(e) => {
+                            setCustomCertificateDate(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_date_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-3 flex items-center justify-between">
                       <span>Curriculum Units & Grades</span>
@@ -765,9 +865,33 @@ export const Transcripts: React.FC = () => {
           </div>
         )}
 
-        {/* Right pane: Real transcript render card */}
+        {/* Right pane: Real transcript/certificate render card */}
         <div className={`${isAdminOrStaff ? 'lg:col-span-8' : 'lg:col-span-12'} text-left PrintNoBorder`}>
           
+          {/* Document Switcher - HIDDEN ON PRINT */}
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-6 print:hidden max-w-sm shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+            <button
+              onClick={() => setPreviewDocType('transcript')}
+              className={`flex-1 py-2.5 px-3 text-center rounded-xl font-black text-[11px] uppercase tracking-wider transition-all ${
+                previewDocType === 'transcript'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Transcript
+            </button>
+            <button
+              onClick={() => setPreviewDocType('certificate')}
+              className={`flex-1 py-2.5 px-3 text-center rounded-xl font-black text-[11px] uppercase tracking-wider transition-all ${
+                previewDocType === 'certificate'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Graduation Certificate
+            </button>
+          </div>
+
           <AnimatePresence mode="wait">
             {loading ? (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
@@ -777,12 +901,14 @@ export const Transcripts: React.FC = () => {
                 </div>
               </div>
             ) : selectedStudent ? (
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-6 sm:p-12 relative print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
-              >
+              previewDocType === 'transcript' ? (
+                <motion.div
+                  key="transcript-view"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-6 sm:p-12 relative print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
+                >
                 
                 {/* Institutional Letterhead Header - ALWAYS VISIBLE (Preview & Print) */}
                 <div className="border-b border-sky-100 dark:border-slate-100 pb-6 mb-6">
@@ -1084,6 +1210,145 @@ export const Transcripts: React.FC = () => {
                 </div>
 
               </motion.div>
+              ) : (
+                <motion.div
+                  key="certificate-view"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="bg-[#FFFDF6] text-slate-900 border-[16px] border-double border-amber-800 rounded-[40px] overflow-hidden p-8 sm:p-14 relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100"
+                  style={{ borderColor: '#b45309' }}
+                >
+                  
+                  {/* Classical Gold Corners Decoration vectors - Hidden on small screens, gorgeous on preview */}
+                  <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-400/20 rounded-tl-xl pointer-events-none print:hidden"></div>
+                  <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-400/20 rounded-tr-xl pointer-events-none print:hidden"></div>
+                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-400/20 rounded-bl-xl pointer-events-none print:hidden"></div>
+                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-400/20 rounded-br-xl pointer-events-none print:hidden"></div>
+
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none text-amber-700">
+                    <GraduationCap size={440} className="stroke-[1]" />
+                  </div>
+
+                  <div className="text-center space-y-6 relative z-10">
+                    
+                    {/* Header Logo */}
+                    <div className="flex justify-center mb-2">
+                      {logoUrlOverride ? (
+                        <img 
+                          src={logoUrlOverride} 
+                          alt="School logo" 
+                          className="h-20 w-auto object-contain max-w-[130px] rounded-xl"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="bg-[#0b1654] text-white p-3 rounded-2xl shadow-md">
+                          <GraduationCap className="text-white w-10 h-10" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* School Name */}
+                    <div className="space-y-1">
+                      <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-black text-[#0b1654] tracking-tight uppercase leading-tight">
+                        {schoolNameOverride}
+                      </h1>
+                      <p className="text-[10px] uppercase font-black tracking-[0.35em] text-amber-700 leading-none">
+                        Chartered Registry of Academic Affairs & TVETA Registered
+                      </p>
+                    </div>
+
+                    {/* Certifying opening line */}
+                    <div className="max-w-xl mx-auto pt-4">
+                      <p className="font-serif italic text-slate-600 text-sm sm:text-base leading-relaxed">
+                        By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
+                      </p>
+                    </div>
+
+                    {/* Candidate Name */}
+                    <div className="py-2">
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-amber-800 tracking-wide uppercase border-b border-dashed border-amber-300 max-w-lg mx-auto pb-2">
+                        {selectedStudent.name}
+                      </h2>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">
+                        having satisfied the full requirements of the department of instruction in
+                      </p>
+                    </div>
+
+                    {/* Enrolled Program Award */}
+                    <div className="space-y-1">
+                      <p className="text-lg sm:text-xl md:text-2xl font-serif font-extrabold text-[#0b1654] uppercase tracking-normal">
+                        {selectedStudent.course || 'CERTIFICATION OF MINISTRY'}
+                      </p>
+                      
+                      <div className="inline-block mt-2 bg-amber-50 border border-amber-200 text-amber-800 font-black text-xs px-4 py-1.5 uppercase rounded-full tracking-widest">
+                        {customAwardClass}
+                      </div>
+                    </div>
+
+                    {/* Conferred Date Stamp */}
+                    <div className="max-w-md mx-auto pt-1 pb-4">
+                      <p className="font-serif text-slate-500 text-xs italic">
+                        In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong className="text-slate-800 font-extrabold not-italic">{customCertificateDate}</strong>.
+                      </p>
+                    </div>
+
+                    {/* Classical Certificate Footer (3-Columns) */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end pt-8 border-t border-slate-200/60 max-w-2xl mx-auto">
+                      
+                      {/* Left: Certificate No. and URL Verification Block */}
+                      <div className="md:col-span-4 flex flex-col items-center md:items-start space-y-2">
+                        <div className="p-1.5 border border-slate-200 bg-white rounded-xl shadow-xs shrink-0">
+                          <QRCodeCanvas
+                            value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://verify.bitc.ac.ke' : window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
+                            size={72}
+                            level="H"
+                          />
+                        </div>
+                        <div className="text-center md:text-left">
+                          <p className="text-[8px] font-black text-[#0b1654] uppercase tracking-wider">SECURE DIGITAL VERIFICATION</p>
+                          <p className="text-[7.5px] font-extrabold text-amber-700 underline font-mono truncate max-w-[170px]">
+                            {window.location.origin.includes('bitc.ac.ke') ? 'verify.bitc.ac.ke' : window.location.host}/certificate/{selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}
+                          </p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase mt-1 font-mono tracking-tighter">
+                            Cert No: {customCertificateNo}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Center: Golden Seal Badge Vector */}
+                      <div className="md:col-span-4 flex justify-center py-2">
+                        <div className="relative w-24 h-24 flex items-center justify-center border-4 border-double border-amber-600 rounded-full text-amber-800 font-black text-center text-[8px] tracking-tight uppercase p-2 select-none opacity-90 bg-[#fffcf5] shadow-sm">
+                          <div className="absolute inset-0 border border-amber-500 border-dashed rounded-full m-1" />
+                          <div className="space-y-0.5">
+                            <p className="font-black text-[7px] leading-tight text-amber-700">OFFICIAL</p>
+                            <p className="font-black text-xs tracking-widest text-[#0b1654] my-0.5 font-serif">BITC</p>
+                            <p className="font-extrabold text-[7px] leading-none text-slate-500">SEAL</p>
+                            <p className="font-black text-[6px] tracking-tighter text-emerald-600">VERIFIED</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Autograph and Signatory info */}
+                      <div className="md:col-span-4 text-center md:text-right flex flex-col items-center md:items-end">
+                        <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
+                        <div className="h-10 flex items-center justify-end py-1 relative">
+                          <svg className="h-9 w-auto text-blue-800 opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          </svg>
+                        </div>
+                        <div className="border-t border-slate-200 pt-1.5 w-full max-w-[180px]">
+                          <p className="text-[9.5px] font-black text-slate-900 uppercase">PROF. J. K. KIBICHO, PHD</p>
+                          <p className="text-[7.5px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">REGISTRAR OF ACADEMIC AFFAIRS</p>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </motion.div>
+              )
             ) : (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">No student selected</p>

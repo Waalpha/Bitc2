@@ -194,7 +194,7 @@ export const Auth: React.FC = () => {
         const userEmail = user.email?.toLowerCase() || '';
         let finalRole: 'student' | 'teacher' | 'admin' = role;
         
-        const adminEmails = ['davmuchiri48@gmail.com', 'daudimuchiri4@gmail.com'];
+        const adminEmails = ['davmuchiri48@gmail.com', 'daudimuchiri4@gmail.com', 'info@bitc.ac.ke'];
         
         if (role === 'admin' && !adminEmails.includes(userEmail)) {
           finalRole = 'teacher';
@@ -275,6 +275,7 @@ export const Auth: React.FC = () => {
       case 'admin':
         return [
           { uid: 'is5B5zbkEbUNlwYGQGlXJiAt66A2', name: 'Daud', email: 'daudimuchiri4@gmail.com', role: 'admin' },
+          { uid: 'info_bitc_admin', name: 'BITC Registrar & Admin', email: 'info@bitc.ac.ke', role: 'admin' },
           { uid: 'admin_demo', name: 'System Admin', email: 'admin@school.com', role: 'admin' }
         ];
     }
