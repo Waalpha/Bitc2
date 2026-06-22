@@ -6,7 +6,8 @@ import { ShieldCheck, ShieldAlert, BadgeCheck, GraduationCap, Calendar, Award, B
 import { useAuth } from '../components/AuthProvider';
 
 export const CertificateVerification: React.FC = () => {
-  const { certNo } = useParams<{ certNo: string }>();
+  const params = useParams();
+  const certNo = params.certNo || params['*'];
   const [loading, setLoading] = useState(true);
   const [errorStr, setErrorStr] = useState<string | null>(null);
   

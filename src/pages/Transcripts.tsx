@@ -1362,18 +1362,21 @@ export const Transcripts: React.FC = () => {
 
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+          @page {
+            size: ${previewDocType === 'transcript' ? 'portrait' : 'landscape'};
+            margin: 0.5cm;
+          }
+
           /* Hide everything unwanted */
           .print\\:hidden, 
           header, 
           aside, 
           footer, 
-          .lg\\:flex,
-          .PrintNoGrid,
           aside.hidden {
             display: none !important;
           }
           
-          /* Full width print */
+          /* Full width print container */
           body, .flex-1, main, .PageNoPadding {
             width: 100% !important;
             max-width: 100% !important;
@@ -1383,8 +1386,20 @@ export const Transcripts: React.FC = () => {
             color: black !important;
           }
 
-          /* Force black print details */
+          /* Reset grid display to let transcript fill current screen viewport printed width */
+          .PrintNoGrid {
+            display: block !important;
+            grid-template-columns: none !important;
+            gap: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* Remove external page styling, border, & shadow offsets */
           .PrintNoBorder {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;

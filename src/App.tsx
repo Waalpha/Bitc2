@@ -111,9 +111,9 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<PublicPortal />} />
-            <Route path="/student/verify/:queryId" element={<StudentVerification />} />
-            <Route path="/verify/certificate/:certNo" element={<CertificateVerification />} />
-            <Route path="/certificate/:certNo" element={<CertificateVerification />} />
+            <Route path="/student/verify/*" element={<StudentVerification />} />
+            <Route path="/verify/certificate/*" element={<CertificateVerification />} />
+            <Route path="/certificate/*" element={<CertificateVerification />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />

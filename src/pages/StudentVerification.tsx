@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export const StudentVerification: React.FC = () => {
-  const { queryId } = useParams<{ queryId: string }>();
+  const params = useParams();
+  const queryId = params.queryId || params['*'];
   const [student, setStudent] = useState<User | null>(null);
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
