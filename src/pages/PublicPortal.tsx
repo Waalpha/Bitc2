@@ -12,6 +12,7 @@ import {
   BookOpen,
   Users,
   Award,
+  Megaphone,
   Building,
   Send,
   Heart,
@@ -843,6 +844,20 @@ export function PublicPortal() {
         }
       `}</style>
       
+      {settings?.portalNoticeEnabled && (
+        <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white text-[11px] sm:text-xs font-semibold py-2 px-4 flex justify-between items-center relative z-50 shadow-inner">
+          <div className="flex-1 text-center flex items-center justify-center gap-1.5 flex-wrap">
+            <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500 font-bold tracking-widest uppercase rounded">NOTICE</span>
+            <span>{settings.portalNoticeText || "September Intake for all Accredited Diploma & Certificate Courses is currently ongoing!"}</span>
+            {settings.portalNoticeLink && (
+              <a href={settings.portalNoticeLink} className="underline hover:text-emerald-300 font-bold inline-flex items-center gap-0.5 ml-2">
+                Apply Online <ArrowRight size={10} />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ─────────────────────────────────────────────────────────────────
           1. HEADER / NAVIGATION (W/ DARK SWITCHER & MOBILE BURGER DRAWER)
           ───────────────────────────────────────────────────────────────── */}
@@ -1331,52 +1346,52 @@ export function PublicPortal() {
             {/* Stat item 1 */}
             <div className="text-center space-y-2 border-r border-white/10 last:border-0 p-4">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-emerald-400 tracking-tight">
-                200+
+                {settings?.portalStat1Number || "200+"}
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-300 font-alt">
-                Active Enrolled Students
+                {settings?.portalStat1Label || "Active Enrolled Students"}
               </p>
               <p className="text-[10px] text-slate-400">
-                Across both physical learning campuses
+                {settings?.portalStat1Sub || "Across both physical learning campuses"}
               </p>
             </div>
 
             {/* Stat item 2 */}
             <div className="text-center space-y-2 border-r border-white/10 last:border-0 p-4">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
-                200+
+                {settings?.portalStat2Number || "200+"}
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-300 font-alt">
-                Certified Graduates
+                {settings?.portalStat2Label || "Certified Graduates"}
               </p>
               <p className="text-[10px] text-slate-400 font-mono">
-                Working in corporate healthcare & ICT industry
+                {settings?.portalStat2Sub || "Working in corporate healthcare & ICT industry"}
               </p>
             </div>
 
             {/* Stat item 3 */}
             <div className="text-center space-y-2 border-r border-white/10 last:border-0 p-4">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-emerald-400 tracking-tight">
-                5+
+                {settings?.portalStat3Number || "5+"}
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-300 font-alt">
-                Instructors & Specialists
+                {settings?.portalStat3Label || "Instructors & Specialists"}
               </p>
               <p className="text-[10px] text-slate-400">
-                Dedicated corporate industry professionals
+                {settings?.portalStat3Sub || "Dedicated corporate industry professionals"}
               </p>
             </div>
 
             {/* Stat item 4 */}
             <div className="text-center space-y-2 border-r border-white/10 last:border-0 p-4">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-heading font-black text-white tracking-tight">
-                1
+                {settings?.portalStat4Number || "1"}
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-300 font-alt">
-                Physical Campuses
+                {settings?.portalStat4Label || "Physical Campuses"}
               </p>
               <p className="text-[10px] text-slate-400">
-                Located in Thika Kiganjo, Corner 2
+                {settings?.portalStat4Sub || "Located in Thika Kiganjo, Corner 2"}
               </p>
             </div>
 
@@ -1398,39 +1413,43 @@ export function PublicPortal() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((test, index) => (
-              <div
-                key={index}
-                className="p-8 rounded-3xl bg-[#F8FAFC] dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  {/* Rating stars */}
-                  <div className="flex items-center gap-1 text-amber-500 mb-5">
-                    {[...Array(test.rating)].map((_, i) => (
-                      <Star key={i} size={15} fill="currentColor" />
-                    ))}
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                    "{test.quote}"
-                  </p>
-                </div>
-
-                <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 mt-6 flex items-center gap-4">
-                  <span className="text-3xl p-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                    {test.avatar}
-                  </span>
+            {(settings?.portalTestimonials && settings.portalTestimonials.length > 0 ? settings.portalTestimonials : TESTIMONIALS).map((test, index) => {
+              if (!test) return null;
+              const ratingVal = Math.max(1, Math.min(5, Number(test.rating) || 5));
+              return (
+                <div
+                  key={index}
+                  className="p-8 rounded-3xl bg-[#F8FAFC] dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+                >
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase font-alt">
-                      {test.name}
-                    </h4>
-                    <p className="text-[10px] text-slate-400">
-                      {test.role} at <strong className="text-slate-500">{test.workplace}</strong>
+                    {/* Rating stars */}
+                    <div className="flex items-center gap-1 text-amber-500 mb-5">
+                      {[...Array(ratingVal)].map((_, i) => (
+                        <Star key={i} size={15} fill="currentColor" />
+                      ))}
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                      "{test.quote || ''}"
                     </p>
                   </div>
+
+                  <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 mt-6 flex items-center gap-4">
+                    <span className="text-3xl p-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                      {test.avatar || '🎓'}
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase font-alt">
+                        {test.name || 'Anonymous Graduate'}
+                      </h4>
+                      <p className="text-[10px] text-slate-400">
+                        {test.role || 'Alumnus'} {test.workplace ? `at` : ""} <strong className="text-slate-500">{test.workplace || ""}</strong>
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
         </div>

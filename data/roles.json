@@ -18,5 +18,22 @@
       "manage_units",
       "manage_fees"
     ]
+  },
+  "student": {
+    "name": "Student",
+    "description": "View courses and take exams",
+    "permissions": []
+  },
+  "teacher": {
+    "permissions": [
+      "manage_classes",
+      "manage_courses",
+      "manage_exams",
+      "view_students",
+      "manage_subjects",
+      "manage_units"
+    ],
+    "name": "Teacher",
+    "description": "Manage classes and exams"
   }
 }

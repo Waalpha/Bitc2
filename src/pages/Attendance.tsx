@@ -951,8 +951,8 @@ void loop() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isScannerMode, selectedStudentForBio, students]);
 
-  const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
-    if (!isTeacher && !isAdmin) return;
+   const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
+    if (!isAdmin) return;
     setAttendance(prev => ({
       ...prev,
       [studentId]: status
@@ -1133,7 +1133,7 @@ void loop() {
   };
 
   const handleSave = async () => {
-    if (!selectedClassId || (!isTeacher && !isAdmin)) return;
+    if (!selectedClassId || !isAdmin) return;
     setSaving(true);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
@@ -2794,6 +2794,22 @@ void loop() {
                     )}
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                      {isAdmin && (
+                        <div className="bg-blue-50/50 border-b border-gray-150 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                            <p className="text-xs font-extrabold text-blue-900 uppercase tracking-widest leading-none">Admin Manual Override Mode</p>
+                          </div>
+                          <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 active:scale-95 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer font-sans"
+                            id="admin-save-manual-attendance"
+                          >
+                            <span>{saving ? 'Saving...' : 'Save Manual Attendance'}</span>
+                          </button>
+                        </div>
+                      )}
                       <div className="overflow-x-auto">
                       <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -2959,7 +2975,20 @@ void loop() {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                   <div className="flex justify-center">
-                                    {status ? (
+                                    {isAdmin ? (
+                                      <select
+                                        value={status || ''}
+                                        onChange={(e) => handleStatusChange(student.uid, e.target.value as AttendanceStatus)}
+                                        className="bg-white border border-gray-200 text-gray-900 text-xs font-black rounded-xl p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 cursor-pointer font-sans"
+                                        id={`manual-status-select-${student.uid}`}
+                                      >
+                                        <option value="">— Unmarked —</option>
+                                        <option value="present">Present (P)</option>
+                                        <option value="absent">Absent (A)</option>
+                                        <option value="late">Late (L)</option>
+                                        <option value="excused">Excused (E)</option>
+                                      </select>
+                                    ) : status ? (
                                       <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold border ${getStatusColor(status)} shadow-sm`}>
                                         {status === 'present' ? 'P' : status === 'absent' ? 'A' : status === 'late' ? 'L' : 'E'}
                                       </span>

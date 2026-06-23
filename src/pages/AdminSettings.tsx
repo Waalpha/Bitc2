@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -105,6 +105,47 @@ export const AdminSettings: React.FC = () => {
     portalGallery: [],
     sessionTimeoutSeconds: 300,
     activeSession: '2024/2025 Semester 1',
+    portalNoticeEnabled: false,
+    portalNoticeText: 'September Intake for all Accredited Diploma & Certificate Courses is currently ongoing!',
+    portalNoticeLink: '#programs',
+    portalStat1Number: '200+',
+    portalStat1Label: 'Active Enrolled Students',
+    portalStat1Sub: 'Across both physical learning campuses',
+    portalStat2Number: '200+',
+    portalStat2Label: 'Certified Graduates',
+    portalStat2Sub: 'Working in corporate healthcare & ICT industry',
+    portalStat3Number: '5+',
+    portalStat3Label: 'Instructors & Specialists',
+    portalStat3Sub: 'Dedicated corporate industry professionals',
+    portalStat4Number: '1',
+    portalStat4Label: 'Physical Campuses',
+    portalStat4Sub: 'Located in Thika Kiganjo, Corner 2',
+    portalTestimonials: [
+      {
+        name: 'Abigail Wambui',
+        role: 'Software Developer Graduate',
+        workplace: 'Fintech Firm, Nairobi',
+        quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+        rating: 5,
+        avatar: '👩‍💻'
+      },
+      {
+        name: 'Kevin Kiprop',
+        role: 'Healthcare Caregiver Alumnus',
+        workplace: 'Professional Care Home, United Kingdom',
+        quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+        rating: 5,
+        avatar: '👨‍⚕️'
+      },
+      {
+        name: 'Gladys Atieno',
+        role: 'Cosmetology & Hairdressing Lead',
+        workplace: 'Owner, Royal Glitz Spa - Thika',
+        quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+        rating: 5,
+        avatar: '💇‍♀️'
+      }
+    ],
   };
 
   // System Settings State
@@ -177,10 +218,10 @@ export const AdminSettings: React.FC = () => {
   const bootstrapRoles = async () => {
     const defaultRoles = [
       { id: 'admin', name: 'Admin', description: 'Full system access', permissions: PERMISSIONS.map(p => p.id) },
-      { id: 'teacher', name: 'Teacher', description: 'Manage academic classes, unit materials, exams, and grades', permissions: ['manage_units', 'manage_exams', 'mark_attendance', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results'] },
+      { id: 'teacher', name: 'Teacher', description: 'Manage academic classes, unit materials, exams, and grades', permissions: ['manage_units', 'manage_exams', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results'] },
       { id: 'registrar', name: 'Registrar', description: 'Student admission, class lists, enrollment, and timetable manager', permissions: ['view_students', 'student_admission', 'manage_classes', 'manage_units', 'manage_timetable'] },
       { id: 'finance', name: 'Finance Officer', description: 'Fee management, collections, invoice, and financial reports viewer', permissions: ['manage_fees', 'view_finance', 'view_reports'] },
-      { id: 'staff', name: 'Support Staff', description: 'Mark attendee registers, view student records, school timetable', permissions: ['view_students', 'mark_attendance', 'manage_timetable'] },
+      { id: 'staff', name: 'Support Staff', description: 'Mark attendee registers, view student records, school timetable', permissions: ['view_students', 'manage_timetable'] },
       { id: 'parent', name: 'Parent', description: 'Access child attendance status, grading reports, and finance sheets', permissions: ['view_results', 'view_reports'] },
       { id: 'student', name: 'Student', description: 'Access personal timetable, submit assignments, take exams, and view performance results', permissions: ['view_results'] },
     ];
@@ -2359,6 +2400,579 @@ export const AdminSettings: React.FC = () => {
                     <span className="text-[10px] text-gray-400 col-span-3 text-center py-4 italic">No gallery photos uploaded. Using default collection.</span>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Top notice/announcement banner controls */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                  <Megaphone size={16} className="text-purple-500 animate-pulse" />
+                  Top Announcement Notice Banner
+                </h3>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={appSettings.portalNoticeEnabled || false}
+                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeEnabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  <span className="ml-2 text-xs font-bold text-gray-600 uppercase tracking-wider">Enabled</span>
+                </label>
+              </div>
+              <p className="text-[10px] text-gray-450">Configure an eye-catching message bar that stays at the absolute top of the homepage to call active attention (e.g. for Intakes, Holidays, or Admissions Notice).</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Notice Headline Text</label>
+                  <input
+                    type="text"
+                    value={appSettings.portalNoticeText || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeText: e.target.value })}
+                    placeholder="e.g. September Intake for all Accredited Diploma & Certificate Courses is currently ongoing!"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
+                    disabled={!appSettings.portalNoticeEnabled}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Notice Action URL Link (Anchor or External Link)</label>
+                  <input
+                    type="text"
+                    value={appSettings.portalNoticeLink || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeLink: e.target.value })}
+                    placeholder="e.g. #programs"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
+                    disabled={!appSettings.portalNoticeEnabled}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Institutional stats controls */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                <Database size={16} className="text-purple-500" />
+                Institutional Numbers & Counters
+              </h3>
+              <p className="text-[10px] text-gray-450">Change the four main numbers showcased on the public landing page statistics block to match your newest audited metrics.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Stat 1 */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
+                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 1</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Counter</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat1Number || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat1Number: e.target.value })}
+                        placeholder="e.g. 200+"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Label / Title</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat1Label || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat1Label: e.target.value })}
+                        placeholder="e.g. Active Enrolled Students"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Subtext</label>
+                    <input
+                      type="text"
+                      value={appSettings.portalStat1Sub || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, portalStat1Sub: e.target.value })}
+                      placeholder="e.g. Across both physical learning campuses"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Stat 2 */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
+                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 2</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat2Number || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat2Number: e.target.value })}
+                        placeholder="e.g. 200+"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat2Label || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat2Label: e.target.value })}
+                        placeholder="e.g. Certified Graduates"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
+                    <input
+                      type="text"
+                      value={appSettings.portalStat2Sub || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, portalStat2Sub: e.target.value })}
+                      placeholder="e.g. Working in corporate healthcare & ICT industry"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Stat 3 */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
+                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 3</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat3Number || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat3Number: e.target.value })}
+                        placeholder="e.g. 5+"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat3Label || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat3Label: e.target.value })}
+                        placeholder="e.g. Instructors & Specialists"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
+                    <input
+                      type="text"
+                      value={appSettings.portalStat3Sub || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, portalStat3Sub: e.target.value })}
+                      placeholder="e.g. Dedicated corporate industry professionals"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Stat 4 */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
+                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 4</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat4Number || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat4Number: e.target.value })}
+                        placeholder="e.g. 1"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
+                      <input
+                        type="text"
+                        value={appSettings.portalStat4Label || ''}
+                        onChange={(e) => setAppSettings({ ...appSettings, portalStat4Label: e.target.value })}
+                        placeholder="e.g. Physical Campuses"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
+                    <input
+                      type="text"
+                      value={appSettings.portalStat4Sub || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, portalStat4Sub: e.target.value })}
+                      placeholder="e.g. Located in Thika Kiganjo, Corner 2"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonials controls */}
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                  <MessageSquare size={16} className="text-purple-500" />
+                  Alumni Student Testimonials
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentList = appSettings.portalTestimonials || [
+                      {
+                        name: 'Abigail Wambui',
+                        role: 'Software Developer Graduate',
+                        workplace: 'Fintech Firm, Nairobi',
+                        quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                        rating: 5,
+                        avatar: '👩‍💻'
+                      },
+                      {
+                        name: 'Kevin Kiprop',
+                        role: 'Healthcare Caregiver Alumnus',
+                        workplace: 'Professional Care Home, United Kingdom',
+                        quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                        rating: 5,
+                        avatar: '👨‍⚕️'
+                      },
+                      {
+                        name: 'Gladys Atieno',
+                        role: 'Cosmetology & Hairdressing Lead',
+                        workplace: 'Owner, Royal Glitz Spa - Thika',
+                        quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                        rating: 5,
+                        avatar: '💇‍♀️'
+                      }
+                    ];
+                    const newList = [...currentList, {
+                      name: 'New Graduate Name',
+                      role: 'New Alumnus',
+                      workplace: 'Company/Self-Employed',
+                      quote: 'The specialized program was incredibly practical and project-oriented. Excellent mentors!',
+                      rating: 5,
+                      avatar: '🎓'
+                    }];
+                    setAppSettings({ ...appSettings, portalTestimonials: newList });
+                  }}
+                  className="px-3 py-1.5 bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={12} />
+                  Add Testimonial
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-450">Review, modify, or add alumni student testimonials displayed in the sliding quote carousel under student stories.</p>
+              
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                {(appSettings.portalTestimonials || [
+                  {
+                    name: 'Abigail Wambui',
+                    role: 'Software Developer Graduate',
+                    workplace: 'Fintech Firm, Nairobi',
+                    quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                    rating: 5,
+                    avatar: '👩‍💻'
+                  },
+                  {
+                    name: 'Kevin Kiprop',
+                    role: 'Healthcare Caregiver Alumnus',
+                    workplace: 'Professional Care Home, United Kingdom',
+                    quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                    rating: 5,
+                    avatar: '👨‍⚕️'
+                  },
+                  {
+                    name: 'Gladys Atieno',
+                    role: 'Cosmetology & Hairdressing Lead',
+                    workplace: 'Owner, Royal Glitz Spa - Thika',
+                    quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                    rating: 5,
+                    avatar: '💇‍♀️'
+                  }
+                ]).map((test, index) => (
+                  <div key={`test_admin_${index}`} className="p-4 bg-white rounded-xl border border-gray-200 space-y-3 relative group">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentList = appSettings.portalTestimonials || [
+                          {
+                            name: 'Abigail Wambui',
+                            role: 'Software Developer Graduate',
+                            workplace: 'Fintech Firm, Nairobi',
+                            quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                            rating: 5,
+                            avatar: '👩‍💻'
+                          },
+                          {
+                            name: 'Kevin Kiprop',
+                            role: 'Healthcare Caregiver Alumnus',
+                            workplace: 'Professional Care Home, United Kingdom',
+                            quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                            rating: 5,
+                            avatar: '👨‍⚕️'
+                          },
+                          {
+                            name: 'Gladys Atieno',
+                            role: 'Cosmetology & Hairdressing Lead',
+                            workplace: 'Owner, Royal Glitz Spa - Thika',
+                            quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                            rating: 5,
+                            avatar: '💇‍♀️'
+                          }
+                        ];
+                        const newList = currentList.filter((_, i) => i !== index);
+                        setAppSettings({ ...appSettings, portalTestimonials: newList });
+                      }}
+                      className="absolute top-3 right-3 text-red-500 hover:text-red-700 p-1 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer"
+                      title="Delete Testimonial"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+
+                    <div className="text-[10px] font-black text-gray-400">TESTIMONIAL {index + 1}</div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Graduate Name</label>
+                        <input
+                          type="text"
+                          value={test.name}
+                          onChange={(e) => {
+                            const currentList = [...(appSettings.portalTestimonials || [
+                              {
+                                name: 'Abigail Wambui',
+                                role: 'Software Developer Graduate',
+                                workplace: 'Fintech Firm, Nairobi',
+                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                                rating: 5,
+                                avatar: '👩‍💻'
+                              },
+                              {
+                                name: 'Kevin Kiprop',
+                                role: 'Healthcare Caregiver Alumnus',
+                                workplace: 'Professional Care Home, United Kingdom',
+                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                                rating: 5,
+                                avatar: '👨‍⚕️'
+                              },
+                              {
+                                name: 'Gladys Atieno',
+                                role: 'Cosmetology & Hairdressing Lead',
+                                workplace: 'Owner, Royal Glitz Spa - Thika',
+                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                                rating: 5,
+                                avatar: '💇‍♀️'
+                              }
+                            ])];
+                            currentList[index] = { ...currentList[index], name: e.target.value };
+                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px] font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Program Role</label>
+                        <input
+                          type="text"
+                          value={test.role}
+                          onChange={(e) => {
+                            const currentList = [...(appSettings.portalTestimonials || [
+                              {
+                                name: 'Abigail Wambui',
+                                role: 'Software Developer Graduate',
+                                workplace: 'Fintech Firm, Nairobi',
+                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                                rating: 5,
+                                avatar: '👩‍💻'
+                              },
+                              {
+                                name: 'Kevin Kiprop',
+                                role: 'Healthcare Caregiver Alumnus',
+                                workplace: 'Professional Care Home, United Kingdom',
+                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                                rating: 5,
+                                avatar: '👨‍⚕️'
+                              },
+                              {
+                                name: 'Gladys Atieno',
+                                role: 'Cosmetology & Hairdressing Lead',
+                                workplace: 'Owner, Royal Glitz Spa - Thika',
+                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                                rating: 5,
+                                avatar: '💇‍♀️'
+                              }
+                            ])];
+                            currentList[index] = { ...currentList[index], role: e.target.value };
+                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Current Workplace</label>
+                        <input
+                          type="text"
+                          value={test.workplace}
+                          onChange={(e) => {
+                            const currentList = [...(appSettings.portalTestimonials || [
+                              {
+                                name: 'Abigail Wambui',
+                                role: 'Software Developer Graduate',
+                                workplace: 'Fintech Firm, Nairobi',
+                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                                rating: 5,
+                                avatar: '👩‍💻'
+                              },
+                              {
+                                name: 'Kevin Kiprop',
+                                role: 'Healthcare Caregiver Alumnus',
+                                workplace: 'Professional Care Home, United Kingdom',
+                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                                rating: 5,
+                                avatar: '👨‍⚕️'
+                              },
+                              {
+                                name: 'Gladys Atieno',
+                                role: 'Cosmetology & Hairdressing Lead',
+                                workplace: 'Owner, Royal Glitz Spa - Thika',
+                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                                rating: 5,
+                                avatar: '💇‍♀️'
+                              }
+                            ])];
+                            currentList[index] = { ...currentList[index], workplace: e.target.value };
+                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Rating (1-5)</label>
+                          <select
+                            value={test.rating}
+                            onChange={(e) => {
+                              const currentList = [...(appSettings.portalTestimonials || [
+                                {
+                                  name: 'Abigail Wambui',
+                                  role: 'Software Developer Graduate',
+                                  workplace: 'Fintech Firm, Nairobi',
+                                  quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                                  rating: 5,
+                                  avatar: '👩‍💻'
+                                },
+                                {
+                                  name: 'Kevin Kiprop',
+                                  role: 'Healthcare Caregiver Alumnus',
+                                  workplace: 'Professional Care Home, United Kingdom',
+                                  quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                                  rating: 5,
+                                  avatar: '👨‍⚕️'
+                                },
+                                {
+                                  name: 'Gladys Atieno',
+                                  role: 'Cosmetology & Hairdressing Lead',
+                                  workplace: 'Owner, Royal Glitz Spa - Thika',
+                                  quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                                  rating: 5,
+                                  avatar: '💇‍♀️'
+                                }
+                              ])];
+                              currentList[index] = { ...currentList[index], rating: parseInt(e.target.value) || 5 };
+                              setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                            }}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-900 text-[11px] h-[33px] font-medium"
+                          >
+                            <option value="5">5 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="2">2 Stars</option>
+                            <option value="1">1 Star</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Avatar Emoji</label>
+                          <input
+                            type="text"
+                            value={test.avatar}
+                            onChange={(e) => {
+                              const currentList = [...(appSettings.portalTestimonials || [
+                                {
+                                  name: 'Abigail Wambui',
+                                  role: 'Software Developer Graduate',
+                                  workplace: 'Fintech Firm, Nairobi',
+                                  quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                                  rating: 5,
+                                  avatar: '👩‍💻'
+                                },
+                                {
+                                  name: 'Kevin Kiprop',
+                                  role: 'Healthcare Caregiver Alumnus',
+                                  workplace: 'Professional Care Home, United Kingdom',
+                                  quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                                  rating: 5,
+                                  avatar: '👨‍⚕️'
+                                },
+                                {
+                                  name: 'Gladys Atieno',
+                                  role: 'Cosmetology & Hairdressing Lead',
+                                  workplace: 'Owner, Royal Glitz Spa - Thika',
+                                  quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                                  rating: 5,
+                                  avatar: '💇‍♀️'
+                                }
+                              ])];
+                              currentList[index] = { ...currentList[index], avatar: e.target.value };
+                              setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                            }}
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
+                            placeholder="e.g. 👩‍🎓"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Quote Message Content</label>
+                      <textarea
+                        value={test.quote}
+                        onChange={(e) => {
+                          const currentList = [...(appSettings.portalTestimonials || [
+                            {
+                              name: 'Abigail Wambui',
+                              role: 'Software Developer Graduate',
+                              workplace: 'Fintech Firm, Nairobi',
+                              quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
+                              rating: 5,
+                              avatar: '👩‍💻'
+                            },
+                            {
+                              name: 'Kevin Kiprop',
+                              role: 'Healthcare Caregiver Alumnus',
+                              workplace: 'Professional Care Home, United Kingdom',
+                              quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
+                              rating: 5,
+                              avatar: '👨‍⚕️'
+                            },
+                            {
+                              name: 'Gladys Atieno',
+                              role: 'Cosmetology & Hairdressing Lead',
+                              workplace: 'Owner, Royal Glitz Spa - Thika',
+                              quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
+                              rating: 5,
+                              avatar: '💇‍♀️'
+                            }
+                          ])];
+                          currentList[index] = { ...currentList[index], quote: e.target.value };
+                          setAppSettings({ ...appSettings, portalTestimonials: currentList });
+                        }}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px] min-h-[50px] leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                ))}
+                {(appSettings.portalTestimonials || []).length === 0 && appSettings.portalTestimonials !== undefined && (
+                  <div className="text-[11px] italic text-gray-400 text-center py-6 bg-white rounded-lg border">No student testimonials currently customized. Using system defaults on website.</div>
+                )}
               </div>
             </div>
 

@@ -338,6 +338,30 @@ export interface AppSettings {
   sessionTimeoutSeconds?: number;
   activeSession?: string;
   denyAccessOnBalance?: boolean;
+  // Landing Page CMS additions
+  portalNoticeEnabled?: boolean;
+  portalNoticeText?: string;
+  portalNoticeLink?: string;
+  portalStat1Number?: string;
+  portalStat1Label?: string;
+  portalStat1Sub?: string;
+  portalStat2Number?: string;
+  portalStat2Label?: string;
+  portalStat2Sub?: string;
+  portalStat3Number?: string;
+  portalStat3Label?: string;
+  portalStat3Sub?: string;
+  portalStat4Number?: string;
+  portalStat4Label?: string;
+  portalStat4Sub?: string;
+  portalTestimonials?: {
+    name: string;
+    role: string;
+    workplace: string;
+    quote: string;
+    rating: number;
+    avatar: string;
+  }[];
 }
 
 export interface StyledText {
