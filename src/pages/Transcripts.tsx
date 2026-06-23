@@ -74,34 +74,38 @@ export const Transcripts: React.FC = () => {
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
     const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
     const memoizedColors: Record<string, string> = {};
-    const resolveOklchColor = (oklchStr: string): string => {
-      if (memoizedColors[oklchStr]) return memoizedColors[oklchStr];
+    const resolveColor = (colorStr: string): string => {
+      if (memoizedColors[colorStr]) return memoizedColors[colorStr];
       try {
         const tempSpan = document.createElement('span');
-        tempSpan.style.color = oklchStr;
+        tempSpan.style.color = colorStr;
         tempSpan.style.display = 'none';
         document.body.appendChild(tempSpan);
         const resolved = window.getComputedStyle(tempSpan).color;
         document.body.removeChild(tempSpan);
-        if (!resolved || resolved.includes('oklch')) {
-          memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+        if (!resolved || resolved.includes('oklch') || resolved.includes('oklab')) {
+          memoizedColors[colorStr] = 'rgb(0, 0, 0)';
         } else {
-          memoizedColors[oklchStr] = resolved;
+          memoizedColors[colorStr] = resolved;
         }
       } catch (err) {
-        memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+        memoizedColors[colorStr] = 'rgb(0, 0, 0)';
       }
-      return memoizedColors[oklchStr];
+      return memoizedColors[colorStr];
     };
 
     Object.defineProperty(CSSRule.prototype, 'cssText', {
       get: function() {
-        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
-        if (rawText && rawText.includes('oklch(')) {
+        let rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
+        if (rawText && (rawText.includes('oklch(') || rawText.includes('oklab('))) {
           try {
-            return rawText.replace(/oklch\([^)]+\)/g, (match) => {
-              return resolveOklchColor(match);
+            rawText = rawText.replace(/oklch\([^)]+\)/g, (match) => {
+              return resolveColor(match);
             });
+            rawText = rawText.replace(/oklab\([^)]+\)/g, (match) => {
+              return resolveColor(match);
+            });
+            return rawText;
           } catch (err) {
             return rawText;
           }
@@ -216,30 +220,37 @@ export const Transcripts: React.FC = () => {
   ];
 
   useEffect(() => {
+    let active = true;
     const loadData = async () => {
       setLoading(true);
       try {
         // Fetch baseline school info
         const gradesSnap = await getDocs(collection(db, 'grades'));
+        if (!active) return;
         const gradesList = gradesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Grade));
         setGrades(gradesList.length > 0 ? gradesList : getDefaultGrades());
 
         const classesSnap = await getDocs(collection(db, 'classes'));
+        if (!active) return;
         setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
 
         const unitsSnap = await getDocs(collection(db, 'units'));
+        if (!active) return;
         setUnits(unitsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit)));
 
         const examsSnap = await getDocs(collection(db, 'exams'));
+        if (!active) return;
         setExams(examsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam)));
 
         const submissionsSnap = await getDocs(collection(db, 'submissions'));
+        if (!active) return;
         setSubmissions(submissionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
 
         // Setup students query
         if (isAdminOrStaff) {
           const studentsQ = query(collection(db, 'users'), where('role', '==', 'student'));
           const studentsSnap = await getDocs(studentsQ);
+          if (!active) return;
           const studentList = studentsSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
           setStudents(studentList);
           
@@ -247,9 +258,9 @@ export const Transcripts: React.FC = () => {
           const targetContextUid = new URLSearchParams(window.location.search).get('studentId') || studentContext?.uid;
           if (targetContextUid) {
             const matched = studentList.find(s => s.uid === targetContextUid);
-            if (matched) setSelectedStudent(matched);
+            if (matched) setSelectedStudent(prev => prev || matched);
           } else if (studentList.length > 0) {
-            setSelectedStudent(studentList[0]);
+            setSelectedStudent(prev => prev || studentList[0]);
           }
         } else {
           // Locked view for student and parent
@@ -257,18 +268,19 @@ export const Transcripts: React.FC = () => {
           if (myUserUid) {
             if (myUserUid === user?.uid && userData) {
               const meAsStudent = { uid: myUserUid, ...userData } as User;
-              setSelectedStudent(meAsStudent);
+              setSelectedStudent(prev => prev || meAsStudent);
               setStudents([meAsStudent]);
             } else {
               const studentDocRef = doc(db, 'users', myUserUid);
               const studentDocSnap = await getDoc(studentDocRef);
+              if (!active) return;
               if (studentDocSnap.exists()) {
                 const matched = { uid: studentDocSnap.id, ...studentDocSnap.data() } as User;
-                setSelectedStudent(matched);
+                setSelectedStudent(prev => prev || matched);
                 setStudents([matched]);
               } else if (userData) {
                 const meAsStudent = { uid: user?.uid, ...userData } as User;
-                setSelectedStudent(meAsStudent);
+                setSelectedStudent(prev => prev || meAsStudent);
                 setStudents([meAsStudent]);
               }
             }
@@ -278,14 +290,19 @@ export const Transcripts: React.FC = () => {
         console.error("Error loading transcript data: ", err);
         handleFirestoreError(err, OperationType.LIST, 'academic-transcripts');
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
-    if (user) {
+    if (user?.uid) {
       loadData();
     }
-  }, [user, userData, studentContext, isAdminOrStaff]);
+    return () => {
+      active = false;
+    };
+  }, [user?.uid, studentContext?.uid, isAdminOrStaff]);
 
   // Set defaults for school overrides when settings load
   useEffect(() => {

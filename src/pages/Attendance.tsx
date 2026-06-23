@@ -2800,9 +2800,6 @@ void loop() {
                           <tr>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Student</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
-                            {(isTeacher || isAdmin) && (
-                              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Actions</th>
-                            )}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -2973,42 +2970,7 @@ void loop() {
                                     )}
                                   </div>
                                 </td>
-                                {(isTeacher || isAdmin) && (
-                                  <td className="px-6 py-4">
-                                    <div className="flex justify-center gap-2">
-                                      {(['present', 'absent', 'late', 'excused'] as AttendanceStatus[]).map((s) => (
-                                        <button
-                                          key={s}
-                                          onClick={() => handleStatusChange(student.uid, s)}
-                                          className={`p-2 rounded-lg border transition-all ${
-                                            status === s 
-                                              ? getStatusColor(s) + ' shadow-sm' 
-                                              : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
-                                          }`}
-                                          title={s.charAt(0).toUpperCase() + s.slice(1)}
-                                        >
-                                          {getStatusIcon(s) || <Check size={14} />}
-                                        </button>
-                                      ))}
-                                      <button
-                                        onClick={() => {
-                                          setRefusedCheckoutStudent(student);
-                                          setRefusalReason('');
-                                        }}
-                                        className={`p-2 rounded-lg border transition-all flex items-center gap-1.5 font-bold uppercase shrink-0 ${
-                                          attendanceRecord?.biometricLogs?.[student.uid]?.checkOut?.refused
-                                            ? 'bg-rose-100 text-rose-700 border-rose-350 shadow-xs'
-                                            : 'bg-white hover:bg-rose-50 text-rose-500 border-rose-200 hover:border-rose-300 shadow-xs'
-                                        }`}
-                                        title="Refuse Checkout (Mark as Absent with Reason)"
-                                      >
-                                        <XCircle size={14} />
-                                        <span className="text-[10px] tracking-wider hidden md:inline">Refuse CO</span>
-                                      </button>
-                                    </div>
-                                  </td>
-                                )}
-                              </tr>
+                               </tr>
                             );
                           })}
                           {students.length === 0 && (
@@ -3021,18 +2983,6 @@ void loop() {
                         </tbody>
                       </table>
                     </div>
-                    {(isTeacher || isAdmin) && students.length > 0 && (
-                      <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button
-                          onClick={handleSave}
-                          disabled={saving}
-                          className="flex items-center gap-2 bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
-                        >
-                          <Save size={20} />
-                          {saving ? 'Saving...' : 'Save Attendance'}
-                        </button>
-                      </div>
-                    )}
                   </div>
                   </>
                 )}
