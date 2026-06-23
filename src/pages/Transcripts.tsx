@@ -20,10 +20,13 @@ import {
   QrCode,
   MapPin,
   Mail,
-  Phone
+  Phone,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export const Transcripts: React.FC = () => {
   const { user, userData, settings, studentContext } = useAuth();
@@ -60,6 +63,106 @@ export const Transcripts: React.FC = () => {
   
   // Digital Certificate states
   const [previewDocType, setPreviewDocType] = useState<'transcript' | 'certificate'>('transcript');
+  const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+
+  // Synchronize default orientation with document types
+  useEffect(() => {
+    setPrintOrientation(previewDocType === 'transcript' ? 'portrait' : 'landscape');
+  }, [previewDocType]);
+
+  const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
+    const memoizedColors: Record<string, string> = {};
+    const resolveOklchColor = (oklchStr: string): string => {
+      if (memoizedColors[oklchStr]) return memoizedColors[oklchStr];
+      try {
+        const tempSpan = document.createElement('span');
+        tempSpan.style.color = oklchStr;
+        tempSpan.style.display = 'none';
+        document.body.appendChild(tempSpan);
+        const resolved = window.getComputedStyle(tempSpan).color;
+        document.body.removeChild(tempSpan);
+        if (!resolved || resolved.includes('oklch')) {
+          memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+        } else {
+          memoizedColors[oklchStr] = resolved;
+        }
+      } catch (err) {
+        memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
+      }
+      return memoizedColors[oklchStr];
+    };
+
+    Object.defineProperty(CSSRule.prototype, 'cssText', {
+      get: function() {
+        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
+        if (rawText && rawText.includes('oklch(')) {
+          try {
+            return rawText.replace(/oklch\([^)]+\)/g, (match) => {
+              return resolveOklchColor(match);
+            });
+          } catch (err) {
+            return rawText;
+          }
+        }
+        return rawText;
+      },
+      configurable: true
+    });
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+      return canvas;
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
+      } else {
+        delete (CSSRule.prototype as any).cssText;
+      }
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const elementId = previewDocType === 'transcript' ? 'transcript-view-element' : 'certificate-view-element';
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    setIsSavingPdf(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 250));
+      const canvas = await executeHtml2CanvasWithPatch(element);
+      const imgData = canvas.toDataURL('image/png');
+      const isPortrait = printOrientation === 'portrait';
+      
+      const width = isPortrait ? 210 : 297;
+      const height = (canvas.height * width) / canvas.width;
+      
+      const pdf = new jsPDF({
+        orientation: isPortrait ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+      
+      const fileName = selectedStudent 
+        ? `${selectedStudent.name.trim().replace(/\s+/g, '_')}_${previewDocType === 'transcript' ? 'Transcript' : 'Certificate'}.pdf` 
+        : `Breakthrough_${previewDocType === 'transcript' ? 'Transcript' : 'Certificate'}.pdf`;
+        
+      pdf.save(fileName);
+    } catch (error) {
+      console.error("Error generating PDF: ", error);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
   const [customCertificateNo, setCustomCertificateNo] = useState('');
   const [customAwardClass, setCustomAwardClass] = useState('First Class Honours / Pass with Distinction');
   const [customCertificateDate, setCustomCertificateDate] = useState('June 22, 2026');
@@ -513,13 +616,53 @@ export const Transcripts: React.FC = () => {
           <p className="text-slate-400 dark:text-slate-500 font-medium text-sm">Professional Registrar records & dynamic academic certification</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all outline-none"
-          >
-            <Download size={14} /> One-Click Print Transcript
-          </button>
+        <div className="flex flex-wrap items-center gap-4 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-2 sm:p-2.5 rounded-3xl shrink-0 shadow-sm">
+          {/* Orientation Selector */}
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm animate-fade-in">
+            <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Layout:</span>
+            <select
+              id="print-orientation-selector"
+              value={printOrientation}
+              onChange={(e) => setPrintOrientation(e.target.value as 'portrait' | 'landscape')}
+              className="text-xs font-extrabold uppercase bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none border-none py-1 cursor-pointer pr-1"
+            >
+              <option value="portrait" className="text-slate-800 bg-white">Portrait</option>
+              <option value="landscape" className="text-slate-800 bg-white">Landscape</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Download PDF button */}
+            <button
+              id="download-pdf-btn"
+              disabled={isSavingPdf || !selectedStudent}
+              onClick={handleDownloadPDF}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 hover:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 font-bold text-xs uppercase tracking-widest active:scale-95 transition-all outline-none"
+            >
+              {isSavingPdf ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download size={13} />
+                  Download PDF
+                </>
+              )}
+            </button>
+
+            {/* Print Transcript button */}
+            <button
+              id="print-transcript-btn"
+              disabled={!selectedStudent}
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all outline-none"
+            >
+              <Printer size={13} className="shrink-0" />
+              Print Document
+            </button>
+          </div>
         </div>
       </div>
 
@@ -971,6 +1114,7 @@ export const Transcripts: React.FC = () => {
             ) : selectedStudent ? (
               previewDocType === 'transcript' ? (
                 <motion.div
+                  id="transcript-view-element"
                   key="transcript-view"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1289,6 +1433,7 @@ export const Transcripts: React.FC = () => {
               </motion.div>
               ) : (
                 <motion.div
+                  id="certificate-view-element"
                   key="certificate-view"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1449,7 +1594,7 @@ export const Transcripts: React.FC = () => {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            size: ${previewDocType === 'transcript' ? 'portrait' : 'landscape'};
+            size: ${printOrientation};
             margin: 0.5cm;
           }
 
