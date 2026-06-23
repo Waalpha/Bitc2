@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { NotificationBell } from '../components/NotificationBell';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Sector } from 'recharts';
 import html2canvas from 'html2canvas';
+import { withOklabOklchPatch } from '../utils/canvasPatch';
 import { jsPDF } from 'jspdf';
 
 import { uploadFile } from '../services/uploadService';
@@ -207,54 +208,11 @@ export const Dashboard: React.FC = () => {
   };
 
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
-    // Save original cssText descriptor so we can restore it down the line
-    const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
-    
-    const memoizedColors: Record<string, string> = {};
-    const resolveOklchColor = (oklchStr: string): string => {
-      if (memoizedColors[oklchStr]) return memoizedColors[oklchStr];
-      try {
-        const tempSpan = document.createElement('span');
-        tempSpan.style.color = oklchStr;
-        tempSpan.style.display = 'none';
-        document.body.appendChild(tempSpan);
-        const resolved = window.getComputedStyle(tempSpan).color;
-        document.body.removeChild(tempSpan);
-        
-        if (!resolved || resolved.includes('oklch')) {
-          memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
-        } else {
-          memoizedColors[oklchStr] = resolved;
-        }
-      } catch (err) {
-        memoizedColors[oklchStr] = 'rgb(0, 0, 0)';
-      }
-      return memoizedColors[oklchStr];
-    };
-
-    // Override cssText getter temporarily
-    Object.defineProperty(CSSRule.prototype, 'cssText', {
-      get: function() {
-        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
-        if (rawText && rawText.includes('oklch(')) {
-          try {
-            return rawText.replace(/oklch\([^)]+\)/g, (match) => {
-              return resolveOklchColor(match);
-            });
-          } catch (err) {
-            return rawText;
-          }
-        }
-        return rawText;
-      },
-      configurable: true
-    });
-
-    try {
+    return withOklabOklchPatch(async () => {
       const isPortrait = idCardOrientation === 'portrait';
       const canvas = await html2canvas(element, {
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
@@ -262,14 +220,7 @@ export const Dashboard: React.FC = () => {
         height: isPortrait ? 480 : 300
       });
       return canvas;
-    } finally {
-      // Always restore original cssText descriptor to avoid side effects
-      if (originalDescriptor) {
-        Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
-      } else {
-        delete (CSSRule.prototype as any).cssText;
-      }
-    }
+    });
   };
 
   const handleSaveAsPNG = async (student: any) => {

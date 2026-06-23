@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+
 // Monkey-patch HTMLVideoElement.prototype.play to handle the "play() request was interrupted" error gracefully
 const originalPlay = HTMLVideoElement.prototype.play;
 HTMLVideoElement.prototype.play = function() {

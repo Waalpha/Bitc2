@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { withOklabOklchPatch } from '../utils/canvasPatch';
 
 export const Transcripts: React.FC = () => {
   const { user, userData, settings, studentContext } = useAuth();
@@ -72,109 +73,16 @@ export const Transcripts: React.FC = () => {
   }, [previewDocType]);
 
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
-    const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
-    const originalGetComputedStyle = window.getComputedStyle;
-    
-    const canvas1x1 = document.createElement('canvas');
-    canvas1x1.width = 1;
-    canvas1x1.height = 1;
-    const ctx1x1 = canvas1x1.getContext('2d', { willReadFrequently: true });
-
-    const resolveColorToRgba = (colorStr: string): string => {
-      if (!ctx1x1) return 'rgba(0, 0, 0, 1)';
-      try {
-        ctx1x1.clearRect(0, 0, 1, 1);
-        ctx1x1.fillStyle = colorStr;
-        ctx1x1.fillRect(0, 0, 1, 1);
-        const data = ctx1x1.getImageData(0, 0, 1, 1).data;
-        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
-      } catch (err) {
-        return 'rgba(0, 0, 0, 1)';
-      }
-    };
-
-    const replaceOklchAndOklab = (val: string): string => {
-      if (!val || typeof val !== 'string') return val;
-      if (!val.includes('oklch') && !val.includes('oklab')) return val;
-      
-      try {
-        let result = val;
-        // Match oklch(...)
-        result = result.replace(/oklch\([^)]+\)/g, (match) => {
-          return resolveColorToRgba(match);
-        });
-        // Match oklab(...)
-        result = result.replace(/oklab\([^)]+\)/g, (match) => {
-          return resolveColorToRgba(match);
-        });
-        // Match color(oklch ...)
-        result = result.replace(/color\(oklch\s+[^)]+\)/g, (match) => {
-          return resolveColorToRgba(match);
-        });
-        // Match color(oklab ...)
-        result = result.replace(/color\(oklab\s+[^)]+\)/g, (match) => {
-          return resolveColorToRgba(match);
-        });
-        return result;
-      } catch (err) {
-        return val;
-      }
-    };
-
-    // Patch CSSRule.prototype.cssText
-    Object.defineProperty(CSSRule.prototype, 'cssText', {
-      get: function() {
-        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
-        return replaceOklchAndOklab(rawText);
-      },
-      configurable: true
-    });
-
-    // Patch window.getComputedStyle
-    window.getComputedStyle = function(elt, pseudoElt) {
-      const style = originalGetComputedStyle.call(window, elt, pseudoElt);
-      return new Proxy(style, {
-        get(target, prop, receiver) {
-          if (prop === 'getPropertyValue') {
-            return function(propertyName: string) {
-              const val = target.getPropertyValue(propertyName);
-              return replaceOklchAndOklab(val);
-            };
-          }
-          
-          const value = (target as any)[prop];
-          if (typeof prop === 'string' && typeof value === 'string') {
-            return replaceOklchAndOklab(value);
-          }
-          
-          if (typeof value === 'function') {
-            return value.bind(target);
-          }
-          return value;
-        }
-      });
-    };
-
-    try {
+    return withOklabOklchPatch(async () => {
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: null,
         logging: false
       });
       return canvas;
-    } finally {
-      // Restore CSSRule.prototype.cssText
-      if (originalDescriptor) {
-        Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
-      } else {
-        delete (CSSRule.prototype as any).cssText;
-      }
-      
-      // Restore window.getComputedStyle
-      window.getComputedStyle = originalGetComputedStyle;
-    }
+    });
   };
 
   const handleDownloadPDF = async () => {
@@ -189,8 +97,23 @@ export const Transcripts: React.FC = () => {
       const imgData = canvas.toDataURL('image/png');
       const isPortrait = printOrientation === 'portrait';
       
-      const width = isPortrait ? 210 : 297;
-      const height = (canvas.height * width) / canvas.width;
+      const margin = 8; // 8mm margin
+      const pageWidth = isPortrait ? 210 : 297;
+      const pageHeight = isPortrait ? 297 : 210;
+      
+      const printableWidth = pageWidth - (margin * 2);
+      const printableHeight = pageHeight - (margin * 2);
+      
+      let width = printableWidth;
+      let height = (canvas.height * width) / canvas.width;
+      
+      if (height > printableHeight) {
+        height = printableHeight;
+        width = (canvas.width * height) / canvas.height;
+      }
+      
+      const x = margin + (printableWidth - width) / 2;
+      const y = margin + (printableHeight - height) / 2;
       
       const pdf = new jsPDF({
         orientation: isPortrait ? 'portrait' : 'landscape',
@@ -198,7 +121,7 @@ export const Transcripts: React.FC = () => {
         format: 'a4'
       });
       
-      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+      pdf.addImage(imgData, 'PNG', x, y, width, height);
       
       const fileName = selectedStudent 
         ? `${selectedStudent.name.trim().replace(/\s+/g, '_')}_${previewDocType === 'transcript' ? 'Transcript' : 'Certificate'}.pdf` 
@@ -1231,9 +1154,18 @@ export const Transcripts: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Aesthetic background watermarks for display, HIDDEN ON PRINT */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.025] z-0 pointer-events-none print:hidden">
-                  <GraduationCap size={400} className="stroke-[1.5]" />
+                {/* Elegant small watermark centered - VISIBLE ON BOTH PRINT & PREVIEW */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none z-0 flex items-center justify-center">
+                  {logoUrlOverride ? (
+                    <img 
+                      src={logoUrlOverride} 
+                      alt="" 
+                      className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <GraduationCap size={160} className="stroke-[1.25] text-slate-400 select-none pointer-events-none" />
+                  )}
                 </div>
 
                 {/* Display interactive toggle indicators */}
@@ -1493,153 +1425,181 @@ export const Transcripts: React.FC = () => {
 
               </motion.div>
               ) : (
-                <motion.div
-                  id="certificate-view-element"
-                  key="certificate-view"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  className="bg-[#FFFDF6] text-slate-900 border-[16px] border-double border-amber-800 rounded-[40px] overflow-hidden p-8 sm:p-14 relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100"
-                  style={{ borderColor: '#b45309' }}
-                >
-                  
-                  {/* Classical Gold Corners Decoration vectors - Hidden on small screens, gorgeous on preview */}
-                  <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-400/20 rounded-tl-xl pointer-events-none print:hidden"></div>
-                  <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-400/20 rounded-tr-xl pointer-events-none print:hidden"></div>
-                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-400/20 rounded-bl-xl pointer-events-none print:hidden"></div>
-                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-400/20 rounded-br-xl pointer-events-none print:hidden"></div>
-
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none text-amber-700">
-                    <GraduationCap size={440} className="stroke-[1]" />
-                  </div>
-
-                  <div className="text-center space-y-6 relative z-10">
+                <div className="w-full overflow-x-auto pb-4 scrollbar-thin print:overflow-visible">
+                  <motion.div
+                    id="certificate-view-element"
+                    key="certificate-view"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    className={`bg-[#FFFDF6] text-slate-900 border-[16px] border-double border-amber-800 rounded-[40px] overflow-hidden relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100 ${
+                      printOrientation === 'landscape' 
+                        ? 'w-[1000px] h-[707px] p-10 flex flex-col justify-between mx-auto shadow-amber-900/10 shrink-0' 
+                        : 'w-full max-w-3xl p-8 sm:p-14 mx-auto'
+                    }`}
+                    style={{ borderColor: '#b45309' }}
+                  >
                     
-                    {/* Header Logo */}
-                    <div className="flex justify-center mb-2">
+                    {/* Classical Gold Corners Decoration vectors - Hidden on small screens, gorgeous on preview */}
+                    <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-400/20 rounded-tl-xl pointer-events-none print:hidden"></div>
+                    <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-400/20 rounded-tr-xl pointer-events-none print:hidden"></div>
+                    <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-400/20 rounded-bl-xl pointer-events-none print:hidden"></div>
+                    <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-400/20 rounded-br-xl pointer-events-none print:hidden"></div>
+
+                    {/* Elegant small watermark centered - VISIBLE ON BOTH PRINT & PREVIEW */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none z-0 flex items-center justify-center">
                       {logoUrlOverride ? (
                         <img 
                           src={logoUrlOverride} 
-                          alt="School logo" 
-                          className="h-20 w-auto object-contain max-w-[130px] rounded-xl"
+                          alt="" 
+                          className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none" 
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <div className="bg-[#0b1654] text-white p-3 rounded-2xl shadow-md">
-                          <GraduationCap className="text-white w-10 h-10" />
-                        </div>
+                        <GraduationCap size={150} className="stroke-[1.25] text-amber-700 select-none pointer-events-none" />
                       )}
                     </div>
 
-                    {/* School Name */}
-                    <div className="space-y-1">
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-black text-[#0b1654] tracking-tight uppercase leading-tight">
-                        {schoolNameOverride}
-                      </h1>
-                      <p className="text-[10px] uppercase font-black tracking-[0.35em] text-amber-700 leading-none">
-                        Chartered Registry of Academic Affairs & TVETA Registered
-                      </p>
-                    </div>
-
-                    {/* Certifying opening line */}
-                    <div className="max-w-xl mx-auto pt-4">
-                      <p className="font-serif italic text-slate-600 text-sm sm:text-base leading-relaxed">
-                        By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
-                      </p>
-                    </div>
-
-                    {/* Candidate Name */}
-                    <div className="py-2">
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-amber-800 tracking-wide uppercase border-b border-dashed border-amber-300 max-w-lg mx-auto pb-2">
-                        {selectedStudent.name}
-                      </h2>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">
-                        having satisfied the full requirements of the department of instruction in
-                      </p>
-                    </div>
-
-                    {/* Enrolled Program Award */}
-                    <div className="space-y-1">
-                      <p className="text-lg sm:text-xl md:text-2xl font-serif font-extrabold text-[#0b1654] uppercase tracking-normal">
-                        {selectedStudent.course || 'CERTIFICATION OF MINISTRY'}
-                      </p>
+                    <div className={`text-center relative z-10 ${
+                      printOrientation === 'landscape' ? 'space-y-3.5 h-full flex flex-col justify-between' : 'space-y-6'
+                    }`}>
                       
-                      <div className="inline-block mt-2 bg-amber-50 border border-amber-200 text-amber-800 font-black text-xs px-4 py-1.5 uppercase rounded-full tracking-widest">
-                        {customAwardClass}
-                      </div>
-                    </div>
-
-                    {/* Conferred Date Stamp */}
-                    <div className="max-w-md mx-auto pt-1 pb-4">
-                      <p className="font-serif text-slate-500 text-xs italic">
-                        In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong className="text-slate-800 font-extrabold not-italic">{customCertificateDate}</strong>.
-                      </p>
-                    </div>
-
-                    {/* Classical Certificate Footer (3-Columns) */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end pt-8 border-t border-slate-200/60 max-w-2xl mx-auto">
-                      
-                      {/* Left: Certificate No. and URL Verification Block */}
-                      <div className="md:col-span-4 flex flex-col items-center md:items-start space-y-2">
-                        <div className="p-1.5 border border-slate-200 bg-white rounded-xl shadow-xs shrink-0">
-                          <QRCodeCanvas
-                            value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://verify.bitc.ac.ke' : window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
-                            size={72}
-                            level="H"
+                      {/* Header Logo */}
+                      <div className="flex justify-center mb-1">
+                        {logoUrlOverride ? (
+                          <img 
+                            src={logoUrlOverride} 
+                            alt="School logo" 
+                            className="h-16 w-auto object-contain max-w-[110px] rounded-xl"
+                            referrerPolicy="no-referrer"
                           />
-                        </div>
-                        <div className="text-center md:text-left">
-                          <p className="text-[8px] font-black text-[#0b1654] uppercase tracking-wider">SECURE DIGITAL VERIFICATION</p>
-                          <p className="text-[7.5px] font-extrabold text-amber-700 underline font-mono truncate max-w-[170px]">
-                            {window.location.origin.includes('bitc.ac.ke') ? 'verify.bitc.ac.ke' : window.location.host}/certificate/{selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}
-                          </p>
-                          <p className="text-[8px] font-black text-slate-500 uppercase mt-1 font-mono tracking-tighter">
-                            Cert No: {customCertificateNo}
-                          </p>
+                        ) : (
+                          <div className="bg-[#0b1654] text-white p-2.5 rounded-2xl shadow-md">
+                            <GraduationCap className="text-white w-9 h-9" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* School Name */}
+                      <div className="space-y-0.5">
+                        <h1 className={`font-serif font-black text-[#0b1654] tracking-tight uppercase leading-tight ${
+                          printOrientation === 'landscape' ? 'text-2xl' : 'text-xl sm:text-2xl md:text-3xl'
+                        }`}>
+                          {schoolNameOverride}
+                        </h1>
+                        <p className="text-[10px] uppercase font-black tracking-[0.35em] text-amber-700 leading-none">
+                          Chartered Registry of Academic Affairs & TVETA Registered
+                        </p>
+                      </div>
+
+                      {/* Certifying opening line */}
+                      <div className={`max-w-2xl mx-auto ${printOrientation === 'landscape' ? 'pt-0' : 'pt-4'}`}>
+                        <p className={`font-serif italic text-slate-600 leading-relaxed ${
+                          printOrientation === 'landscape' ? 'text-xs' : 'text-sm sm:text-base'
+                        }`}>
+                          By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
+                        </p>
+                      </div>
+
+                      {/* Candidate Name */}
+                      <div className={printOrientation === 'landscape' ? 'py-1' : 'py-2'}>
+                        <h2 className={`font-serif font-black text-amber-800 tracking-wide uppercase border-b border-dashed border-amber-300 max-w-lg mx-auto ${
+                          printOrientation === 'landscape' ? 'text-2xl pb-1.5' : 'text-2xl sm:text-3xl md:text-4xl pb-2'
+                        }`}>
+                          {selectedStudent.name}
+                        </h2>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">
+                          having satisfied the full requirements of the department of instruction in
+                        </p>
+                      </div>
+
+                      {/* Enrolled Program Award */}
+                      <div className="space-y-0.5">
+                        <p className={`font-serif font-extrabold text-[#0b1654] uppercase tracking-normal ${
+                          printOrientation === 'landscape' ? 'text-lg' : 'text-lg sm:text-xl md:text-2xl'
+                        }`}>
+                          {selectedStudent.course || 'CERTIFICATION OF MINISTRY'}
+                        </p>
+                        
+                        <div className="inline-block mt-1 bg-amber-50 border border-amber-200 text-amber-800 font-black text-[10px] px-3.5 py-1 uppercase rounded-full tracking-widest">
+                          {customAwardClass}
                         </div>
                       </div>
 
-                      {/* Center: Golden Seal Badge Vector */}
-                      <div className="md:col-span-4 flex justify-center py-2">
-                        <div className="relative w-24 h-24 flex items-center justify-center border-4 border-double border-amber-600 rounded-full text-amber-800 font-black text-center text-[8px] tracking-tight uppercase p-2 select-none opacity-90 bg-[#fffcf5] shadow-sm">
-                          <div className="absolute inset-0 border border-amber-500 border-dashed rounded-full m-1" />
-                          <div className="space-y-0.5">
-                            <p className="font-black text-[7px] leading-tight text-amber-700">OFFICIAL</p>
-                            <p className="font-black text-xs tracking-widest text-[#0b1654] my-0.5 font-serif">BITC</p>
-                            <p className="font-extrabold text-[7px] leading-none text-slate-500">SEAL</p>
-                            <p className="font-black text-[6px] tracking-tighter text-emerald-600">VERIFIED</p>
+                      {/* Conferred Date Stamp */}
+                      <div className={`max-w-md mx-auto ${printOrientation === 'landscape' ? 'pt-0 pb-1' : 'pt-1 pb-4'}`}>
+                        <p className="font-serif text-slate-500 text-xs italic">
+                          In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong className="text-slate-800 font-extrabold not-italic">{customCertificateDate}</strong>.
+                        </p>
+                      </div>
+
+                      {/* Classical Certificate Footer (3-Columns) */}
+                      <div className={`grid grid-cols-1 md:grid-cols-12 gap-6 items-end border-t border-slate-200/60 max-w-3xl mx-auto w-full ${
+                        printOrientation === 'landscape' ? 'pt-3' : 'pt-8'
+                      }`}>
+                        
+                        {/* Left: Certificate No. and URL Verification Block */}
+                        <div className="md:col-span-4 flex flex-col items-center md:items-start space-y-1">
+                          <div className="p-1 border border-slate-200 bg-white rounded-xl shadow-xs shrink-0">
+                            <QRCodeCanvas
+                              value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://verify.bitc.ac.ke' : window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
+                              size={56}
+                              level="H"
+                            />
+                          </div>
+                          <div className="text-center md:text-left">
+                            <p className="text-[7.5px] font-black text-[#0b1654] uppercase tracking-wider leading-none">SECURE DIGITAL VERIFICATION</p>
+                            <p className="text-[7px] font-extrabold text-amber-700 underline font-mono truncate max-w-[180px] mt-0.5">
+                              {window.location.origin.includes('bitc.ac.ke') ? 'verify.bitc.ac.ke' : window.location.host}/certificate/{selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}
+                            </p>
+                            <p className="text-[7.5px] font-black text-slate-500 uppercase mt-0.5 font-mono tracking-tighter">
+                              Cert No: {customCertificateNo}
+                            </p>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right: Autograph and Signatory info */}
-                      <div className="md:col-span-4 text-center md:text-right flex flex-col items-center md:items-end">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
-                        <div className="h-10 flex items-center justify-end py-1 relative text-blue-800">
-                          {signatureUrlOverride ? (
-                            <img 
-                              src={signatureUrlOverride} 
-                              alt="Signature" 
-                              className="h-9 w-auto object-contain max-h-9" 
-                              referrerPolicy="no-referrer" 
-                            />
-                          ) : (
-                            <svg className="h-9 w-auto opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                              <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                            </svg>
-                          )}
+                        {/* Center: Golden Seal Badge Vector */}
+                        <div className="md:col-span-4 flex justify-center py-0.5">
+                          <div className="relative w-20 h-20 flex items-center justify-center border-4 border-double border-amber-600 rounded-full text-amber-800 font-black text-center text-[7px] tracking-tight uppercase p-1.5 select-none opacity-90 bg-[#fffcf5] shadow-sm">
+                            <div className="absolute inset-0 border border-amber-500 border-dashed rounded-full m-1" />
+                            <div className="space-y-0.5">
+                              <p className="font-black text-[6.5px] leading-tight text-amber-700">OFFICIAL</p>
+                              <p className="font-black text-xs tracking-widest text-[#0b1654] my-0.5 font-serif">BITC</p>
+                              <p className="font-extrabold text-[6.5px] leading-none text-slate-500">SEAL</p>
+                              <p className="font-black text-[5.5px] tracking-tighter text-emerald-600">VERIFIED</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="border-t border-slate-200 pt-1.5 w-full max-w-[180px]">
-                          <p className="text-[9.5px] font-black text-slate-900 uppercase">{registrarNameOverride}</p>
-                          <p className="text-[7.5px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">{registrarTitleOverride}</p>
-                        </div>
-                      </div>
 
+                        {/* Right: Autograph and Signatory info */}
+                        <div className="md:col-span-4 text-center md:text-right flex flex-col items-center md:items-end">
+                          <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">AUTHORIZED SIGNATORY</p>
+                          <div className="h-8 flex items-center justify-end py-1 relative text-blue-800">
+                            {signatureUrlOverride ? (
+                              <img 
+                                src={signatureUrlOverride} 
+                                alt="Signature" 
+                                className="h-7 w-auto object-contain max-h-7" 
+                                referrerPolicy="no-referrer" 
+                              />
+                            ) : (
+                              <svg className="h-7 w-auto opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                                <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="border-t border-slate-200 pt-1 w-full max-w-[160px]">
+                            <p className="text-[9px] font-black text-slate-900 uppercase">{registrarNameOverride}</p>
+                            <p className="text-[7px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">{registrarTitleOverride}</p>
+                          </div>
+                        </div>
+
+                      </div>
                     </div>
-                  </div>
 
-                </motion.div>
+                  </motion.div>
+                </div>
               )
             ) : (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
@@ -1655,47 +1615,319 @@ export const Transcripts: React.FC = () => {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            size: ${printOrientation};
-            margin: 0.5cm;
+            size: A4 ${printOrientation};
+            margin: 0 !important;
           }
 
-          /* Hide everything unwanted */
-          .print\\:hidden, 
-          header, 
-          aside, 
-          footer, 
-          aside.hidden {
+          /* General body print specifications */
+          html, body {
+            width: ${printOrientation === 'landscape' ? '297mm' : '210mm'} !important;
+            height: ${printOrientation === 'landscape' ? '210mm' : '297mm'} !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Hide absolutely everything by default */
+          body * {
+            visibility: hidden !important;
+          }
+
+          /* Completely hide specific UI layers so they don't consume any layout flow */
+          header, aside, footer, nav, button, 
+          #print-orientation-selector, .print\\:hidden,
+          .bg-slate-100, .mb-6.flex, .AnimatePresence,
+          .fixed, [role="dialog"], .Toast, .ToastMessage {
             display: none !important;
           }
-          
-          /* Full width print container */
-          body, .flex-1, main, .PageNoPadding {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
+
+          /* Make ONLY our target print element and its descendants printed */
+          #transcript-view-element, 
+          #transcript-view-element *,
+          #certificate-view-element, 
+          #certificate-view-element * {
+            visibility: visible !important;
+          }
+
+          /* Position target printable elements on top, covering A4 perfectly */
+          #transcript-view-element, #certificate-view-element {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: ${printOrientation === 'landscape' ? '297mm' : '210mm'} !important;
+            height: ${printOrientation === 'landscape' ? '210mm' : '297mm'} !important;
+            max-width: ${printOrientation === 'landscape' ? '297mm' : '210mm'} !important;
+            max-height: ${printOrientation === 'landscape' ? '210mm' : '297mm'} !important;
             margin: 0 !important;
-            background: white !important;
-            color: black !important;
-          }
-
-          /* Reset grid display to let transcript fill current screen viewport printed width */
-          .PrintNoGrid {
-            display: block !important;
-            grid-template-columns: none !important;
-            gap: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-
-          /* Remove external page styling, border, & shadow offsets */
-          .PrintNoBorder {
-            display: block !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            border: none !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* TRANSCRIPT PRINT CONDENSING FOR A4 SINGLE PAGE */
+          #transcript-view-element {
+            padding: 12mm 14mm !important;
+            border: 1px solid #cbd5e1 !important;
+            background-color: #ffffff !important;
+            font-size: 10px !important;
+          }
+
+          #transcript-view-element img {
+            max-height: 48px !important;
+          }
+
+          #transcript-view-element h1 {
+            font-size: 18px !important;
+            margin-top: 4px !important;
+            margin-bottom: 2px !important;
+          }
+
+          #transcript-view-element h2 {
+            font-size: 13px !important;
+          }
+
+          #transcript-view-element .pb-6,
+          #transcript-view-element .mb-6 {
+            padding-bottom: 6px !important;
+            margin-bottom: 6px !important;
+          }
+
+          #transcript-view-element .mb-10,
+          #transcript-view-element .mt-8,
+          #transcript-view-element .pb-4 {
+            margin-top: 4px !important;
+            margin-bottom: 6px !important;
+            padding-bottom: 2px !important;
+          }
+
+          #transcript-view-element .grid-cols-12 {
+            gap: 8px !important;
+            padding: 8px !important;
+            margin-bottom: 8px !important;
+            border-radius: 8px !important;
+          }
+
+          #transcript-view-element .grid-cols-12 p {
+            font-size: 9px !important;
+          }
+
+          #transcript-view-element .grid-cols-12 p.text-sm {
+            font-size: 11px !important;
+          }
+
+          #transcript-view-element table {
+            margin-bottom: 0 !important;
+          }
+
+          #transcript-view-element table th,
+          #transcript-view-element table td {
+            padding: 3px 6px !important;
+            font-size: 9px !important;
+          }
+
+          #transcript-view-element table th {
+            font-size: 9px !important;
+            font-weight: 800 !important;
+          }
+
+          #transcript-view-element .rounded-\[28px\] {
+            border-radius: 8px !important;
+            margin-bottom: 8px !important;
+          }
+
+          /* Summary blocks */
+          #transcript-view-element .grid-cols-3 {
+            gap: 8px !important;
+            margin-bottom: 8px !important;
+          }
+
+          #transcript-view-element .grid-cols-3 .p-5 {
+            padding: 6px 10px !important;
+            border-radius: 8px !important;
+          }
+
+          #transcript-view-element .grid-cols-3 p.text-\[10px\] {
+            font-size: 8px !important;
+          }
+
+          #transcript-view-element .grid-cols-3 p.text-2xl {
+            font-size: 13px !important;
+            margin-top: 1px !important;
+          }
+
+          #transcript-view-element .grid-cols-3 .w-10 {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 4px !important;
+          }
+
+          #transcript-view-element .grid-cols-3 svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+
+          /* Classification panel & note disclaimer */
+          #transcript-view-element .mb-12 {
+            margin-bottom: 8px !important;
+            padding: 8px !important;
+            border-radius: 8px !important;
+          }
+
+          #transcript-view-element .mb-12 h4 {
+            font-size: 11px !important;
+            margin-top: 1px !important;
+          }
+
+          #transcript-view-element .mb-12 .text-\[10px\] {
+            font-size: 8px !important;
+          }
+
+          #transcript-view-element p.mt-4 {
+            margin-top: 2px !important;
+            font-size: 7.5px !important;
+            line-height: normal !important;
+          }
+
+          /* Signatures and Seals */
+          #transcript-view-element .items-end {
+            padding-top: 2px !important;
+            gap: 10px !important;
+          }
+
+          #transcript-view-element .w-28 {
+            width: 60px !important;
+            height: 60px !important;
+          }
+
+          #transcript-view-element .w-28 p {
+            font-size: 6px !important;
+          }
+
+          #transcript-view-element .h-14 {
+            height: 30px !important;
+          }
+
+          #transcript-view-element .h-14 svg,
+          #transcript-view-element .h-14 img {
+            height: 25px !important;
+          }
+
+          #transcript-view-element .max-w-\[240px\] {
+            margin-top: 1px !important;
+            padding-top: 2px !important;
+          }
+
+          #transcript-view-element .max-w-\[240px\] p {
+            font-size: 8px !important;
+            margin-top: 0 !important;
+          }
+
+          #transcript-view-element .md\:col-span-3 .p-2 {
+            padding: 2px !important;
+            border-radius: 4px !important;
+          }
+
+          #transcript-view-element .md\:col-span-3 canvas {
+            width: 44px !important;
+            height: 44px !important;
+          }
+
+          #transcript-view-element .md\:col-span-3 span {
+            font-size: 7px !important;
+            margin-top: 1px !important;
+          }
+
+          /* CERTIFICATE PRINT CONDENSING FOR A4 SINGLE PAGE */
+          #certificate-view-element {
+            padding: ${printOrientation === 'landscape' ? '12mm 15mm' : '15mm 20mm'} !important;
+            border: 6px double #b45309 !important;
+            background-color: #FFFDF6 !important;
+          }
+
+          #certificate-view-element .space-y-6 > * {
+            margin-top: 8px !important;
+            margin-bottom: 8px !important;
+          }
+
+          #certificate-view-element h1 {
+            font-size: 18px !important;
+          }
+
+          #certificate-view-element p.text-sm,
+          #certificate-view-element p.text-base {
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+          }
+
+          #certificate-view-element h2 {
+            font-size: 20px !important;
+            padding-bottom: 2px !important;
+          }
+
+          #certificate-view-element p.text-lg,
+          #certificate-view-element p.text-xl,
+          #certificate-view-element p.text-2xl {
+            font-size: 13px !important;
+          }
+
+          #certificate-view-element .max-w-md,
+          #certificate-view-element .max-w-xl,
+          #certificate-view-element .max-w-2xl {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+          }
+
+          #certificate-view-element .max-w-2xl {
+            margin-top: 8px !important;
+            padding-top: 8px !important;
+          }
+
+          #certificate-view-element .w-24 {
+            width: 60px !important;
+            height: 60px !important;
+          }
+
+          #certificate-view-element .w-24 p {
+            font-size: 5px !important;
+          }
+
+          /* Handle QR Code Canvas wrapper and inside canvas */
+          #certificate-view-element .p-1,
+          #certificate-view-element .p-1.5,
+          #certificate-view-element .p-2 {
+            padding: 4px !important;
+            border-radius: 6px !important;
+            background: white !important;
+          }
+
+          #certificate-view-element .p-1 canvas,
+          #certificate-view-element .p-1.5 canvas,
+          #certificate-view-element .p-2 canvas {
+            width: 44px !important;
+            height: 44px !important;
+          }
+
+          #certificate-view-element .md\:col-span-4 .text-center,
+          #certificate-view-element .md\:col-span-4 .text-left,
+          #certificate-view-element .md\:col-span-4 .text-right {
+            font-size: 7.5px !important;
+          }
+
+          #certificate-view-element .md\:col-span-4 .border-t {
+            padding-top: 2px !important;
+            margin-top: 2px !important;
+          }
+
+          #certificate-view-element .md\:col-span-4 p {
+            font-size: 8px !important;
           }
 
           .print-header {
