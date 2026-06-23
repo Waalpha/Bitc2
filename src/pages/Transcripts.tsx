@@ -73,47 +73,87 @@ export const Transcripts: React.FC = () => {
 
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
     const originalDescriptor = Object.getOwnPropertyDescriptor(CSSRule.prototype, 'cssText');
-    const memoizedColors: Record<string, string> = {};
-    const resolveColor = (colorStr: string): string => {
-      if (memoizedColors[colorStr]) return memoizedColors[colorStr];
+    const originalGetComputedStyle = window.getComputedStyle;
+    
+    const canvas1x1 = document.createElement('canvas');
+    canvas1x1.width = 1;
+    canvas1x1.height = 1;
+    const ctx1x1 = canvas1x1.getContext('2d', { willReadFrequently: true });
+
+    const resolveColorToRgba = (colorStr: string): string => {
+      if (!ctx1x1) return 'rgba(0, 0, 0, 1)';
       try {
-        const tempSpan = document.createElement('span');
-        tempSpan.style.color = colorStr;
-        tempSpan.style.display = 'none';
-        document.body.appendChild(tempSpan);
-        const resolved = window.getComputedStyle(tempSpan).color;
-        document.body.removeChild(tempSpan);
-        if (!resolved || resolved.includes('oklch') || resolved.includes('oklab')) {
-          memoizedColors[colorStr] = 'rgb(0, 0, 0)';
-        } else {
-          memoizedColors[colorStr] = resolved;
-        }
+        ctx1x1.clearRect(0, 0, 1, 1);
+        ctx1x1.fillStyle = colorStr;
+        ctx1x1.fillRect(0, 0, 1, 1);
+        const data = ctx1x1.getImageData(0, 0, 1, 1).data;
+        return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
       } catch (err) {
-        memoizedColors[colorStr] = 'rgb(0, 0, 0)';
+        return 'rgba(0, 0, 0, 1)';
       }
-      return memoizedColors[colorStr];
     };
 
+    const replaceOklchAndOklab = (val: string): string => {
+      if (!val || typeof val !== 'string') return val;
+      if (!val.includes('oklch') && !val.includes('oklab')) return val;
+      
+      try {
+        let result = val;
+        // Match oklch(...)
+        result = result.replace(/oklch\([^)]+\)/g, (match) => {
+          return resolveColorToRgba(match);
+        });
+        // Match oklab(...)
+        result = result.replace(/oklab\([^)]+\)/g, (match) => {
+          return resolveColorToRgba(match);
+        });
+        // Match color(oklch ...)
+        result = result.replace(/color\(oklch\s+[^)]+\)/g, (match) => {
+          return resolveColorToRgba(match);
+        });
+        // Match color(oklab ...)
+        result = result.replace(/color\(oklab\s+[^)]+\)/g, (match) => {
+          return resolveColorToRgba(match);
+        });
+        return result;
+      } catch (err) {
+        return val;
+      }
+    };
+
+    // Patch CSSRule.prototype.cssText
     Object.defineProperty(CSSRule.prototype, 'cssText', {
       get: function() {
-        let rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
-        if (rawText && (rawText.includes('oklch(') || rawText.includes('oklab('))) {
-          try {
-            rawText = rawText.replace(/oklch\([^)]+\)/g, (match) => {
-              return resolveColor(match);
-            });
-            rawText = rawText.replace(/oklab\([^)]+\)/g, (match) => {
-              return resolveColor(match);
-            });
-            return rawText;
-          } catch (err) {
-            return rawText;
-          }
-        }
-        return rawText;
+        const rawText = originalDescriptor?.get ? originalDescriptor.get.call(this) : '';
+        return replaceOklchAndOklab(rawText);
       },
       configurable: true
     });
+
+    // Patch window.getComputedStyle
+    window.getComputedStyle = function(elt, pseudoElt) {
+      const style = originalGetComputedStyle.call(window, elt, pseudoElt);
+      return new Proxy(style, {
+        get(target, prop, receiver) {
+          if (prop === 'getPropertyValue') {
+            return function(propertyName: string) {
+              const val = target.getPropertyValue(propertyName);
+              return replaceOklchAndOklab(val);
+            };
+          }
+          
+          const value = (target as any)[prop];
+          if (typeof prop === 'string' && typeof value === 'string') {
+            return replaceOklchAndOklab(value);
+          }
+          
+          if (typeof value === 'function') {
+            return value.bind(target);
+          }
+          return value;
+        }
+      });
+    };
 
     try {
       const canvas = await html2canvas(element, {
@@ -125,11 +165,15 @@ export const Transcripts: React.FC = () => {
       });
       return canvas;
     } finally {
+      // Restore CSSRule.prototype.cssText
       if (originalDescriptor) {
         Object.defineProperty(CSSRule.prototype, 'cssText', originalDescriptor);
       } else {
         delete (CSSRule.prototype as any).cssText;
       }
+      
+      // Restore window.getComputedStyle
+      window.getComputedStyle = originalGetComputedStyle;
     }
   };
 
