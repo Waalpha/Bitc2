@@ -134,6 +134,684 @@ export const Transcripts: React.FC = () => {
       setIsSavingPdf(false);
     }
   };
+
+  const handleDownloadWord = () => {
+    if (!selectedStudent) return;
+
+    if (previewDocType === 'transcript') {
+      const resultsHtml = results.length === 0 
+        ? `<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8; font-weight:bold; font-family:Arial,sans-serif;">No Graded Assessment Entries Found</td></tr>`
+        : results.map((r, i) => `
+          <tr>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-family:Courier,monospace; font-weight:bold; color:#64748b;">${i + 1}</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; font-weight:bold; font-family:Courier,monospace;">${r.unitCode}</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-transform:uppercase; font-family:Arial,sans-serif;">${r.unitName}</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-family:Courier,monospace;">${r.hours} Hrs</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; font-family:Courier,monospace;">${r.score}%</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; font-family:Courier,monospace; color:${r.grade === 'A' ? '#047857' : r.grade === 'B' ? '#1d4ed8' : r.grade === 'F' ? '#b91c1c' : '#1e293b'};">${r.grade}</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; font-size:8.5pt; color:${r.status === 'PASS' ? '#059669' : '#dc2626'};">${r.status}</td>
+          </tr>
+        `).join('');
+
+      const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <title>Academic Transcript - ${selectedStudent.name}</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 1in 1in 1in 1in;
+            }
+            body {
+              font-family: 'Arial', 'Calibri', sans-serif;
+              color: #1e293b;
+              margin: 0;
+              padding: 0;
+              background-color: #ffffff;
+            }
+            .main-container {
+              position: relative;
+              background-color: #ffffff;
+            }
+            .watermark {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              width: 700px;
+              height: 150px;
+              margin-left: -350px;
+              margin-top: -75px;
+              font-size: 60pt;
+              color: rgba(226, 232, 240, 0.22);
+              font-weight: 900;
+              font-family: 'Arial Black', Impact, sans-serif;
+              transform: rotate(-35deg);
+              -webkit-transform: rotate(-35deg);
+              text-align: center;
+              z-index: -100;
+              text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+              letter-spacing: 4px;
+              text-transform: uppercase;
+              pointer-events: none;
+              user-select: none;
+            }
+            .header-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 25px;
+              border-bottom: 3px double #1e3a8a;
+            }
+            .school-title {
+              font-size: 16pt;
+              font-weight: bold;
+              color: #1e3a8a;
+              text-transform: uppercase;
+              margin: 0;
+              font-family: 'Trebuchet MS', Arial, sans-serif;
+            }
+            .school-subtitle {
+              font-size: 8.5pt;
+              font-weight: bold;
+              color: #1d4ed8;
+              text-transform: uppercase;
+              margin: 3px 0 0 0;
+              letter-spacing: 1px;
+            }
+            .school-desc {
+              font-size: 8.5pt;
+              color: #64748b;
+              margin: 3px 0 0 0;
+              font-weight: bold;
+            }
+            .contact-info {
+              font-size: 8.5pt;
+              color: #475569;
+              text-align: right;
+              line-height: 1.4;
+            }
+            .title-section {
+              text-align: center;
+              margin-bottom: 25px;
+            }
+            .record-badge {
+              font-size: 9pt;
+              font-weight: bold;
+              color: #1d4ed8;
+              text-transform: uppercase;
+              letter-spacing: 3px;
+              margin: 0;
+            }
+            .record-title {
+              font-size: 20pt;
+              font-weight: bold;
+              color: #0f172a;
+              text-transform: uppercase;
+              margin: 4px 0 0 0;
+              font-family: 'Georgia', serif;
+            }
+            .info-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+              background-color: #f8fafc;
+              border: 1px solid #cbd5e1;
+            }
+            .info-card {
+              width: 50%;
+              padding: 10px 14px;
+              border: 1px solid #cbd5e1;
+              vertical-align: top;
+            }
+            .info-label {
+              font-size: 7.5pt;
+              font-weight: bold;
+              color: #64748b;
+              text-transform: uppercase;
+              margin-bottom: 3px;
+              letter-spacing: 0.5px;
+            }
+            .info-val {
+              font-size: 10pt;
+              font-weight: bold;
+              color: #0d1e3d;
+              text-transform: uppercase;
+            }
+            .results-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .th-custom {
+              background-color: #0f172a;
+              color: #ffffff;
+              font-weight: bold;
+              font-size: 9pt;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              padding: 10px;
+              border: 1px solid #0f172a;
+              text-align: left;
+            }
+            .th-center {
+              text-align: center;
+            }
+            .aggregations-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .agg-cell {
+              width: 33.33%;
+              padding: 12px;
+              border: 1px solid #cbd5e1;
+              background-color: #f8fafc;
+              text-align: center;
+            }
+            .agg-label {
+              font-size: 7.5pt;
+              font-weight: bold;
+              color: #64748b;
+              text-transform: uppercase;
+            }
+            .agg-val {
+              font-size: 16pt;
+              font-weight: bold;
+              color: #0f172a;
+              margin-top: 5px;
+              font-family: Arial, sans-serif;
+            }
+            .disclaimer-card {
+              border: 1px solid #cbd5e1;
+              background-color: #f8fafc;
+              padding: 18px;
+              margin-bottom: 40px;
+              border-radius: 4px;
+            }
+            .disclaimer-title {
+              font-size: 8pt;
+              font-weight: bold;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .disclaimer-award {
+              font-size: 11pt;
+              font-weight: bold;
+              color: #1e3a8a;
+              margin-top: 5px;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+            }
+            .disclaimer-text {
+              font-size: 8pt;
+              color: #64748b;
+              line-height: 1.5;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 8px;
+            }
+            .sign-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 40px;
+            }
+            .sign-cell {
+              width: 40%;
+              vertical-align: bottom;
+            }
+            .seal-cell {
+              width: 30%;
+              text-align: center;
+              vertical-align: middle;
+            }
+            .sign-line {
+              border-top: 1px solid #475569;
+              padding-top: 6px;
+              margin-top: 10px;
+              width: 100%;
+            }
+            .sign-name {
+              font-size: 9.5pt;
+              font-weight: bold;
+              color: #0f172a;
+              text-transform: uppercase;
+            }
+            .sign-title {
+              font-size: 7.5pt;
+              font-weight: bold;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .seal-badge {
+              width: 90px;
+              height: 90px;
+              border: 4px double #1e3a8a;
+              border-radius: 50%;
+              margin: 0 auto;
+              padding: 8px 5px;
+              text-align: center;
+              color: #1e3a8a;
+            }
+            .seal-dept {
+              font-weight: bold;
+              font-size: 6.5pt;
+              margin: 0;
+            }
+            .seal-name {
+              font-weight: 900;
+              font-size: 11pt;
+              margin: 2px 0;
+            }
+            .seal-txt {
+              font-size: 6pt;
+              font-weight: bold;
+              color: #64748b;
+              margin: 0;
+              letter-spacing: 0.5px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="main-container">
+            <!-- Rotary Watermark Background -->
+            <div class="watermark">OFFICIAL TRANSCRIPT</div>
+            
+            <!-- Letterhead Header -->
+            <table class="header-table">
+              <tr>
+                <td style="padding-bottom:15px; vertical-align:middle;">
+                  <h2 class="school-title">${schoolNameOverride || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</h2>
+                  <p class="school-subtitle">Ministry of Higher Education, Science & Technology & TVETA Registered</p>
+                  <p class="school-desc">Official Certificate of Registrar of Academic Affairs</p>
+                </td>
+                <td class="contact-info" style="padding-bottom:15px; vertical-align:middle;">
+                  <p style="margin:0; font-weight:bold; color:#0f172a;">${addressOverride || 'P.O. BOX 12345-00100, NAIROBI'}</p>
+                  <p style="margin:2px 0 0 0;">TEL: ${phoneOverride || '+254 700 000 000'}</p>
+                  <p style="margin:2px 0 0 0;">EMAIL: ${emailOverride || 'info@bitc.ac.ke'}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Title -->
+            <div class="title-section">
+              <p class="record-badge">Official Academic Record</p>
+              <h1 class="record-title">Transcript of Results</h1>
+            </div>
+
+            <!-- Demographics (2 Column Layout Table) -->
+            <table class="info-table">
+              <tr>
+                <td class="info-card">
+                  <p class="info-label">Candidate Name</p>
+                  <p class="info-val" style="font-size:11pt; color:#1e3a8a;">${selectedStudent.name}</p>
+                </td>
+                <td class="info-card">
+                  <p class="info-label">Registration Number</p>
+                  <p class="info-val">${selectedStudent.admissionNumber || 'N/A'}</p>
+                </td>
+              </tr>
+              <tr>
+                <td class="info-card">
+                  <p class="info-label">Enrolled Program</p>
+                  <p class="info-val">${selectedStudent.course || 'Certificate Program'}</p>
+                </td>
+                <td class="info-card">
+                  <p class="info-label">Academic Intake</p>
+                  <p class="info-val">${selectedStudent.academicYear || 'September 2026'}</p>
+                </td>
+              </tr>
+              <tr>
+                <td class="info-card">
+                  <p class="info-label">ID / Passport Number</p>
+                  <p class="info-val" style="font-family:Courier,monospace;">${selectedStudent.idNumber || 'Not Classified'}</p>
+                </td>
+                <td class="info-card">
+                  <p class="info-label">Registry Seal Date</p>
+                  <p class="info-val">2026-06-22</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Course Sheet -->
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th class="th-custom th-center" style="width:7%;">No.</th>
+                  <th class="th-custom" style="width:18%;">Unit Code</th>
+                  <th class="th-custom">Academic Unit Name</th>
+                  <th class="th-custom th-center" style="width:12%;">Hours</th>
+                  <th class="th-custom th-center" style="width:12%;">Score</th>
+                  <th class="th-custom th-center" style="width:10%;">Grade</th>
+                  <th class="th-custom th-center" style="width:12%;">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${resultsHtml}
+              </tbody>
+            </table>
+
+            <!-- Summary Statistics Table (3 Columns) -->
+            <table class="aggregations-table">
+              <tr>
+                <td class="agg-cell">
+                  <p class="agg-label">Weightage Completed</p>
+                  <p class="agg-val" style="font-family:Courier,monospace;">${results.length} Units</p>
+                </td>
+                <td class="agg-cell">
+                  <p class="agg-label">Cumulative Average</p>
+                  <p class="agg-val" style="font-family:Courier,monospace; color:#2563eb;">${currentAverage}%</p>
+                </td>
+                <td class="agg-cell">
+                  <p class="agg-label">Equiv. Cumulative GPA</p>
+                  <p class="agg-val" style="font-family:Courier,monospace; color:#059669;">${currentGPA} / 4.00</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Classification Recommended Card -->
+            <table style="width:100%; border-collapse:collapse; margin-bottom:40px;">
+              <tr>
+                <td class="disclaimer-card">
+                  <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                      <td>
+                        <p class="disclaimer-title">Transcript Classification & Award</p>
+                        <h4 class="disclaimer-award">${getPerformanceClass(currentAverage)}</h4>
+                      </td>
+                      <td style="text-align:right; vertical-align:middle;">
+                        <span style="background-color:#ecfdf5; border:1px solid #10b981; padding:6px 12px; font-size:8.5pt; font-weight:bold; color:#047857; text-transform:uppercase;">RECOMMENDED FOR GRADUATION</span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p class="disclaimer-text">
+                    NOTE: This academic transcript is generated directly from the digital registry database of Breakthrough International Training College (BITC). This document is valid only when bearing the official embossed stamp, hologram verification code, and registrar's signature. Any alterations will invalidate the record.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Registrar signatures bottom -->
+            <table class="sign-table">
+              <tr>
+                <td class="sign-cell">
+                  <p class="sign-title">AUTHORIZED SIGNATORY</p>
+                  <div style="height:45px; vertical-align:bottom; padding-bottom:5px;">
+                    <span style="font-family:'Brush Script MT', 'Lucida Handwriting', cursive; font-size:20pt; color:#1d4ed8; font-weight:bold;">${registrarNameOverride.toLowerCase().split(',')[0]}</span>
+                  </div>
+                  <div class="sign-line">
+                    <p class="sign-name">${registrarNameOverride}</p>
+                    <p class="sign-title">${registrarTitleOverride}</p>
+                  </div>
+                </td>
+                <td class="seal-cell">
+                  <div class="seal-badge">
+                    <p class="seal-dept">REGISTRAR</p>
+                    <p class="seal-name">BITC</p>
+                    <p class="seal-txt" style="color:#1e3a8a;">OFFICIAL SEAL</p>
+                    <p class="seal-txt" style="font-style:italic;">VERIFIED</p>
+                  </div>
+                </td>
+                <td class="sign-cell" style="text-align:right;">
+                  <p class="sign-title" style="text-align:right;">REGISTRY VERIFICATION</p>
+                  <div style="height:45px; vertical-align:middle; text-align:right; padding-bottom:5px;">
+                    <span style="font-size:7pt; color:#64748b; font-family:Courier,monospace;">QR CODE LINKED TO DATABASE<br/>verify.bitc.ac.ke</span>
+                  </div>
+                  <div class="sign-line" style="text-align:right;">
+                    <p class="sign-name" style="text-align:right;">SECURE CODE</p>
+                    <p class="sign-title" style="text-align:right;">REF: ${selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+          </div>
+        </body>
+        </html>
+      `;
+      
+      const blob = new Blob(['\ufeff', htmlContent], {
+        type: 'application/msword;charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedStudent.name.trim().replace(/\s+/g, '_')}_Transcript.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      // Certificate export
+      const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <title>Institutional Certificate - ${selectedStudent.name}</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 0.8in 0.8in 0.8in 0.8in;
+            }
+            body {
+              font-family: 'Georgia', 'Times New Roman', serif;
+              color: #0f172a;
+              margin: 0;
+              padding: 0;
+              background-color: #fffdf6;
+            }
+            .cert-border {
+              border: 15px double #b45309;
+              padding: 40px;
+              background-color: #fffdf6;
+              position: relative;
+              min-height: 550px;
+            }
+            .watermark {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              width: 500px;
+              height: 100px;
+              margin-left: -250px;
+              margin-top: -50px;
+              font-size: 50pt;
+              color: rgba(180, 83, 9, 0.08);
+              font-weight: bold;
+              transform: rotate(-30deg);
+              -webkit-transform: rotate(-30deg);
+              text-align: center;
+              z-index: -100;
+              letter-spacing: 3px;
+              text-transform: uppercase;
+              pointer-events: none;
+            }
+            .center-txt {
+              text-align: center;
+            }
+            .school-header {
+              font-size: 24pt;
+              font-weight: 900;
+              color: #0b1654;
+              margin: 0;
+              text-transform: uppercase;
+            }
+            .school-registry {
+              font-size: 8pt;
+              font-weight: bold;
+              color: #b45309;
+              letter-spacing: 4px;
+              text-transform: uppercase;
+              margin-top: 5px;
+              margin-bottom: 30px;
+            }
+            .conferring-txt {
+              font-size: 11pt;
+              font-style: italic;
+              color: #475569;
+              margin: 20px auto;
+              width: 80%;
+              line-height: 1.5;
+            }
+            .cand-name {
+              font-size: 26pt;
+              font-weight: bold;
+              color: #92400e;
+              margin: 15px 0;
+              border-bottom: 2px dashed #fcd34d;
+              display: inline-block;
+              padding-bottom: 8px;
+              text-transform: uppercase;
+            }
+            .cand-sub {
+              font-size: 8pt;
+              font-weight: bold;
+              color: #64748b;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              margin: 5px 0 15px 0;
+            }
+            .cert-course {
+              font-size: 18pt;
+              font-weight: bold;
+              color: #0b1654;
+              text-transform: uppercase;
+              margin: 10px 0;
+            }
+            .award-class {
+              background-color: #fffbeb;
+              border: 1px solid #fde047;
+              color: #92400e;
+              font-size: 9pt;
+              font-weight: bold;
+              padding: 5px 15px;
+              display: inline-block;
+              border-radius: 20px;
+              margin-top: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .testimony-txt {
+              font-size: 9.5pt;
+              color: #64748b;
+              font-style: italic;
+              margin: 25px auto;
+              width: 80%;
+            }
+            .footer-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 35px;
+            }
+            .footer-cell {
+              width: 33.33%;
+              vertical-align: bottom;
+              font-family: Arial, sans-serif;
+            }
+            .seal-gold {
+              width: 80px;
+              height: 80px;
+              border: 4px double #b45309;
+              border-radius: 50%;
+              background-color: #fffbeb;
+              margin: 0 auto;
+              padding: 8px 5px;
+              text-align: center;
+              color: #b45309;
+            }
+            .seal-gold-txt {
+              font-weight: bold;
+              font-size: 6pt;
+              margin: 0;
+              text-transform: uppercase;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="cert-border">
+            <div class="watermark">OFFICIAL SEAL</div>
+            
+            <div class="center-txt">
+              <h1 class="school-header">${schoolNameOverride || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</h1>
+              <p class="school-registry">Chartered Registry of Academic Affairs & TVETA Registered</p>
+              
+              <p class="conferring-txt">
+                By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
+              </p>
+              
+              <h2 class="cand-name">${selectedStudent.name}</h2>
+              <p class="cand-sub">having satisfied the full requirements of the department of instruction in</p>
+              
+              <h3 class="cert-course">${selectedStudent.course || 'CERTIFICATION OF MINISTRY'}</h3>
+              <div>
+                <span class="award-class">${customAwardClass}</span>
+              </div>
+              
+              <p class="testimony-txt">
+                In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong style="color:#1e293b; font-style:normal;">${customCertificateDate}</strong>.
+              </p>
+              
+              <table class="footer-table">
+                <tr>
+                  <td class="footer-cell" style="text-align:left;">
+                    <p style="font-size:7.5px; font-weight:bold; color:#cbd5e1; text-transform:uppercase; margin:0;">SECURE DIGITAL VERIFICATION</p>
+                    <p style="font-size:7px; font-weight:bold; color:#b45309; text-decoration:underline; font-family:Courier; margin:2px 0;">verify.bitc.ac.ke</p>
+                    <p style="font-size:7px; font-weight:bold; color:#64748b; font-family:Courier; margin:0;">Cert No: ${customCertificateNo}</p>
+                  </td>
+                  <td class="footer-cell" style="text-align:center;">
+                    <div class="seal-gold">
+                      <p class="seal-gold-txt" style="color:#b45309;">OFFICIAL</p>
+                      <p class="seal-gold-txt" style="font-size:9pt; color:#0b1654; font-family:Georgia,serif; margin:1px 0;">BITC</p>
+                      <p class="seal-gold-txt" style="color:#64748b;">SEAL</p>
+                    </div>
+                  </td>
+                  <td class="footer-cell" style="text-align:right;">
+                    <p style="font-size:7.5px; font-weight:bold; color:#cbd5e1; text-transform:uppercase; margin:0; line-height:1;">AUTHORIZED SIGNATORY</p>
+                    <div style="height:35px; vertical-align:bottom; padding-bottom:5px; text-align:right;">
+                      <span style="font-family:'Brush Script MT', cursive; font-size:16pt; color:#0b1654; font-weight:bold;">${registrarNameOverride.toLowerCase().split(',')[0]}</span>
+                    </div>
+                    <div style="border-top:1px solid #cbd5e1; padding-top:4px; max-width:160px; margin-left:auto;">
+                      <p style="font-size:8pt; font-weight:bold; color:#0f172a; margin:0; text-transform:uppercase;">${registrarNameOverride}</p>
+                      <p style="font-size:6.5pt; font-weight:bold; color:#94a3b8; margin:0; text-transform:uppercase;">${registrarTitleOverride}</p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+          </div>
+        </body>
+        </html>
+      `;
+      const blob = new Blob(['\ufeff', htmlContent], {
+        type: 'application/msword;charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedStudent.name.trim().replace(/\s+/g, '_')}_Certificate.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
   const [customCertificateNo, setCustomCertificateNo] = useState('');
   const [customAwardClass, setCustomAwardClass] = useState('First Class Honours / Pass with Distinction');
   const [customCertificateDate, setCustomCertificateDate] = useState('June 22, 2026');
@@ -634,6 +1312,17 @@ export const Transcripts: React.FC = () => {
                   Download PDF
                 </>
               )}
+            </button>
+
+            {/* Download Word Document button */}
+            <button
+              id="download-word-btn"
+              disabled={!selectedStudent}
+              onClick={handleDownloadWord}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all outline-none"
+            >
+              <FileText size={13} />
+              Download Word
             </button>
 
             {/* Print Transcript button */}
