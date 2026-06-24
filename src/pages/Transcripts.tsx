@@ -982,7 +982,7 @@ export const Transcripts: React.FC = () => {
       setLogoUrlOverride(localStorage.getItem('transcript_logoUrl') || settings.logoUrl || '');
       setAddressOverride(localStorage.getItem('transcript_address') || settings.publicAddress || 'P O BOX 5110 – 01002 Madaraka Thika');
       setPhoneOverride(localStorage.getItem('transcript_phone') || settings.publicPhone || '+254 727 114 355 / +254 707 760 239');
-      setEmailOverride(localStorage.getItem('transcript_email') || settings.publicEmail || 'info@breakthrough.ac.ke');
+      setEmailOverride(localStorage.getItem('transcript_email') || settings.publicEmail || 'info@bitc.ac.ke');
     }
     setRegistrarNameOverride(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
@@ -1212,13 +1212,13 @@ export const Transcripts: React.FC = () => {
       setLogoUrlOverride(settings.logoUrl || '');
       setAddressOverride(settings.publicAddress || 'P O BOX 5110 – 01002 Madaraka Thika');
       setPhoneOverride(settings.publicPhone || '+254 727 114 355 / +254 707 760 239');
-      setEmailOverride(settings.publicEmail || 'info@breakthrough.ac.ke');
+      setEmailOverride(settings.publicEmail || 'info@bitc.ac.ke');
     } else {
       setSchoolNameOverride('BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE');
       setLogoUrlOverride('');
       setAddressOverride('P O BOX 5110 – 01002 Madaraka Thika');
       setPhoneOverride('+254 727 114 355 / +254 707 760 239');
-      setEmailOverride('info@breakthrough.ac.ke');
+      setEmailOverride('info@bitc.ac.ke');
     }
     setRegistrarNameOverride('PROF. J. K. KIBICHO, PHD');
     setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');

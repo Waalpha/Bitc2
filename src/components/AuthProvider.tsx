@@ -154,7 +154,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const subs = [
       onSnapshot(globalRef, (snap) => {
         if (snap.exists()) {
-          setSettings(prev => ({ ...prev, ...snap.data() } as AppSettings));
+          const data = snap.data() || {};
+          if (data.publicEmail === 'info@breakthrough.ac.ke') {
+            data.publicEmail = 'info@bitc.ac.ke';
+          }
+          setSettings(prev => ({ ...prev, ...data } as AppSettings));
         } else {
           // Standard defaults fallback
           setSettings({
