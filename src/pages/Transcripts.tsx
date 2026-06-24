@@ -91,15 +91,36 @@ export const Transcripts: React.FC = () => {
     if (!element) return;
     
     setIsSavingPdf(true);
+    const originalStyle = element.getAttribute('style') || '';
+    
     try {
+      const isPortrait = printOrientation === 'portrait';
+      if (previewDocType === 'transcript') {
+        element.style.width = '1000px';
+        element.style.minWidth = '1000px';
+        element.style.maxWidth = '1000px';
+      } else {
+        const w = isPortrait ? '840px' : '1120px';
+        element.style.width = w;
+        element.style.minWidth = w;
+        element.style.maxWidth = w;
+      }
+
       await new Promise(resolve => setTimeout(resolve, 250));
       const canvas = await executeHtml2CanvasWithPatch(element);
+      
+      if (originalStyle) {
+        element.setAttribute('style', originalStyle);
+      } else {
+        element.removeAttribute('style');
+      }
+
       const imgData = canvas.toDataURL('image/png');
-      const isPortrait = printOrientation === 'portrait';
+      const isPortraitDoc = printOrientation === 'portrait';
       
       const margin = 8; // 8mm margin
-      const pageWidth = isPortrait ? 210 : 297;
-      const pageHeight = isPortrait ? 297 : 210;
+      const pageWidth = isPortraitDoc ? 210 : 297;
+      const pageHeight = isPortraitDoc ? 297 : 210;
       
       const printableWidth = pageWidth - (margin * 2);
       const printableHeight = pageHeight - (margin * 2);
@@ -116,7 +137,7 @@ export const Transcripts: React.FC = () => {
       const y = margin + (printableHeight - height) / 2;
       
       const pdf = new jsPDF({
-        orientation: isPortrait ? 'portrait' : 'landscape',
+        orientation: isPortraitDoc ? 'portrait' : 'landscape',
         unit: 'mm',
         format: 'a4'
       });
@@ -130,6 +151,11 @@ export const Transcripts: React.FC = () => {
       pdf.save(fileName);
     } catch (error) {
       console.error("Error generating PDF: ", error);
+      if (originalStyle) {
+        element.setAttribute('style', originalStyle);
+      } else {
+        element.removeAttribute('style');
+      }
     } finally {
       setIsSavingPdf(false);
     }
@@ -1887,10 +1913,10 @@ export const Transcripts: React.FC = () => {
                 </div>
 
                 {/* Demographics Card Section */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 border border-slate-200 rounded-[28px] p-6 bg-slate-50/50 mb-10 text-slate-800 z-10 relative print:bg-transparent print:border-black print:rounded-none">
+                <div className="flex flex-col md:flex-row gap-8 border border-slate-200 rounded-[28px] p-6 bg-slate-50/50 mb-10 text-slate-800 z-10 relative print:bg-transparent print:border-black print:rounded-none">
                   
                   {/* Photo or barcode identifier */}
-                  <div className="md:col-span-2 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 print:border-black print:border-r">
+                  <div className="md:w-1/6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 pr-0 md:pr-8 print:border-black print:border-r shrink-0">
                     {selectedStudent.photoUrl ? (
                       <img 
                         src={selectedStudent.photoUrl} 
@@ -1907,33 +1933,33 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* Information block */}
-                  <div className="md:col-span-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-xs text-left">
-                    <div>
+                  <div className="flex-1 flex flex-wrap gap-y-4 text-xs text-left">
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Candidate Name</p>
                       <p className="font-black text-slate-900 uppercase text-sm">{selectedStudent.name}</p>
                     </div>
 
-                    <div>
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registration Number</p>
                       <p className="font-bold text-slate-900 uppercase text-sm tracking-tight">{selectedStudent.admissionNumber || 'N/A'}</p>
                     </div>
 
-                    <div>
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Enrolled Program</p>
                       <p className="font-bold text-slate-900 uppercase text-sm">{selectedStudent.course || 'Certificate Program'}</p>
                     </div>
 
-                    <div>
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Academic Intake</p>
                       <p className="font-bold text-slate-900 uppercase text-sm">{selectedStudent.academicYear || 'September 2026'}</p>
                     </div>
 
-                    <div>
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">ID / Passport Number</p>
                       <p className="font-semibold text-slate-950 uppercase">{selectedStudent.idNumber || 'Not Classified'}</p>
                     </div>
 
-                    <div>
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registry Seal Date</p>
                       <p className="font-semibold text-slate-950 uppercase">2026-06-22</p>
                     </div>
@@ -1998,10 +2024,10 @@ export const Transcripts: React.FC = () => {
                 </div>
 
                 {/* Score Aggregations Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 z-10 relative">
+                <div className="flex flex-col md:flex-row gap-6 mb-10 z-10 relative">
                   
                   {/* Total Units completed */}
-                  <div className="border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
+                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
                     <div className="text-left">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Weightage Completed</p>
                       <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{results.length} Units</p>
@@ -2012,7 +2038,7 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* Cumulative average */}
-                  <div className="border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
+                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
                     <div className="text-left">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cumulative Average</p>
                       <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{currentAverage}%</p>
@@ -2023,7 +2049,7 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* GPA Rating */}
-                  <div className="border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
+                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
                     <div className="text-left">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Equiv. Cumulative GPA</p>
                       <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{currentGPA} / 4.00</p>
@@ -2054,10 +2080,10 @@ export const Transcripts: React.FC = () => {
                 </div>
 
                 {/* Registrar Signature & Seal stamp */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-4">
+                <div className="flex flex-col md:flex-row gap-8 items-end pt-4 justify-between">
                   
                   {/* Digital Signature */}
-                  <div className="md:col-span-5 text-left">
+                  <div className="md:w-5/12 text-left">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
                     <div className="h-14 flex items-center justify-start py-2 relative text-blue-800">
                       {isSignoffPrinted && (
@@ -2084,7 +2110,7 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* Stamp / Logo seal */}
-                  <div className="md:col-span-4 flex justify-center py-4 print:py-0">
+                  <div className="md:w-4/12 flex justify-center py-4 print:py-0 shrink-0">
                     <div className="relative w-28 h-28 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-80 rotate-[-10deg] print:border-black print:text-black">
                       <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
                       <div>
@@ -2097,7 +2123,7 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* Blockchain Authenticity Verification QR Code */}
-                  <div className="md:col-span-3 flex flex-col items-center md:items-end justify-center">
+                  <div className="md:w-3/12 flex flex-col items-center md:items-end justify-center shrink-0">
                     <div className="p-2 border border-slate-200 bg-white rounded-2xl print:border-black shrink-0">
                       <QRCodeCanvas
                         value={`https://bitc.ac.ke/verify/transcript/${selectedStudent.admissionNumber || 'ADM-2026'}`}
@@ -2223,12 +2249,12 @@ export const Transcripts: React.FC = () => {
                       </div>
 
                       {/* Classical Certificate Footer (3-Columns) */}
-                      <div className={`grid grid-cols-1 md:grid-cols-12 gap-6 items-end border-t border-slate-200/60 max-w-3xl mx-auto w-full ${
+                      <div className={`flex flex-col md:flex-row gap-6 items-end border-t border-slate-200/60 max-w-3xl mx-auto w-full justify-between ${
                         printOrientation === 'landscape' ? 'pt-3' : 'pt-8'
                       }`}>
                         
                         {/* Left: Certificate No. and URL Verification Block */}
-                        <div className="md:col-span-4 flex flex-col items-center md:items-start space-y-1">
+                        <div className="md:w-[35%] flex flex-col items-center md:items-start space-y-1">
                           <div className="p-1 border border-slate-200 bg-white rounded-xl shadow-xs shrink-0">
                             <QRCodeCanvas
                               value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://verify.bitc.ac.ke' : window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
@@ -2248,7 +2274,7 @@ export const Transcripts: React.FC = () => {
                         </div>
 
                         {/* Center: Golden Seal Badge Vector */}
-                        <div className="md:col-span-4 flex justify-center py-0.5">
+                        <div className="md:w-[30%] flex justify-center py-0.5 shrink-0">
                           <div className="relative w-20 h-20 flex items-center justify-center border-4 border-double border-amber-600 rounded-full text-amber-800 font-black text-center text-[7px] tracking-tight uppercase p-1.5 select-none opacity-90 bg-[#fffcf5] shadow-sm">
                             <div className="absolute inset-0 border border-amber-500 border-dashed rounded-full m-1" />
                             <div className="space-y-0.5">
@@ -2261,7 +2287,7 @@ export const Transcripts: React.FC = () => {
                         </div>
 
                         {/* Right: Autograph and Signatory info */}
-                        <div className="md:col-span-4 text-center md:text-right flex flex-col items-center md:items-end">
+                        <div className="md:w-[35%] text-center md:text-right flex flex-col items-center md:items-end">
                           <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">AUTHORIZED SIGNATORY</p>
                           <div className="h-8 flex items-center justify-end py-1 relative text-blue-800">
                             {signatureUrlOverride ? (

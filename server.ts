@@ -1472,10 +1472,10 @@ async function startServer() {
     }
   });
 
-  // Daily Automatic System Backups
-  // Cron schedule: 0 2 * * * (Every night at 2:00 AM)
-  cron.schedule("0 2 * * *", async () => {
-    console.log("Starting scheduled automatic daily backup at 2:00 AM...");
+  // Monthly Automatic System Backups
+  // Cron schedule: 0 2 1 * * (Every 1st of the month at 2:00 AM)
+  cron.schedule("0 2 1 * *", async () => {
+    console.log("Starting scheduled automatic monthly backup at 2:00 AM...");
     try {
       const result = await runBackup();
       if (result.success) {
@@ -1488,7 +1488,7 @@ async function startServer() {
     }
   });
 
-  console.log("Daily backup scheduler initialized.");
+  console.log("Monthly backup scheduler initialized.");
 
   // Also run once on startup to ensure no missed fees (highly useful for on-demand restarts)
   console.log("Monthly fee scheduler initialized.");
