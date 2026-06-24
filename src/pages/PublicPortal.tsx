@@ -1697,7 +1697,15 @@ export function PublicPortal() {
                         <div className="space-y-1 my-1">
                           <span className="text-slate-500 text-[9px] block">Distance:</span>
                           <span className="font-black text-slate-900 dark:text-white font-mono text-sm">
-                            {campusDistances.kiganjo ? `${campusDistances.kiganjo.toFixed(2)} km` : 'Calculating...'}
+                            {campusDistances.kiganjo !== null ? (
+                              campusDistances.kiganjo < 0.45 ? (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">0.00 km (You are on Campus! 📍)</span>
+                              ) : (
+                                `${campusDistances.kiganjo.toFixed(2)} km`
+                              )
+                            ) : (
+                              'Calculating...'
+                            )}
                           </span>
                         </div>
                         <a
