@@ -47,6 +47,21 @@ const headerMapping: Record<string, string> = {
   "class names": "classIds"
 };
 
+const SYSTEM_COURSES = [
+  "Diploma in Beauty Therapy, Skincare & Professional Makeup",
+  "Certificate in Hairdressing, Advanced Styling & Barbering",
+  "Diploma in Software Engineering & Web Development",
+  "Certificate in Computer Packages & Digital Commerce Systems",
+  "Certificate in Healthcare Support Services & Caregiver",
+  "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
+  "Certificate in Professional Cookery, General Baking & Cake Decoration",
+  "Diploma in Catering & Hospitality Management",
+  "Certificate in Solar PV Technology & Electrical Wiring",
+  "Diploma in Domestic & Industrial Electrical Engineering",
+  "Certificate in Theology & Biblical Studies",
+  "Diploma in Theology & Christian Ministry"
+];
+
 export const Students: React.FC = () => {
   const navigate = useNavigate();
   const { user, userData, hasPermission, settings } = useAuth();
@@ -62,6 +77,17 @@ export const Students: React.FC = () => {
     setSelectedStudentIds(new Set());
   };
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
+  const [isCustomCourseSelected, setIsCustomCourseSelected] = useState(false);
+
+  useEffect(() => {
+    if (editingStudent) {
+      const course = editingStudent.course || '';
+      const isSystem = SYSTEM_COURSES.includes(course) || course === '';
+      setIsCustomCourseSelected(!isSystem);
+    } else {
+      setIsCustomCourseSelected(false);
+    }
+  }, [editingStudent?.uid]);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const studentFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingLetter, setIsUploadingLetter] = useState(false);
@@ -4423,13 +4449,42 @@ export const Students: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Course / Program</label>
-                      <input
-                        type="text"
-                        value={editingStudent.course || ''}
-                        onChange={(e) => setEditingStudent({ ...editingStudent, course: e.target.value })}
-                        placeholder="e.g. Computer Science"
+                      <select
+                        value={isCustomCourseSelected ? 'custom' : (editingStudent.course || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'custom') {
+                            setIsCustomCourseSelected(true);
+                            const isExistingCustom = editingStudent.course && !SYSTEM_COURSES.includes(editingStudent.course);
+                            if (!isExistingCustom) {
+                              setEditingStudent({ ...editingStudent, course: '' });
+                            }
+                          } else {
+                            setIsCustomCourseSelected(false);
+                            setEditingStudent({ ...editingStudent, course: val });
+                          }
+                        }}
                         className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900"
-                      />
+                      >
+                        <option value="">Select Course</option>
+                        {SYSTEM_COURSES.map((c, idx) => (
+                          <option key={idx} value={c}>{c}</option>
+                        ))}
+                        <option value="custom">✍️ Custom Course (Enter manually)</option>
+                      </select>
+
+                      {isCustomCourseSelected && (
+                        <div className="mt-2 animate-fadeIn">
+                          <input
+                            type="text"
+                            required
+                            value={editingStudent.course || ''}
+                            onChange={(e) => setEditingStudent({ ...editingStudent, course: e.target.value })}
+                            placeholder="Type custom course name..."
+                            className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900 uppercase"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div>

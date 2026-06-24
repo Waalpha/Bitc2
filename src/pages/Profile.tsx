@@ -29,6 +29,21 @@ import { Toast, ToastMessage } from '../components/Toast';
 
 import { uploadFile } from '../services/uploadService';
 
+const SYSTEM_COURSES = [
+  "Diploma in Beauty Therapy, Skincare & Professional Makeup",
+  "Certificate in Hairdressing, Advanced Styling & Barbering",
+  "Diploma in Software Engineering & Web Development",
+  "Certificate in Computer Packages & Digital Commerce Systems",
+  "Certificate in Healthcare Support Services & Caregiver",
+  "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
+  "Certificate in Professional Cookery, General Baking & Cake Decoration",
+  "Diploma in Catering & Hospitality Management",
+  "Certificate in Solar PV Technology & Electrical Wiring",
+  "Diploma in Domestic & Industrial Electrical Engineering",
+  "Certificate in Theology & Biblical Studies",
+  "Diploma in Theology & Christian Ministry"
+];
+
 export const Profile: React.FC = () => {
   const { user, userData, settings } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -41,6 +56,16 @@ export const Profile: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const directFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isCustomCourseSelected, setIsCustomCourseSelected] = useState(false);
+
+  useEffect(() => {
+    if (userData) {
+      const course = userData.course || '';
+      const isSystem = SYSTEM_COURSES.includes(course) || course === '';
+      setIsCustomCourseSelected(!isSystem);
+    }
+  }, [userData]);
+
   const [editForm, setEditForm] = useState({
     name: '',
     phone: '',
@@ -798,17 +823,65 @@ export const Profile: React.FC = () => {
                         <label className={`block text-xs font-black uppercase tracking-[0.2em] mb-2 ml-1 ${isStudent ? 'text-gray-400' : 'text-gray-500'}`}>
                           {isStudent ? 'Course / Programme' : 'Department'}
                         </label>
-                        <input
-                          type="text"
-                          value={editForm.course}
-                          onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}
-                          className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
-                            isStudent 
-                            ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
-                            : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
-                          }`}
-                          placeholder={isStudent ? "e.g. Diploma in ICT" : "e.g. Computer Science"}
-                        />
+                        {isStudent ? (
+                          <>
+                            <select
+                              value={isCustomCourseSelected ? 'custom' : editForm.course}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'custom') {
+                                  setIsCustomCourseSelected(true);
+                                  const isExistingCustom = editForm.course && !SYSTEM_COURSES.includes(editForm.course);
+                                  if (!isExistingCustom) {
+                                    setEditForm({ ...editForm, course: '' });
+                                  }
+                                } else {
+                                  setIsCustomCourseSelected(false);
+                                  setEditForm({ ...editForm, course: val });
+                                }
+                              }}
+                              className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
+                                isStudent 
+                                ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                                : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                              }`}
+                            >
+                              <option value="" className="text-gray-900">Select Course</option>
+                              {SYSTEM_COURSES.map((c, idx) => (
+                                <option key={idx} value={c} className="text-gray-900">{c}</option>
+                              ))}
+                              <option value="custom" className="text-gray-900">✍️ Custom Course (Enter manually)</option>
+                            </select>
+
+                            {isCustomCourseSelected && (
+                              <div className="mt-2 animate-fadeIn">
+                                <input
+                                  type="text"
+                                  value={editForm.course}
+                                  onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}
+                                  placeholder="Type custom course name..."
+                                  className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none uppercase ${
+                                    isStudent 
+                                    ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                                    : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                                  }`}
+                                />
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editForm.course}
+                            onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}
+                            className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
+                              isStudent 
+                              ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                              : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                            }`}
+                            placeholder="e.g. Computer Science"
+                          />
+                        )}
                       </div>
                     </div>
 
