@@ -6,6 +6,7 @@ import admin from "firebase-admin";
 import dotenv from "dotenv";
 import cors from "cors";
 import fs from "fs";
+import zlib from "zlib";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -55,6 +56,7 @@ import {
   deleteDocumentInCol 
 } from "./server/localDb";
 import { seedDatabase } from "./server/seeder";
+import { runBackup } from "./server/backupService";
 
 // Local Firestore Adapter to route Express backend operations (IoT, reports, fee automations) offline
 class LocalCollectionReference {
@@ -574,6 +576,23 @@ async function startServer() {
           } catch (fileErr) {
             console.error(`Error reading backup ${file}:`, fileErr);
           }
+        } else if (file.endsWith('.json.gz')) {
+          try {
+            const gzBuffer = fs.readFileSync(path.join(BACKUP_DIR, file));
+            const raw = zlib.gunzipSync(gzBuffer).toString('utf8');
+            const data = JSON.parse(raw);
+            backupsList.push({
+              id: data.id || file.slice(0, -8),
+              name: data.name || `Automated Backup (${file.slice(7, 17)})`,
+              notes: data.notes || 'Auto-generated system backup (gzipped)',
+              timestamp: data.timestamp || new Date(fs.statSync(path.join(BACKUP_DIR, file)).mtime).toISOString(),
+              docCount: data.docCount || 0,
+              size: gzBuffer.length,
+              isGzip: true
+            });
+          } catch (fileErr) {
+            console.error(`Error reading gzipped backup ${file}:`, fileErr);
+          }
         }
       }
 
@@ -596,12 +615,29 @@ async function startServer() {
       if (customBackupData) {
         backupPayload = typeof customBackupData === 'string' ? JSON.parse(customBackupData) : customBackupData;
       } else if (backupId) {
-        const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+        let filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+        let isGzip = false;
+
+        if (!fs.existsSync(filePath)) {
+          const gzPath = path.join(BACKUP_DIR, `${backupId}.json.gz`);
+          if (fs.existsSync(gzPath)) {
+            filePath = gzPath;
+            isGzip = true;
+          }
+        }
+
         if (!fs.existsSync(filePath)) {
           return res.status(404).json({ error: `Backup with ID ${backupId} not found` });
         }
-        const raw = fs.readFileSync(filePath, 'utf8');
-        backupPayload = JSON.parse(raw);
+
+        if (isGzip) {
+          const gzBuffer = fs.readFileSync(filePath);
+          const raw = zlib.gunzipSync(gzBuffer).toString('utf8');
+          backupPayload = JSON.parse(raw);
+        } else {
+          const raw = fs.readFileSync(filePath, 'utf8');
+          backupPayload = JSON.parse(raw);
+        }
       }
 
       if (!backupPayload || !backupPayload.collections || typeof backupPayload.collections !== 'object') {
@@ -640,8 +676,13 @@ async function startServer() {
     try {
       const backupId = req.params.id;
       const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+      const gzPath = path.join(BACKUP_DIR, `${backupId}.json.gz`);
+      
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+        return res.json({ success: true });
+      } else if (fs.existsSync(gzPath)) {
+        fs.unlinkSync(gzPath);
         return res.json({ success: true });
       } else {
         return res.status(404).json({ error: "Backup file not found" });
@@ -656,10 +697,25 @@ async function startServer() {
   apiRouter.get("/backup/download/:id", (req, res) => {
     try {
       const backupId = req.params.id;
-      const filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+      let filePath = path.join(BACKUP_DIR, `${backupId}.json`);
+      let isGzip = false;
+
+      if (!fs.existsSync(filePath)) {
+        const gzPath = path.join(BACKUP_DIR, `${backupId}.json.gz`);
+        if (fs.existsSync(gzPath)) {
+          filePath = gzPath;
+          isGzip = true;
+        }
+      }
+
       if (fs.existsSync(filePath)) {
-        res.setHeader('Content-disposition', `attachment; filename=${backupId}.json`);
-        res.setHeader('Content-type', 'application/json');
+        if (isGzip) {
+          res.setHeader('Content-disposition', `attachment; filename=${backupId}.json.gz`);
+          res.setHeader('Content-type', 'application/gzip');
+        } else {
+          res.setHeader('Content-disposition', `attachment; filename=${backupId}.json`);
+          res.setHeader('Content-type', 'application/json');
+        }
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);
       } else {
@@ -1415,6 +1471,24 @@ async function startServer() {
       console.error("Monthly fee automation failed:", error);
     }
   });
+
+  // Daily Automatic System Backups
+  // Cron schedule: 0 2 * * * (Every night at 2:00 AM)
+  cron.schedule("0 2 * * *", async () => {
+    console.log("Starting scheduled automatic daily backup at 2:00 AM...");
+    try {
+      const result = await runBackup();
+      if (result.success) {
+        console.log(`[CRON_BACKUP] Scheduled backup completed successfully. Filename: ${result.filename}`);
+      } else {
+        console.error(`[CRON_BACKUP] Scheduled backup failed. Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("[CRON_BACKUP] Scheduled automatic backup cron error:", error);
+    }
+  });
+
+  console.log("Daily backup scheduler initialized.");
 
   // Also run once on startup to ensure no missed fees (highly useful for on-demand restarts)
   console.log("Monthly fee scheduler initialized.");
