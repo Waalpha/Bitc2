@@ -69,7 +69,7 @@ export const Transcripts: React.FC = () => {
 
   // Synchronize default orientation with document types
   useEffect(() => {
-    setPrintOrientation(previewDocType === 'transcript' ? 'portrait' : 'landscape');
+    setPrintOrientation('portrait');
   }, [previewDocType]);
 
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
@@ -1008,14 +1008,96 @@ export const Transcripts: React.FC = () => {
     }
   }, [selectedStudent]);
 
+  // Helper to generate automated professional TVET serial numbers
+  const generateAutomatedSerial = (student: User) => {
+    if (!student) return '';
+    const courseName = (student.course || '').toLowerCase();
+    
+    // Determine department and course codes
+    let deptCode = '24';
+    let courseCode = '36';
+    
+    if (courseName.includes('hairdressing') || courseName.includes('beauty') || courseName.includes('barbering') || courseName.includes('styling') || courseName.includes('cosmetology')) {
+      deptCode = '12';
+      courseCode = '18';
+    } else if (courseName.includes('computer') || courseName.includes('digital') || courseName.includes('package') || courseName.includes('ict') || courseName.includes('commerce')) {
+      deptCode = '08';
+      courseCode = '42';
+    } else if (courseName.includes('healthcare') || courseName.includes('caregiver') || courseName.includes('caregiving') || courseName.includes('nursing')) {
+      deptCode = '24';
+      courseCode = '36';
+    } else if (courseName.includes('cookery') || courseName.includes('baking') || courseName.includes('catering') || courseName.includes('food')) {
+      deptCode = '15';
+      courseCode = '22';
+    } else if (courseName.includes('solar') || courseName.includes('electrical') || courseName.includes('wiring')) {
+      deptCode = '19';
+      courseCode = '55';
+    } else if (courseName.includes('theology') || courseName.includes('biblical') || courseName.includes('ministry')) {
+      deptCode = '07';
+      courseCode = '77';
+    }
+
+    // Extract student number (ignoring any year parts)
+    let serialIndex = '305';
+    if (student.admissionNumber) {
+      const trimmed = student.admissionNumber.trim();
+      if (/^\d+$/.test(trimmed)) {
+        serialIndex = trimmed;
+      } else {
+        const parts = trimmed.split(/[\/\-\s]+/);
+        for (const part of parts) {
+          if (/^\d+$/.test(part)) {
+            const num = parseInt(part, 10);
+            if (num < 2020 || num > 2030) {
+              serialIndex = part;
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      const numOnly = student.uid?.replace(/[^0-9]/g, '') || '';
+      if (numOnly.length >= 3) {
+        serialIndex = numOnly.slice(0, 3);
+      } else {
+        let hash = 0;
+        const uidStr = student.uid || '';
+        for (let i = 0; i < uidStr.length; i++) {
+          hash = uidStr.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        serialIndex = String(Math.abs(hash % 900) + 100);
+      }
+    }
+
+    // Extract enrollment/admission year
+    let admissionYear = '2022';
+    if (student.admissionNumber) {
+      const parts = student.admissionNumber.split(/[\/\-\s]+/);
+      for (const part of parts) {
+        if (/^\d{4}$/.test(part)) {
+          const num = parseInt(part, 10);
+          if (num >= 2000 && num <= 2100) {
+            admissionYear = part;
+            break;
+          }
+        }
+      }
+    } else if (student.admissionDate) {
+      admissionYear = student.admissionDate.slice(0, 4);
+    } else if (student.createdAt) {
+      admissionYear = student.createdAt.slice(0, 4);
+    }
+
+    return `Bitc/Tvet/${deptCode}/${courseCode}/${admissionYear}/${serialIndex}`;
+  };
+
   // Dynamically synchronize certificate overrides
   useEffect(() => {
     if (selectedStudent) {
       const rList = getTranscriptResults();
       const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
-      const enrollmentDateYear = selectedStudent.admissionDate ? selectedStudent.admissionDate.slice(0, 4) : '2026';
       
-      const staticCertNo = `CERT-${enrollmentDateYear}-${selectedStudent.admissionNumber?.replace(/[^a-zA-Z0-9]/g, '') || selectedStudent.uid.slice(0, 5).toUpperCase()}`;
+      const staticCertNo = generateAutomatedSerial(selectedStudent);
       setCustomCertificateNo(localStorage.getItem(`cert_no_${selectedStudent.uid}`) || staticCertNo);
       
       const defaultAward = avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' :
@@ -1616,8 +1698,7 @@ export const Transcripts: React.FC = () => {
                             localStorage.removeItem(`cert_date_${selectedStudent.uid}`);
                             const rList = getTranscriptResults();
                             const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
-                            const enrollmentDateYear = selectedStudent.admissionDate ? selectedStudent.admissionDate.slice(0, 4) : '2026';
-                            setCustomCertificateNo(`CERT-${enrollmentDateYear}-${selectedStudent.admissionNumber?.replace(/[^a-zA-Z0-9]/g, '') || selectedStudent.uid.slice(0, 5).toUpperCase()}`);
+                            setCustomCertificateNo(generateAutomatedSerial(selectedStudent));
                             setCustomAwardClass(avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' : avg >= 60 ? 'Grade B - Pass WITH CREDIT' : 'Grade C - PASS');
                             setCustomCertificateDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
                           }
@@ -1831,7 +1912,7 @@ export const Transcripts: React.FC = () => {
                         <img 
                           src={logoUrlOverride} 
                           alt="School Logo" 
-                          className="h-16 w-auto object-contain max-w-[110px] rounded-xl self-center"
+                          className="h-16 w-auto object-contain max-w-[110px] rounded-xl self-center mix-blend-multiply"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
@@ -1875,7 +1956,7 @@ export const Transcripts: React.FC = () => {
                     <img 
                       src={logoUrlOverride} 
                       alt="" 
-                      className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none" 
+                      className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
                       referrerPolicy="no-referrer"
                     />
                   ) : (
@@ -2140,179 +2221,251 @@ export const Transcripts: React.FC = () => {
 
               </motion.div>
               ) : (
-                <div className="w-full overflow-x-auto pb-4 scrollbar-thin print:overflow-visible">
+                <div className="w-full overflow-x-auto pb-4 scrollbar-thin print:overflow-visible flex justify-center">
                   <motion.div
                     id="certificate-view-element"
                     key="certificate-view"
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
-                    className={`bg-[#FFFDF6] text-slate-900 border-[16px] border-double border-amber-800 rounded-[40px] overflow-hidden relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100 ${
+                    className={`bg-[#FFFDF6] text-slate-900 overflow-hidden relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100 ${
                       printOrientation === 'landscape' 
                         ? 'w-[1000px] h-[707px] p-10 flex flex-col justify-between mx-auto shadow-amber-900/10 shrink-0' 
-                        : 'w-full max-w-3xl p-8 sm:p-14 mx-auto'
+                        : 'w-[760px] h-[1075px] p-12 sm:p-14 flex flex-col justify-between mx-auto shrink-0'
                     }`}
-                    style={{ borderColor: '#b45309' }}
+                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
-                    
-                    {/* Classical Gold Corners Decoration vectors - Hidden on small screens, gorgeous on preview */}
-                    <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-400/20 rounded-tl-xl pointer-events-none print:hidden"></div>
-                    <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-400/20 rounded-tr-xl pointer-events-none print:hidden"></div>
-                    <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-400/20 rounded-bl-xl pointer-events-none print:hidden"></div>
-                    <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-400/20 rounded-br-xl pointer-events-none print:hidden"></div>
+                    {/* Google Fonts Link dynamically loaded inside */}
+                    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@500;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet" />
 
-                    {/* Elegant small watermark centered - VISIBLE ON BOTH PRINT & PREVIEW */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none z-0 flex items-center justify-center">
+                    {/* Elegant Royal Blue and Gold Custom Certificate Frame Overlay */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 760 1075" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Outer Royal Blue Frame */}
+                      <rect x="12" y="12" width="736" height="1051" rx="28" stroke="#0c3182" strokeWidth="10" />
+                      <rect x="24" y="24" width="712" height="1027" rx="18" stroke="#f1c40f" strokeWidth="3" />
+                      <rect x="30" y="30" width="700" height="1015" rx="14" stroke="#0c3182" strokeWidth="4" />
+                      
+                      {/* Beautiful Arched Inner Frame */}
+                      <path d="M44 85 C44 65, 65 44, 85 44 L675 44 C695 44, 716 65, 716 85 L716 990 C716 1010, 695 1031, 675 1031 L85 1031 C65 1031, 44 1010, 44 990 Z" stroke="#0c3182" strokeWidth="1.5" fill="none" />
+                      <path d="M48 83 C48 68, 68 48, 83 48 L677 48 C692 48, 712 68, 712 83 L712 992 C712 1007, 692 1027, 677 1027 L83 1027 C68 1027, 48 1007, 48 992 Z" stroke="#f1c40f" strokeWidth="3" fill="none" />
+                      <path d="M54 81 C54 71, 71 54, 81 54 L679 54 C689 54, 706 71, 706 81 L706 994 C706 1004, 689 1021, 679 1021 L81 1021 C71 1021, 54 1004, 54 994 Z" stroke="#0c3182" strokeWidth="1" fill="none" />
+
+                      {/* Top and Bottom Arched Inward Accents */}
+                      {/* Top Arch */}
+                      <path d="M 120 48 Q 380 75 640 48" stroke="#f1c40f" strokeWidth="2" fill="none" />
+                      {/* Bottom Arch */}
+                      <path d="M 120 1027 Q 380 1000 640 1027" stroke="#f1c40f" strokeWidth="2" fill="none" />
+
+                      {/* Ornate corner flourishes */}
+                      {/* Top Left */}
+                      <path d="M 52 110 Q 110 110 110 52" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                      <circle cx="110" cy="52" r="3.5" fill="#f1c40f" />
+                      <circle cx="52" cy="110" r="3.5" fill="#f1c40f" />
+                      <path d="M 58 100 Q 100 100 100 58" stroke="#0c3182" strokeWidth="1" fill="none" />
+                      
+                      {/* Top Right */}
+                      <path d="M 708 110 Q 650 110 650 52" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                      <circle cx="650" cy="52" r="3.5" fill="#f1c40f" />
+                      <circle cx="708" cy="110" r="3.5" fill="#f1c40f" />
+                      <path d="M 702 100 Q 660 100 660 58" stroke="#0c3182" strokeWidth="1" fill="none" />
+
+                      {/* Bottom Left */}
+                      <path d="M 52 965 Q 110 965 110 1023" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                      <circle cx="110" cy="1023" r="3.5" fill="#f1c40f" />
+                      <circle cx="52" cy="965" r="3.5" fill="#f1c40f" />
+                      <path d="M 58 975 Q 100 975 100 1017" stroke="#0c3182" strokeWidth="1" fill="none" />
+
+                      {/* Bottom Right */}
+                      <path d="M 708 965 Q 650 965 650 1023" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                      <circle cx="650" cy="1023" r="3.5" fill="#f1c40f" />
+                      <circle cx="708" cy="965" r="3.5" fill="#f1c40f" />
+                      <path d="M 702 975 Q 660 975 660 1017" stroke="#0c3182" strokeWidth="1" fill="none" />
+                    </svg>
+
+                    {/* Elegant background watermark of Breakthrough Shield - VISIBLE ON BOTH PRINT & PREVIEW */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.06] pointer-events-none z-0 flex items-center justify-center">
                       {logoUrlOverride ? (
                         <img 
                           src={logoUrlOverride} 
                           alt="" 
-                          className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none" 
+                          className="w-[420px] h-[420px] object-contain select-none pointer-events-none mix-blend-multiply" 
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <GraduationCap size={150} className="stroke-[1.25] text-amber-700 select-none pointer-events-none" />
+                        <GraduationCap size={320} className="stroke-[1] text-blue-900 select-none pointer-events-none" />
                       )}
                     </div>
 
-                    <div className={`text-center relative z-10 ${
-                      printOrientation === 'landscape' ? 'space-y-3.5 h-full flex flex-col justify-between' : 'space-y-6'
-                    }`}>
+                    <div className="text-center relative z-10 h-full flex flex-col justify-between py-2 px-4 sm:px-6">
                       
-                      {/* Header Logo */}
-                      <div className="flex justify-center mb-1">
+                      {/* Section 1: Institution Branding (Top Header) */}
+                      <div className="space-y-2 mt-4">
+                        <h1 className="font-serif font-black tracking-[0.1em] text-[#002266] uppercase text-2xl sm:text-3xl md:text-4xl leading-none">
+                          BREAKTHROUGH
+                        </h1>
+                        <h2 className="font-serif font-extrabold tracking-[0.08em] text-[#0c3182] uppercase text-lg sm:text-xl md:text-2xl leading-none">
+                          INTERNATIONAL TRAINING
+                        </h2>
+                        <h3 className="font-serif font-extrabold tracking-[0.15em] text-[#0c3182] uppercase text-base sm:text-lg md:text-xl leading-none">
+                          COLLEGE
+                        </h3>
+                        
+                        {/* Technical Accreditation Subtitle precisely from the certificate */}
+                        <div className="max-w-xl mx-auto px-4 mt-2">
+                          <p className="text-[7.5px] uppercase font-black tracking-wider text-slate-800 leading-normal text-center">
+                            KENYA: -TVETA/PRIVATE/TVC/0054 -REGISTERED BY TVET AUTHORITY; LICENSED AS A CBET, RPL AND ODEL CENTER. ACCREDITED TO OFFER CHRISTIAN MINISTRY LEVEL 4, 5 & 6. CHRISTIAN CHAPLAINCY, LEVEL 5/6 AND TECHNICAL COURSES
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Logo / Crest Shield */}
+                      <div className="flex justify-center my-1.5">
                         {logoUrlOverride ? (
-                          <img 
-                            src={logoUrlOverride} 
-                            alt="School logo" 
-                            className="h-16 w-auto object-contain max-w-[110px] rounded-xl"
-                            referrerPolicy="no-referrer"
-                          />
+                          <div className="relative p-1">
+                            <img 
+                              src={logoUrlOverride} 
+                              alt="School Crest" 
+                              className="h-28 w-auto object-contain max-w-[150px] mix-blend-multiply filter drop-shadow-[0_4px_6px_rgba(12,49,130,0.15)]"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
                         ) : (
-                          <div className="bg-[#0b1654] text-white p-2.5 rounded-2xl shadow-md">
-                            <GraduationCap className="text-white w-9 h-9" />
+                          <div className="bg-[#0b1654] text-white p-3.5 rounded-full shadow-lg border-2 border-amber-400">
+                            <GraduationCap className="text-white w-10 h-10" />
                           </div>
                         )}
                       </div>
 
-                      {/* School Name */}
-                      <div className="space-y-0.5">
-                        <h1 className={`font-serif font-black text-[#0b1654] tracking-tight uppercase leading-tight ${
-                          printOrientation === 'landscape' ? 'text-2xl' : 'text-xl sm:text-2xl md:text-3xl'
-                        }`}>
-                          {schoolNameOverride}
-                        </h1>
-                        <p className="text-[10px] uppercase font-black tracking-[0.35em] text-amber-700 leading-none">
-                          Chartered Registry of Academic Affairs & TVETA Registered
+                      {/* Section 3: Award Title */}
+                      <div className="space-y-1">
+                        <h4 className="font-serif font-black text-[#0c3182] text-xl sm:text-2xl tracking-[0.15em] uppercase leading-none">
+                          CERTIFICATE OF COMPLETION
+                        </h4>
+                        <p className="font-serif italic text-slate-600 text-sm sm:text-base leading-none pt-1">
+                          Awarded To
                         </p>
                       </div>
 
-                      {/* Certifying opening line */}
-                      <div className={`max-w-2xl mx-auto ${printOrientation === 'landscape' ? 'pt-0' : 'pt-4'}`}>
-                        <p className={`font-serif italic text-slate-600 leading-relaxed ${
-                          printOrientation === 'landscape' ? 'text-xs' : 'text-sm sm:text-base'
-                        }`}>
-                          By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
-                        </p>
-                      </div>
-
-                      {/* Candidate Name */}
-                      <div className={printOrientation === 'landscape' ? 'py-1' : 'py-2'}>
-                        <h2 className={`font-serif font-black text-amber-800 tracking-wide uppercase border-b border-dashed border-amber-300 max-w-lg mx-auto ${
-                          printOrientation === 'landscape' ? 'text-2xl pb-1.5' : 'text-2xl sm:text-3xl md:text-4xl pb-2'
-                        }`}>
+                      {/* Section 4: Student Name (UGC Style handwriting typography) */}
+                      <div className="my-1 border-b border-dashed border-amber-400/40 pb-2 max-w-lg mx-auto w-full">
+                        <h2 
+                          className="text-[#111827] text-center tracking-wide leading-tight py-1 select-text"
+                          style={{ 
+                            fontFamily: "'Great Vibes', 'Alex Brush', 'Playfair Display', cursive",
+                            fontSize: '3.4rem',
+                            fontWeight: 'bold',
+                            textShadow: '1px 1px 1px rgba(0,0,0,0.05)'
+                          }}
+                        >
                           {selectedStudent.name}
                         </h2>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">
-                          having satisfied the full requirements of the department of instruction in
+                        <p className="text-[8.5px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none pt-1">
+                          For successful Completion of the prescribed
+                        </p>
+                        <p className="text-[8.5px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none pt-1">
+                          CERTIFICATE course & achievement of the professional skill in
                         </p>
                       </div>
 
-                      {/* Enrolled Program Award */}
-                      <div className="space-y-0.5">
-                        <p className={`font-serif font-extrabold text-[#0b1654] uppercase tracking-normal ${
-                          printOrientation === 'landscape' ? 'text-lg' : 'text-lg sm:text-xl md:text-2xl'
-                        }`}>
-                          {selectedStudent.course || 'CERTIFICATION OF MINISTRY'}
-                        </p>
-                        
-                        <div className="inline-block mt-1 bg-amber-50 border border-amber-200 text-amber-800 font-black text-[10px] px-3.5 py-1 uppercase rounded-full tracking-widest">
-                          {customAwardClass}
+                      {/* Section 5: Course Program */}
+                      <div className="py-2">
+                        <div className="inline-block py-2 px-8 border-t-2 border-b-2 border-double border-[#0c3182] max-w-xl mx-auto">
+                          <h3 
+                            className="text-[#0c3182] font-black tracking-wide uppercase text-sm sm:text-base md:text-lg"
+                            style={{ fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif" }}
+                          >
+                            {selectedStudent.course || 'CERTIFICATE IN CAREGIVING'}
+                          </h3>
                         </div>
+                        {customAwardClass && (
+                          <div className="mt-1">
+                            <span className="text-[9px] font-black uppercase text-amber-800 tracking-widest bg-amber-50 border border-amber-200/60 px-3 py-0.5 rounded-full">
+                              {customAwardClass}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Conferred Date Stamp */}
-                      <div className={`max-w-md mx-auto ${printOrientation === 'landscape' ? 'pt-0 pb-1' : 'pt-1 pb-4'}`}>
-                        <p className="font-serif text-slate-500 text-xs italic">
-                          In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong className="text-slate-800 font-extrabold not-italic">{customCertificateDate}</strong>.
+                      {/* Section 6: Testimony / Date Declaration */}
+                      <div className="max-w-xl mx-auto leading-relaxed px-4">
+                        <p className="font-serif text-slate-700 text-[10.5px] text-center">
+                          In testimony whereof, the International Advisory Board Members have subscribed their signatures and fixed the seal of <strong className="text-[#0c3182] font-extrabold font-serif">Breakthrough Intl Training College</strong> on this{" "}
+                          <span className="inline-block px-3 border-b border-slate-400 font-bold text-slate-900 not-italic">
+                            {customCertificateDate || '18th Day of Feb 2022'}
+                          </span>
                         </p>
                       </div>
 
-                      {/* Classical Certificate Footer (3-Columns) */}
-                      <div className={`flex flex-col md:flex-row gap-6 items-end border-t border-slate-200/60 max-w-3xl mx-auto w-full justify-between ${
-                        printOrientation === 'landscape' ? 'pt-3' : 'pt-8'
-                      }`}>
+                      {/* Section 7: Classic Certificate Footer (2-Columns + Central Gold Seal) */}
+                      <div className="grid grid-cols-3 items-end gap-2 pt-4 border-t border-slate-200/50 w-full max-w-2xl mx-auto">
                         
-                        {/* Left: Certificate No. and URL Verification Block */}
-                        <div className="md:w-[35%] flex flex-col items-center md:items-start space-y-1">
-                          <div className="p-1 border border-slate-200 bg-white rounded-xl shadow-xs shrink-0">
-                            <QRCodeCanvas
-                              value={`${window.location.origin.includes('bitc.ac.ke') ? 'https://verify.bitc.ac.ke' : window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
-                              size={56}
-                              level="H"
-                            />
-                          </div>
-                          <div className="text-center md:text-left">
-                            <p className="text-[7.5px] font-black text-[#0b1654] uppercase tracking-wider leading-none">SECURE DIGITAL VERIFICATION</p>
-                            <p className="text-[7px] font-extrabold text-amber-700 underline font-mono truncate max-w-[180px] mt-0.5">
-                              {window.location.origin.includes('bitc.ac.ke') ? 'verify.bitc.ac.ke' : window.location.host}/certificate/{selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}
-                            </p>
-                            <p className="text-[7.5px] font-black text-slate-500 uppercase mt-0.5 font-mono tracking-tighter">
-                              Cert No: {customCertificateNo}
+                        {/* Column 1: Serial No & Academic Registrar block */}
+                        <div className="flex flex-col items-start text-left space-y-2">
+                          <div className="space-y-0.5">
+                            <p className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">Serial No:</p>
+                            <p className="text-[9px] font-black text-slate-800 font-mono tracking-tight select-text leading-tight">
+                              {customCertificateNo}
                             </p>
                           </div>
-                        </div>
-
-                        {/* Center: Golden Seal Badge Vector */}
-                        <div className="md:w-[30%] flex justify-center py-0.5 shrink-0">
-                          <div className="relative w-20 h-20 flex items-center justify-center border-4 border-double border-amber-600 rounded-full text-amber-800 font-black text-center text-[7px] tracking-tight uppercase p-1.5 select-none opacity-90 bg-[#fffcf5] shadow-sm">
-                            <div className="absolute inset-0 border border-amber-500 border-dashed rounded-full m-1" />
-                            <div className="space-y-0.5">
-                              <p className="font-black text-[6.5px] leading-tight text-amber-700">OFFICIAL</p>
-                              <p className="font-black text-xs tracking-widest text-[#0b1654] my-0.5 font-serif">BITC</p>
-                              <p className="font-extrabold text-[6.5px] leading-none text-slate-500">SEAL</p>
-                              <p className="font-black text-[5.5px] tracking-tighter text-emerald-600">VERIFIED</p>
+                          
+                          <div className="w-full pt-4">
+                            <div className="border-t border-slate-300 pt-2 text-left">
+                              <span className="bg-[#0c3182] text-white font-black text-[8px] tracking-[0.15em] px-2.5 py-1 rounded uppercase block text-center shadow-sm">
+                                ACADEMIC REGISTRAR
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Right: Autograph and Signatory info */}
-                        <div className="md:w-[35%] text-center md:text-right flex flex-col items-center md:items-end">
-                          <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">AUTHORIZED SIGNATORY</p>
-                          <div className="h-8 flex items-center justify-end py-1 relative text-blue-800">
+                        {/* Column 2: Central Interactive QR Verification & Logo Seal */}
+                        <div className="flex flex-col items-center justify-center space-y-1">
+                          <div className="p-1.5 border border-slate-200 bg-white rounded-xl shadow-md shrink-0 flex items-center justify-center">
+                            <QRCodeCanvas
+                              value={`${window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
+                              size={58}
+                              level="H"
+                            />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[6.5px] font-black text-[#0b1654] uppercase tracking-wider leading-none">SECURE DIGITAL VERIFICATION</p>
+                            <p className="text-[6px] font-extrabold text-amber-700 underline font-mono truncate max-w-[120px] mt-0.5">
+                              verify.bitc.ac.ke
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Column 3: Autograph and Signatory info */}
+                        <div className="flex flex-col items-end text-right">
+                          <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none">AUTHORIZED SIGNATORY</p>
+                          
+                          <div className="h-10 relative flex items-center justify-end py-1 text-blue-800 w-full">
                             {signatureUrlOverride ? (
                               <img 
                                 src={signatureUrlOverride} 
                                 alt="Signature" 
-                                className="h-7 w-auto object-contain max-h-7" 
+                                className="h-9 w-auto object-contain max-h-9" 
                                 referrerPolicy="no-referrer" 
                               />
                             ) : (
-                              <svg className="h-7 w-auto opacity-90" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                                <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                              </svg>
+                              <div className="relative">
+                                <svg className="h-9 w-32 opacity-90 text-blue-800" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M10 42 C25 15, 55 75, 75 35 C95 12, 115 65, 140 30 C160 12, 115 18, 150 45 C185 72, 195 18, 215 35" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                                  <path d="M35 32 L165 42" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+                                </svg>
+                                <span className="absolute text-[9.5px] italic font-semibold text-blue-700/70 bottom-1 right-2 pointer-events-none select-none font-serif">Prof Njuguna Gacheru</span>
+                              </div>
                             )}
                           </div>
-                          <div className="border-t border-slate-200 pt-1 w-full max-w-[160px]">
-                            <p className="text-[9px] font-black text-slate-900 uppercase">{registrarNameOverride}</p>
-                            <p className="text-[7px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">{registrarTitleOverride}</p>
+                          
+                          <div className="border-t border-slate-300 pt-2 w-full text-center">
+                            <p className="text-[#0c3182] font-black text-[8px] tracking-[0.15em] uppercase leading-none">
+                              DIRECTOR
+                            </p>
                           </div>
                         </div>
 
                       </div>
                     </div>
-
                   </motion.div>
                 </div>
               )
