@@ -1639,10 +1639,10 @@ export const Fees: React.FC = () => {
       });
       const data = await response.json();
       if (data.success && data.result) {
-        const { configsCount, appliedCount, skippedCount } = data.result;
+        const { configsCount, appliedCount, skippedCount, suspendedCount } = data.result;
         await loadFeesData(true);
         addToast(
-          `Monthly Billing complete! Processed ${configsCount} configs. Applied to ${appliedCount} students. Skipped ${skippedCount} duplicates.`,
+          `Monthly Billing complete! Processed ${configsCount} configs. Applied to ${appliedCount} students. Skipped ${skippedCount} duplicates.${suspendedCount ? ` Suspended billing for ${suspendedCount} student(s) due to 2-month absence.` : ''}`,
           "success"
         );
       } else {

@@ -270,6 +270,7 @@ try {
   
   // Trigger automatic migration once in the background
   const remoteDb = admin.firestore();
+  db = remoteDb;
   console.log("Firebase Admin initialized, launching one-time background migration check.");
   migrateFromFirestore(remoteDb)
     .then(() => {
@@ -1566,8 +1567,39 @@ async function automateMonthlyFees() {
 
   console.log(`Processing ${configs.length} monthly fee configs for ${students.length} students...`);
   
+  // Fetch all attendance from the last 60 days to determine absences
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+
+  const classAttendanceCount: { [classId: string]: number } = {};
+  const studentPresenceCount: { [studentId: string]: number } = {};
+
+  try {
+    const attendanceSnap = await db.collection('attendance')
+      .where('date', '>=', sixtyDaysAgoStr)
+      .get();
+
+    attendanceSnap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      const classId = data.classId;
+      if (classId) {
+        classAttendanceCount[classId] = (classAttendanceCount[classId] || 0) + 1;
+      }
+      const records = data.records || {};
+      for (const [studentId, status] of Object.entries(records)) {
+        if (status === 'present' || status === 'late' || status === 'excused') {
+          studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching attendance for monthly billing suspension check:", err);
+  }
+
   let appliedCount = 0;
   let skippedCount = 0;
+  let suspendedCount = 0;
 
   for (const config of configs) {
     const isAll = (config as any).classId === 'all';
@@ -1577,8 +1609,17 @@ async function automateMonthlyFees() {
       ? students 
       : students.filter(s => {
           const classIds = (s as any).classIds;
-          const cids = Array.isArray(classIds) ? classIds : (classIds ? [String(classIds)] : []);
-          return cids.map(String).map(c => c.trim()).includes(classIdToMatch);
+          const classId = (s as any).classId;
+          const cids: string[] = [];
+          if (Array.isArray(classIds)) {
+            cids.push(...classIds.map(String));
+          } else if (classIds) {
+            cids.push(String(classIds));
+          }
+          if (classId) {
+            cids.push(String(classId));
+          }
+          return cids.map(c => c.trim()).includes(classIdToMatch);
         });
 
     for (const student of targetStudents) {
@@ -1587,6 +1628,40 @@ async function automateMonthlyFees() {
         skippedCount++;
         continue;
       }
+
+      // Check for 2-month absence billing suspension
+      const studentClassIds = (() => {
+        const classIds = (student as any).classIds;
+        const classId = (student as any).classId;
+        const cids: string[] = [];
+        if (Array.isArray(classIds)) {
+          cids.push(...classIds.map(String));
+        } else if (classIds) {
+          cids.push(String(classIds));
+        }
+        if (classId) {
+          cids.push(String(classId));
+        }
+        return cids.map(c => c.trim()).filter(Boolean);
+      })();
+
+      // Evaluate enrollment date - skip check for students registered in the last 60 days
+      const createdAtStr = (student as any).createdAt || (student as any).admissionDate;
+      const createdDate = createdAtStr ? new Date(createdAtStr) : null;
+      const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 60 * 24 * 60 * 60 * 1000;
+
+      if (!isNewStudent) {
+        const hasAttendanceRecordedForStudentClasses = studentClassIds.some(cid => (classAttendanceCount[cid] || 0) > 0);
+        const presenceCount = studentPresenceCount[sUid] || 0;
+        
+        // If their classes have active attendance sessions but they have 0 presences, suspend billing
+        if (hasAttendanceRecordedForStudentClasses && presenceCount === 0) {
+          console.log(`[Suspended Billing] Student ${student.name || sUid} was absent for the last 60 days. Skipping billing.`);
+          suspendedCount++;
+          continue;
+        }
+      }
+
       const feeTitle = (config as any).title;
       const feeAmount = Number((config as any).amount || 0);
       const historyDescription = `Monthly Fee: ${feeTitle} (${currentMonthYear})`;
@@ -1659,7 +1734,8 @@ async function automateMonthlyFees() {
     success: true,
     configsCount: configs.length,
     appliedCount,
-    skippedCount
+    skippedCount,
+    suspendedCount
   };
 }
 
