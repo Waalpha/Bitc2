@@ -63,14 +63,9 @@ export const Transcripts: React.FC = () => {
   const [sidebarTab, setSidebarTab] = useState<'students' | 'editor'>('students');
   
   // Digital Certificate states
-  const [previewDocType, setPreviewDocType] = useState<'transcript' | 'certificate'>('transcript');
+  const previewDocType = 'transcript';
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [isSavingPdf, setIsSavingPdf] = useState(false);
-
-  // Synchronize default orientation with document types
-  useEffect(() => {
-    setPrintOrientation('portrait');
-  }, [previewDocType]);
 
   const executeHtml2CanvasWithPatch = async (element: HTMLElement) => {
     return withOklabOklchPatch(async () => {
@@ -505,6 +500,16 @@ export const Transcripts: React.FC = () => {
                   <p class="info-val">2026-06-22</p>
                 </td>
               </tr>
+              <tr>
+                <td class="info-card">
+                  <p class="info-label">Transcript Serial Number</p>
+                  <p class="info-val" style="font-family:Courier,monospace; color:#1e3a8a; font-weight:bold;">${generateAutomatedSerial(selectedStudent)}</p>
+                </td>
+                <td class="info-card">
+                  <p class="info-label">Verification Code</p>
+                  <p class="info-val" style="font-family:Courier,monospace; font-size:9pt; color:#64748b;">verify.bitc.ac.ke</p>
+                </td>
+              </tr>
             </table>
 
             <!-- Course Sheet -->
@@ -593,7 +598,7 @@ export const Transcripts: React.FC = () => {
                   </div>
                   <div class="sign-line" style="text-align:right;">
                     <p class="sign-name" style="text-align:right;">SECURE CODE</p>
-                    <p class="sign-title" style="text-align:right;">REF: ${selectedStudent.admissionNumber || selectedStudent.uid.slice(0, 5).toUpperCase()}</p>
+                    <p class="sign-title" style="text-align:right;">REF: ${generateAutomatedSerial(selectedStudent)}</p>
                   </div>
                 </td>
               </tr>
@@ -611,227 +616,6 @@ export const Transcripts: React.FC = () => {
       const a = document.createElement('a');
       a.href = url;
       a.download = `${selectedStudent.name.trim().replace(/\s+/g, '_')}_Transcript.doc`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } else {
-      // Certificate export
-      const htmlContent = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <title>Institutional Certificate - ${selectedStudent.name}</title>
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForBrowser/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-          <style>
-            @page {
-              size: A4 landscape;
-              margin: 0.8in 0.8in 0.8in 0.8in;
-            }
-            body {
-              font-family: 'Georgia', 'Times New Roman', serif;
-              color: #0f172a;
-              margin: 0;
-              padding: 0;
-              background-color: #fffdf6;
-            }
-            .cert-border {
-              border: 15px double #b45309;
-              padding: 40px;
-              background-color: #fffdf6;
-              position: relative;
-              min-height: 550px;
-            }
-            .watermark {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              width: 500px;
-              height: 100px;
-              margin-left: -250px;
-              margin-top: -50px;
-              font-size: 50pt;
-              color: rgba(180, 83, 9, 0.08);
-              font-weight: bold;
-              transform: rotate(-30deg);
-              -webkit-transform: rotate(-30deg);
-              text-align: center;
-              z-index: -100;
-              letter-spacing: 3px;
-              text-transform: uppercase;
-              pointer-events: none;
-            }
-            .center-txt {
-              text-align: center;
-            }
-            .school-header {
-              font-size: 24pt;
-              font-weight: 900;
-              color: #0b1654;
-              margin: 0;
-              text-transform: uppercase;
-            }
-            .school-registry {
-              font-size: 8pt;
-              font-weight: bold;
-              color: #b45309;
-              letter-spacing: 4px;
-              text-transform: uppercase;
-              margin-top: 5px;
-              margin-bottom: 30px;
-            }
-            .conferring-txt {
-              font-size: 11pt;
-              font-style: italic;
-              color: #475569;
-              margin: 20px auto;
-              width: 80%;
-              line-height: 1.5;
-            }
-            .cand-name {
-              font-size: 26pt;
-              font-weight: bold;
-              color: #92400e;
-              margin: 15px 0;
-              border-bottom: 2px dashed #fcd34d;
-              display: inline-block;
-              padding-bottom: 8px;
-              text-transform: uppercase;
-            }
-            .cand-sub {
-              font-size: 8pt;
-              font-weight: bold;
-              color: #64748b;
-              letter-spacing: 2px;
-              text-transform: uppercase;
-              margin: 5px 0 15px 0;
-            }
-            .cert-course {
-              font-size: 18pt;
-              font-weight: bold;
-              color: #0b1654;
-              text-transform: uppercase;
-              margin: 10px 0;
-            }
-            .award-class {
-              background-color: #fffbeb;
-              border: 1px solid #fde047;
-              color: #92400e;
-              font-size: 9pt;
-              font-weight: bold;
-              padding: 5px 15px;
-              display: inline-block;
-              border-radius: 20px;
-              margin-top: 10px;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-            }
-            .testimony-txt {
-              font-size: 9.5pt;
-              color: #64748b;
-              font-style: italic;
-              margin: 25px auto;
-              width: 80%;
-            }
-            .footer-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 35px;
-            }
-            .footer-cell {
-              width: 33.33%;
-              vertical-align: bottom;
-              font-family: Arial, sans-serif;
-            }
-            .seal-gold {
-              width: 80px;
-              height: 80px;
-              border: 4px double #b45309;
-              border-radius: 50%;
-              background-color: #fffbeb;
-              margin: 0 auto;
-              padding: 8px 5px;
-              text-align: center;
-              color: #b45309;
-            }
-            .seal-gold-txt {
-              font-weight: bold;
-              font-size: 6pt;
-              margin: 0;
-              text-transform: uppercase;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="cert-border">
-            <div class="watermark">OFFICIAL SEAL</div>
-            
-            <div class="center-txt">
-              <h1 class="school-header">${schoolNameOverride || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</h1>
-              <p class="school-registry">Chartered Registry of Academic Affairs & TVETA Registered</p>
-              
-              <p class="conferring-txt">
-                By recommendations of the academic registry council and under guidelines of professional education standards, the Governing Syndicate of the College hereby conferring upon
-              </p>
-              
-              <h2 class="cand-name">${selectedStudent.name}</h2>
-              <p class="cand-sub">having satisfied the full requirements of the department of instruction in</p>
-              
-              <h3 class="cert-course">${selectedStudent.course || 'CERTIFICATION OF MINISTRY'}</h3>
-              <div>
-                <span class="award-class">${customAwardClass}</span>
-              </div>
-              
-              <p class="testimony-txt">
-                In testimony whereof, the seal of the Institute is hereunto affixed and our signatures subjoined. Conferred and verified on this date: <strong style="color:#1e293b; font-style:normal;">${customCertificateDate}</strong>.
-              </p>
-              
-              <table class="footer-table">
-                <tr>
-                  <td class="footer-cell" style="text-align:left;">
-                    <p style="font-size:7.5px; font-weight:bold; color:#cbd5e1; text-transform:uppercase; margin:0;">SECURE DIGITAL VERIFICATION</p>
-                    <p style="font-size:7px; font-weight:bold; color:#b45309; text-decoration:underline; font-family:Courier; margin:2px 0;">verify.bitc.ac.ke</p>
-                    <p style="font-size:7px; font-weight:bold; color:#64748b; font-family:Courier; margin:0;">Cert No: ${customCertificateNo}</p>
-                  </td>
-                  <td class="footer-cell" style="text-align:center;">
-                    <div class="seal-gold">
-                      <p class="seal-gold-txt" style="color:#b45309;">OFFICIAL</p>
-                      <p class="seal-gold-txt" style="font-size:9pt; color:#0b1654; font-family:Georgia,serif; margin:1px 0;">BITC</p>
-                      <p class="seal-gold-txt" style="color:#64748b;">SEAL</p>
-                    </div>
-                  </td>
-                  <td class="footer-cell" style="text-align:right;">
-                    <p style="font-size:7.5px; font-weight:bold; color:#cbd5e1; text-transform:uppercase; margin:0; line-height:1;">AUTHORIZED SIGNATORY</p>
-                    <div style="height:35px; vertical-align:bottom; padding-bottom:5px; text-align:right;">
-                      <span style="font-family:'Brush Script MT', cursive; font-size:16pt; color:#0b1654; font-weight:bold;">${registrarNameOverride.toLowerCase().split(',')[0]}</span>
-                    </div>
-                    <div style="border-top:1px solid #cbd5e1; padding-top:4px; max-width:160px; margin-left:auto;">
-                      <p style="font-size:8pt; font-weight:bold; color:#0f172a; margin:0; text-transform:uppercase;">${registrarNameOverride}</p>
-                      <p style="font-size:6.5pt; font-weight:bold; color:#94a3b8; margin:0; text-transform:uppercase;">${registrarTitleOverride}</p>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-          </div>
-        </body>
-        </html>
-      `;
-      const blob = new Blob(['\ufeff', htmlContent], {
-        type: 'application/msword;charset=utf-8'
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${selectedStudent.name.trim().replace(/\s+/g, '_')}_Certificate.doc`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1045,10 +829,13 @@ export const Transcripts: React.FC = () => {
         serialIndex = trimmed;
       } else {
         const parts = trimmed.split(/[\/\-\s]+/);
-        for (const part of parts) {
+        // Search from the end of the split parts to find the actual serial number,
+        // ignoring any 4-digit years.
+        for (let i = parts.length - 1; i >= 0; i--) {
+          const part = parts[i];
           if (/^\d+$/.test(part)) {
             const num = parseInt(part, 10);
-            if (num < 2020 || num > 2030) {
+            if (num < 2000 || num > 2100) {
               serialIndex = part;
               break;
             }
@@ -1070,8 +857,15 @@ export const Transcripts: React.FC = () => {
     }
 
     // Extract enrollment/admission year
-    let admissionYear = '2022';
-    if (student.admissionNumber) {
+    let admissionYear = '2026';
+    if (student.academicYear) {
+      const match = student.academicYear.match(/\d{4}/);
+      if (match) {
+        admissionYear = match[0];
+      }
+    }
+    
+    if (admissionYear === '2026' && student.admissionNumber) {
       const parts = student.admissionNumber.split(/[\/\-\s]+/);
       for (const part of parts) {
         if (/^\d{4}$/.test(part)) {
@@ -1082,10 +876,14 @@ export const Transcripts: React.FC = () => {
           }
         }
       }
-    } else if (student.admissionDate) {
-      admissionYear = student.admissionDate.slice(0, 4);
-    } else if (student.createdAt) {
-      admissionYear = student.createdAt.slice(0, 4);
+    }
+    
+    if (admissionYear === '2026') {
+      if (student.admissionDate) {
+        admissionYear = student.admissionDate.slice(0, 4);
+      } else if (student.createdAt) {
+        admissionYear = student.createdAt.slice(0, 4);
+      }
     }
 
     return `Bitc/Tvet/${deptCode}/${courseCode}/${admissionYear}/${serialIndex}`;
@@ -1686,74 +1484,7 @@ export const Transcripts: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Digital Certificate Overrides */}
-                  <div className="border-b border-slate-100 dark:border-slate-800 pb-5">
-                    <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-2 flex items-center justify-between">
-                      <span>Digital Certificate Layout</span>
-                      <button 
-                        onClick={() => {
-                          if (selectedStudent) {
-                            localStorage.removeItem(`cert_no_${selectedStudent.uid}`);
-                            localStorage.removeItem(`cert_award_${selectedStudent.uid}`);
-                            localStorage.removeItem(`cert_date_${selectedStudent.uid}`);
-                            const rList = getTranscriptResults();
-                            const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
-                            setCustomCertificateNo(generateAutomatedSerial(selectedStudent));
-                            setCustomAwardClass(avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' : avg >= 60 ? 'Grade B - Pass WITH CREDIT' : 'Grade C - PASS');
-                            setCustomCertificateDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-                          }
-                        }}
-                        className="text-[10px] text-red-500 hover:underline capitalize font-bold"
-                      >
-                        Reset Defaults
-                      </button>
-                    </h4>
-                    <p className="text-[10px] text-slate-400 mb-3">These fields will be embedded into graduation certificates and verified online via QR codes.</p>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Certificate Number</label>
-                        <input
-                          type="text"
-                          value={customCertificateNo}
-                          onChange={(e) => {
-                            setCustomCertificateNo(e.target.value);
-                            if (selectedStudent) {
-                              localStorage.setItem(`cert_no_${selectedStudent.uid}`, e.target.value);
-                            }
-                          }}
-                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Award / Class Level</label>
-                        <input
-                          type="text"
-                          value={customAwardClass}
-                          onChange={(e) => {
-                            setCustomAwardClass(e.target.value);
-                            if (selectedStudent) {
-                              localStorage.setItem(`cert_award_${selectedStudent.uid}`, e.target.value);
-                            }
-                          }}
-                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Issue / Conferred Date</label>
-                        <input
-                          type="text"
-                          value={customCertificateDate}
-                          onChange={(e) => {
-                            setCustomCertificateDate(e.target.value);
-                            if (selectedStudent) {
-                              localStorage.setItem(`cert_date_${selectedStudent.uid}`, e.target.value);
-                            }
-                          }}
-                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
+
 
                   <div>
                     <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-3 flex items-center justify-between">
@@ -1858,30 +1589,6 @@ export const Transcripts: React.FC = () => {
 
         {/* Right pane: Real transcript/certificate render card */}
         <div className={`${isAdminOrStaff ? 'lg:col-span-8' : 'lg:col-span-12'} text-left PrintNoBorder`}>
-          
-          {/* Document Switcher - HIDDEN ON PRINT */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-6 print:hidden max-w-sm shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-            <button
-              onClick={() => setPreviewDocType('transcript')}
-              className={`flex-1 py-2.5 px-3 text-center rounded-xl font-black text-[11px] uppercase tracking-wider transition-all ${
-                previewDocType === 'transcript'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              Transcript
-            </button>
-            <button
-              onClick={() => setPreviewDocType('certificate')}
-              className={`flex-1 py-2.5 px-3 text-center rounded-xl font-black text-[11px] uppercase tracking-wider transition-all ${
-                previewDocType === 'certificate'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              Graduation Certificate
-            </button>
-          </div>
 
           <AnimatePresence mode="wait">
             {loading ? (
@@ -1892,8 +1599,7 @@ export const Transcripts: React.FC = () => {
                 </div>
               </div>
             ) : selectedStudent ? (
-              previewDocType === 'transcript' ? (
-                <motion.div
+              <motion.div
                   id="transcript-view-element"
                   key="transcript-view"
                   initial={{ opacity: 0, y: 15 }}
@@ -2043,6 +1749,11 @@ export const Transcripts: React.FC = () => {
                     <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registry Seal Date</p>
                       <p className="font-semibold text-slate-950 uppercase">2026-06-22</p>
+                    </div>
+
+                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Transcript Serial</p>
+                      <p className="font-bold text-blue-600 uppercase font-mono tracking-tight text-xs sm:text-sm select-all">{generateAutomatedSerial(selectedStudent)}</p>
                     </div>
                   </div>
 
@@ -2207,7 +1918,7 @@ export const Transcripts: React.FC = () => {
                   <div className="md:w-3/12 flex flex-col items-center md:items-end justify-center shrink-0">
                     <div className="p-2 border border-slate-200 bg-white rounded-2xl print:border-black shrink-0">
                       <QRCodeCanvas
-                        value={`https://bitc.ac.ke/verify/transcript/${selectedStudent.admissionNumber || 'ADM-2026'}`}
+                        value={`https://bitc.ac.ke/verify/transcript/${generateAutomatedSerial(selectedStudent)}`}
                         size={64}
                         level="M"
                       />
@@ -2215,260 +1926,14 @@ export const Transcripts: React.FC = () => {
                     <span className="text-[8px] text-right font-bold text-slate-400 mt-2 tracking-widest uppercase text-center md:text-right">
                       SECURE DB VERIFICATION CODE
                     </span>
+                    <span className="text-[9px] font-black font-mono text-blue-600 mt-0.5 uppercase tracking-tight select-all leading-none">
+                      {generateAutomatedSerial(selectedStudent)}
+                    </span>
                   </div>
 
                 </div>
 
               </motion.div>
-              ) : (
-                <div className="w-full overflow-x-auto pb-4 scrollbar-thin print:overflow-visible flex justify-center">
-                  <motion.div
-                    id="certificate-view-element"
-                    key="certificate-view"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    className={`bg-[#FFFDF6] text-slate-900 overflow-hidden relative print:p-0 print:border-none print:shadow-none print:rounded-none select-none shadow-2xl selection:bg-amber-100 ${
-                      printOrientation === 'landscape' 
-                        ? 'w-[1000px] h-[707px] p-10 flex flex-col justify-between mx-auto shadow-amber-900/10 shrink-0' 
-                        : 'w-[760px] h-[1075px] p-12 sm:p-14 flex flex-col justify-between mx-auto shrink-0'
-                    }`}
-                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                  >
-                    {/* Google Fonts Link dynamically loaded inside */}
-                    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@500;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet" />
-
-                    {/* Elegant Royal Blue and Gold Custom Certificate Frame Overlay */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 760 1075" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      {/* Outer Royal Blue Frame */}
-                      <rect x="12" y="12" width="736" height="1051" rx="28" stroke="#0c3182" strokeWidth="10" />
-                      <rect x="24" y="24" width="712" height="1027" rx="18" stroke="#f1c40f" strokeWidth="3" />
-                      <rect x="30" y="30" width="700" height="1015" rx="14" stroke="#0c3182" strokeWidth="4" />
-                      
-                      {/* Beautiful Arched Inner Frame */}
-                      <path d="M44 85 C44 65, 65 44, 85 44 L675 44 C695 44, 716 65, 716 85 L716 990 C716 1010, 695 1031, 675 1031 L85 1031 C65 1031, 44 1010, 44 990 Z" stroke="#0c3182" strokeWidth="1.5" fill="none" />
-                      <path d="M48 83 C48 68, 68 48, 83 48 L677 48 C692 48, 712 68, 712 83 L712 992 C712 1007, 692 1027, 677 1027 L83 1027 C68 1027, 48 1007, 48 992 Z" stroke="#f1c40f" strokeWidth="3" fill="none" />
-                      <path d="M54 81 C54 71, 71 54, 81 54 L679 54 C689 54, 706 71, 706 81 L706 994 C706 1004, 689 1021, 679 1021 L81 1021 C71 1021, 54 1004, 54 994 Z" stroke="#0c3182" strokeWidth="1" fill="none" />
-
-                      {/* Top and Bottom Arched Inward Accents */}
-                      {/* Top Arch */}
-                      <path d="M 120 48 Q 380 75 640 48" stroke="#f1c40f" strokeWidth="2" fill="none" />
-                      {/* Bottom Arch */}
-                      <path d="M 120 1027 Q 380 1000 640 1027" stroke="#f1c40f" strokeWidth="2" fill="none" />
-
-                      {/* Ornate corner flourishes */}
-                      {/* Top Left */}
-                      <path d="M 52 110 Q 110 110 110 52" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                      <circle cx="110" cy="52" r="3.5" fill="#f1c40f" />
-                      <circle cx="52" cy="110" r="3.5" fill="#f1c40f" />
-                      <path d="M 58 100 Q 100 100 100 58" stroke="#0c3182" strokeWidth="1" fill="none" />
-                      
-                      {/* Top Right */}
-                      <path d="M 708 110 Q 650 110 650 52" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                      <circle cx="650" cy="52" r="3.5" fill="#f1c40f" />
-                      <circle cx="708" cy="110" r="3.5" fill="#f1c40f" />
-                      <path d="M 702 100 Q 660 100 660 58" stroke="#0c3182" strokeWidth="1" fill="none" />
-
-                      {/* Bottom Left */}
-                      <path d="M 52 965 Q 110 965 110 1023" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                      <circle cx="110" cy="1023" r="3.5" fill="#f1c40f" />
-                      <circle cx="52" cy="965" r="3.5" fill="#f1c40f" />
-                      <path d="M 58 975 Q 100 975 100 1017" stroke="#0c3182" strokeWidth="1" fill="none" />
-
-                      {/* Bottom Right */}
-                      <path d="M 708 965 Q 650 965 650 1023" stroke="#f1c40f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                      <circle cx="650" cy="1023" r="3.5" fill="#f1c40f" />
-                      <circle cx="708" cy="965" r="3.5" fill="#f1c40f" />
-                      <path d="M 702 975 Q 660 975 660 1017" stroke="#0c3182" strokeWidth="1" fill="none" />
-                    </svg>
-
-                    {/* Elegant background watermark of Breakthrough Shield - VISIBLE ON BOTH PRINT & PREVIEW */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.06] pointer-events-none z-0 flex items-center justify-center">
-                      {logoUrlOverride ? (
-                        <img 
-                          src={logoUrlOverride} 
-                          alt="" 
-                          className="w-[420px] h-[420px] object-contain select-none pointer-events-none mix-blend-multiply" 
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <GraduationCap size={320} className="stroke-[1] text-blue-900 select-none pointer-events-none" />
-                      )}
-                    </div>
-
-                    <div className="text-center relative z-10 h-full flex flex-col justify-between py-2 px-4 sm:px-6">
-                      
-                      {/* Section 1: Institution Branding (Top Header) */}
-                      <div className="space-y-2 mt-4">
-                        <h1 className="font-serif font-black tracking-[0.1em] text-[#002266] uppercase text-2xl sm:text-3xl md:text-4xl leading-none">
-                          BREAKTHROUGH
-                        </h1>
-                        <h2 className="font-serif font-extrabold tracking-[0.08em] text-[#0c3182] uppercase text-lg sm:text-xl md:text-2xl leading-none">
-                          INTERNATIONAL TRAINING
-                        </h2>
-                        <h3 className="font-serif font-extrabold tracking-[0.15em] text-[#0c3182] uppercase text-base sm:text-lg md:text-xl leading-none">
-                          COLLEGE
-                        </h3>
-                        
-                        {/* Technical Accreditation Subtitle precisely from the certificate */}
-                        <div className="max-w-xl mx-auto px-4 mt-2">
-                          <p className="text-[7.5px] uppercase font-black tracking-wider text-slate-800 leading-normal text-center">
-                            KENYA: -TVETA/PRIVATE/TVC/0054 -REGISTERED BY TVET AUTHORITY; LICENSED AS A CBET, RPL AND ODEL CENTER. ACCREDITED TO OFFER CHRISTIAN MINISTRY LEVEL 4, 5 & 6. CHRISTIAN CHAPLAINCY, LEVEL 5/6 AND TECHNICAL COURSES
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Logo / Crest Shield */}
-                      <div className="flex justify-center my-1.5">
-                        {logoUrlOverride ? (
-                          <div className="relative p-1">
-                            <img 
-                              src={logoUrlOverride} 
-                              alt="School Crest" 
-                              className="h-28 w-auto object-contain max-w-[150px] mix-blend-multiply filter drop-shadow-[0_4px_6px_rgba(12,49,130,0.15)]"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                        ) : (
-                          <div className="bg-[#0b1654] text-white p-3.5 rounded-full shadow-lg border-2 border-amber-400">
-                            <GraduationCap className="text-white w-10 h-10" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Section 3: Award Title */}
-                      <div className="space-y-1">
-                        <h4 className="font-serif font-black text-[#0c3182] text-xl sm:text-2xl tracking-[0.15em] uppercase leading-none">
-                          CERTIFICATE OF COMPLETION
-                        </h4>
-                        <p className="font-serif italic text-slate-600 text-sm sm:text-base leading-none pt-1">
-                          Awarded To
-                        </p>
-                      </div>
-
-                      {/* Section 4: Student Name (UGC Style handwriting typography) */}
-                      <div className="my-1 border-b border-dashed border-amber-400/40 pb-2 max-w-lg mx-auto w-full">
-                        <h2 
-                          className="text-[#111827] text-center tracking-wide leading-tight py-1 select-text"
-                          style={{ 
-                            fontFamily: "'Great Vibes', 'Alex Brush', 'Playfair Display', cursive",
-                            fontSize: '3.4rem',
-                            fontWeight: 'bold',
-                            textShadow: '1px 1px 1px rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          {selectedStudent.name}
-                        </h2>
-                        <p className="text-[8.5px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none pt-1">
-                          For successful Completion of the prescribed
-                        </p>
-                        <p className="text-[8.5px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none pt-1">
-                          CERTIFICATE course & achievement of the professional skill in
-                        </p>
-                      </div>
-
-                      {/* Section 5: Course Program */}
-                      <div className="py-2">
-                        <div className="inline-block py-2 px-8 border-t-2 border-b-2 border-double border-[#0c3182] max-w-xl mx-auto">
-                          <h3 
-                            className="text-[#0c3182] font-black tracking-wide uppercase text-sm sm:text-base md:text-lg"
-                            style={{ fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif" }}
-                          >
-                            {selectedStudent.course || 'CERTIFICATE IN CAREGIVING'}
-                          </h3>
-                        </div>
-                        {customAwardClass && (
-                          <div className="mt-1">
-                            <span className="text-[9px] font-black uppercase text-amber-800 tracking-widest bg-amber-50 border border-amber-200/60 px-3 py-0.5 rounded-full">
-                              {customAwardClass}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Section 6: Testimony / Date Declaration */}
-                      <div className="max-w-xl mx-auto leading-relaxed px-4">
-                        <p className="font-serif text-slate-700 text-[10.5px] text-center">
-                          In testimony whereof, the International Advisory Board Members have subscribed their signatures and fixed the seal of <strong className="text-[#0c3182] font-extrabold font-serif">Breakthrough Intl Training College</strong> on this{" "}
-                          <span className="inline-block px-3 border-b border-slate-400 font-bold text-slate-900 not-italic">
-                            {customCertificateDate || '18th Day of Feb 2022'}
-                          </span>
-                        </p>
-                      </div>
-
-                      {/* Section 7: Classic Certificate Footer (2-Columns + Central Gold Seal) */}
-                      <div className="grid grid-cols-3 items-end gap-2 pt-4 border-t border-slate-200/50 w-full max-w-2xl mx-auto">
-                        
-                        {/* Column 1: Serial No & Academic Registrar block */}
-                        <div className="flex flex-col items-start text-left space-y-2">
-                          <div className="space-y-0.5">
-                            <p className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">Serial No:</p>
-                            <p className="text-[9px] font-black text-slate-800 font-mono tracking-tight select-text leading-tight">
-                              {customCertificateNo}
-                            </p>
-                          </div>
-                          
-                          <div className="w-full pt-4">
-                            <div className="border-t border-slate-300 pt-2 text-left">
-                              <span className="bg-[#0c3182] text-white font-black text-[8px] tracking-[0.15em] px-2.5 py-1 rounded uppercase block text-center shadow-sm">
-                                ACADEMIC REGISTRAR
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Column 2: Central Interactive QR Verification & Logo Seal */}
-                        <div className="flex flex-col items-center justify-center space-y-1">
-                          <div className="p-1.5 border border-slate-200 bg-white rounded-xl shadow-md shrink-0 flex items-center justify-center">
-                            <QRCodeCanvas
-                              value={`${window.location.origin}/certificate/${selectedStudent.admissionNumber || selectedStudent.uid}`}
-                              size={58}
-                              level="H"
-                            />
-                          </div>
-                          <div className="text-center">
-                            <p className="text-[6.5px] font-black text-[#0b1654] uppercase tracking-wider leading-none">SECURE DIGITAL VERIFICATION</p>
-                            <p className="text-[6px] font-extrabold text-amber-700 underline font-mono truncate max-w-[120px] mt-0.5">
-                              verify.bitc.ac.ke
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Column 3: Autograph and Signatory info */}
-                        <div className="flex flex-col items-end text-right">
-                          <p className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none">AUTHORIZED SIGNATORY</p>
-                          
-                          <div className="h-10 relative flex items-center justify-end py-1 text-blue-800 w-full">
-                            {signatureUrlOverride ? (
-                              <img 
-                                src={signatureUrlOverride} 
-                                alt="Signature" 
-                                className="h-9 w-auto object-contain max-h-9" 
-                                referrerPolicy="no-referrer" 
-                              />
-                            ) : (
-                              <div className="relative">
-                                <svg className="h-9 w-32 opacity-90 text-blue-800" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M10 42 C25 15, 55 75, 75 35 C95 12, 115 65, 140 30 C160 12, 115 18, 150 45 C185 72, 195 18, 215 35" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                                  <path d="M35 32 L165 42" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
-                                </svg>
-                                <span className="absolute text-[9.5px] italic font-semibold text-blue-700/70 bottom-1 right-2 pointer-events-none select-none font-serif">Prof Njuguna Gacheru</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="border-t border-slate-300 pt-2 w-full text-center">
-                            <p className="text-[#0c3182] font-black text-[8px] tracking-[0.15em] uppercase leading-none">
-                              DIRECTOR
-                            </p>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )
             ) : (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">No student selected</p>
@@ -2715,56 +2180,91 @@ export const Transcripts: React.FC = () => {
 
           /* CERTIFICATE PRINT CONDENSING FOR A4 SINGLE PAGE */
           #certificate-view-element {
-            padding: ${printOrientation === 'landscape' ? '12mm 15mm' : '15mm 20mm'} !important;
-            border: 6px double #b45309 !important;
+            padding: ${printOrientation === 'landscape' ? '14mm 20mm' : '18mm 16mm'} !important;
+            border: none !important;
             background-color: #FFFDF6 !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
           }
 
-          #certificate-view-element .space-y-6 > * {
-            margin-top: 8px !important;
-            margin-bottom: 8px !important;
+          #certificate-view-element .cert-title-1 {
+            font-size: ${printOrientation === 'landscape' ? '28px' : '22px'} !important;
+            line-height: 1.1 !important;
+            margin-bottom: 2px !important;
           }
 
-          #certificate-view-element h1 {
-            font-size: 18px !important;
+          #certificate-view-element .cert-title-2 {
+            font-size: ${printOrientation === 'landscape' ? '17px' : '13px'} !important;
+            line-height: 1.1 !important;
+            margin-bottom: 2px !important;
           }
 
-          #certificate-view-element p.text-sm,
-          #certificate-view-element p.text-base {
-            font-size: 10px !important;
+          #certificate-view-element .cert-title-3 {
+            font-size: ${printOrientation === 'landscape' ? '15px' : '11px'} !important;
+            line-height: 1.1 !important;
+            margin-bottom: 4px !important;
+          }
+
+          #certificate-view-element .cert-subtitle {
+            font-size: ${printOrientation === 'landscape' ? '8px' : '6.5px'} !important;
             line-height: 1.3 !important;
+            max-width: 90% !important;
+            margin: 0 auto !important;
           }
 
-          #certificate-view-element h2 {
-            font-size: 20px !important;
+          #certificate-view-element .cert-award-title {
+            font-size: ${printOrientation === 'landscape' ? '19px' : '15px'} !important;
+            margin-top: ${printOrientation === 'landscape' ? '6px' : '4px'} !important;
+            margin-bottom: 2px !important;
+          }
+
+          #certificate-view-element .cert-awarded-to {
+            font-size: ${printOrientation === 'landscape' ? '11px' : '9px'} !important;
+            margin-bottom: 2px !important;
+          }
+
+          #certificate-view-element .cert-student-name {
+            font-size: ${printOrientation === 'landscape' ? '42px' : '32px'} !important;
+            line-height: 1.1 !important;
+            margin-top: 4px !important;
+            margin-bottom: 4px !important;
             padding-bottom: 2px !important;
           }
 
-          #certificate-view-element p.text-lg,
-          #certificate-view-element p.text-xl,
-          #certificate-view-element p.text-2xl {
-            font-size: 13px !important;
+          #certificate-view-element .cert-completion-sub {
+            font-size: ${printOrientation === 'landscape' ? '8px' : '6.5px'} !important;
+            line-height: 1.2 !important;
+            margin-top: 1px !important;
+            margin-bottom: 1px !important;
           }
 
-          #certificate-view-element .max-w-md,
-          #certificate-view-element .max-w-xl,
-          #certificate-view-element .max-w-2xl {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
+          #certificate-view-element .cert-course-container {
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
+            margin-top: 4px !important;
+            margin-bottom: 4px !important;
           }
 
-          #certificate-view-element .max-w-2xl {
-            margin-top: 8px !important;
-            padding-top: 8px !important;
+          #certificate-view-element .cert-course-title {
+            font-size: ${printOrientation === 'landscape' ? '14px' : '11px'} !important;
           }
 
-          #certificate-view-element .w-24 {
-            width: 60px !important;
-            height: 60px !important;
+          #certificate-view-element .cert-award-class {
+            font-size: ${printOrientation === 'landscape' ? '8px' : '7px'} !important;
+            padding: 2px 8px !important;
           }
 
-          #certificate-view-element .w-24 p {
-            font-size: 5px !important;
+          #certificate-view-element .cert-testimony {
+            font-size: ${printOrientation === 'landscape' ? '10px' : '8px'} !important;
+            line-height: 1.3 !important;
+            margin-top: ${printOrientation === 'landscape' ? '10px' : '6px'} !important;
+          }
+
+          #certificate-view-element .cert-footer-grid {
+            margin-top: ${printOrientation === 'landscape' ? '12px' : '10px'} !important;
+            padding-top: ${printOrientation === 'landscape' ? '8px' : '6px'} !important;
           }
 
           /* Handle QR Code Canvas wrapper and inside canvas */
@@ -2781,21 +2281,6 @@ export const Transcripts: React.FC = () => {
           #certificate-view-element .p-2 canvas {
             width: 44px !important;
             height: 44px !important;
-          }
-
-          #certificate-view-element .md\:col-span-4 .text-center,
-          #certificate-view-element .md\:col-span-4 .text-left,
-          #certificate-view-element .md\:col-span-4 .text-right {
-            font-size: 7.5px !important;
-          }
-
-          #certificate-view-element .md\:col-span-4 .border-t {
-            padding-top: 2px !important;
-            margin-top: 2px !important;
-          }
-
-          #certificate-view-element .md\:col-span-4 p {
-            font-size: 8px !important;
           }
 
           .print-header {

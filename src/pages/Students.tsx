@@ -116,6 +116,7 @@ export const Students: React.FC = () => {
 
   // Editable Rotation Letter States
   const [editorLetterStudent, setEditorLetterStudent] = useState<User | null>(null);
+  const [letterPreviewZoom, setLetterPreviewZoom] = useState<number>(0.85);
   const [isSavingRotationProfile, setIsSavingRotationProfile] = useState(false);
   const [letterConfig, setLetterConfig] = useState({
     dateOfLetter: '',
@@ -1355,8 +1356,106 @@ export const Students: React.FC = () => {
               font-style: italic;
             }
 
+            @page {
+              size: A4 portrait;
+              margin: 8mm 12mm;
+            }
             @media print {
-              body { padding: 30px 45px; margin: 0; }
+              html, body {
+                height: 99%;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+              }
+              .header-container {
+                margin-bottom: 12px !important;
+                padding-bottom: 6px !important;
+                gap: 15px !important;
+              }
+              .logo {
+                max-height: 55px !important;
+                max-width: 55px !important;
+              }
+              .school-name {
+                font-size: 16px !important;
+                margin-bottom: 2px !important;
+              }
+              .school-info {
+                font-size: 9px !important;
+                margin: 1px 0 !important;
+              }
+              .school-contact {
+                font-size: 8px !important;
+                margin: 1px 0 !important;
+              }
+              .letter-meta {
+                margin-bottom: 12px !important;
+              }
+              .date, .ref-no {
+                font-size: 11px !important;
+              }
+              .recipient {
+                margin-bottom: 12px !important;
+              }
+              .recipient-title {
+                font-size: 11px !important;
+                margin-bottom: 2px !important;
+              }
+              .recipient p {
+                font-size: 10.5px !important;
+                margin: 1px 0 !important;
+              }
+              .subject {
+                margin-bottom: 12px !important;
+                font-size: 11.5px !important;
+                line-height: 1.3 !important;
+              }
+              .content p {
+                margin-bottom: 8px !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+                text-align: justify;
+              }
+              .student-info-table {
+                margin: 10px 0 !important;
+                font-size: 10.5px !important;
+              }
+              .student-info-table td {
+                padding: 4px 10px !important;
+              }
+              .closing {
+                margin-top: 15px !important;
+                page-break-inside: avoid;
+              }
+              .signature-space {
+                height: 45px !important;
+                margin-top: 5px !important;
+              }
+              .signature-svg {
+                max-height: 35px !important;
+              }
+              .stamp {
+                max-height: 65px !important;
+                top: -10px !important;
+              }
+              .signature-line {
+                margin-top: 4px !important;
+                width: 180px !important;
+              }
+              .signatory-name {
+                font-size: 11px !important;
+                margin-top: 3px !important;
+              }
+              .signatory-title {
+                font-size: 9px !important;
+              }
+              .footer {
+                margin-top: 15px !important;
+                padding-top: 6px !important;
+                font-size: 8px !important;
+              }
               .no-print { display: none; }
             }
           </style>
@@ -1696,8 +1795,106 @@ export const Students: React.FC = () => {
               font-style: italic;
             }
 
+            @page {
+              size: A4 portrait;
+              margin: 8mm 12mm;
+            }
             @media print {
-              body { padding: 30px 45px; margin: 0; }
+              html, body {
+                height: 99%;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+              }
+              .header-container {
+                margin-bottom: 12px !important;
+                padding-bottom: 6px !important;
+                gap: 15px !important;
+              }
+              .logo {
+                max-height: 55px !important;
+                max-width: 55px !important;
+              }
+              .school-name {
+                font-size: 16px !important;
+                margin-bottom: 2px !important;
+              }
+              .school-info {
+                font-size: 9px !important;
+                margin: 1px 0 !important;
+              }
+              .school-contact {
+                font-size: 8px !important;
+                margin: 1px 0 !important;
+              }
+              .letter-meta {
+                margin-bottom: 12px !important;
+              }
+              .date, .ref-no {
+                font-size: 11px !important;
+              }
+              .recipient {
+                margin-bottom: 12px !important;
+              }
+              .recipient-title {
+                font-size: 11px !important;
+                margin-bottom: 2px !important;
+              }
+              .recipient p {
+                font-size: 10.5px !important;
+                margin: 1px 0 !important;
+              }
+              .subject {
+                margin-bottom: 12px !important;
+                font-size: 11.5px !important;
+                line-height: 1.3 !important;
+              }
+              .content p {
+                margin-bottom: 8px !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+                text-align: justify;
+              }
+              .student-info-table {
+                margin: 10px 0 !important;
+                font-size: 10.5px !important;
+              }
+              .student-info-table td {
+                padding: 4px 10px !important;
+              }
+              .closing {
+                margin-top: 15px !important;
+                page-break-inside: avoid;
+              }
+              .signature-space {
+                height: 45px !important;
+                margin-top: 5px !important;
+              }
+              .signature-svg {
+                max-height: 35px !important;
+              }
+              .stamp {
+                max-height: 65px !important;
+                top: -10px !important;
+              }
+              .signature-line {
+                margin-top: 4px !important;
+                width: 180px !important;
+              }
+              .signatory-name {
+                font-size: 11px !important;
+                margin-top: 3px !important;
+              }
+              .signatory-title {
+                font-size: 9px !important;
+              }
+              .footer {
+                margin-top: 15px !important;
+                padding-top: 6px !important;
+                font-size: 8px !important;
+              }
               .no-print { display: none; }
             }
           </style>
@@ -5678,16 +5875,83 @@ export const Students: React.FC = () => {
               </div>
 
               {/* Right Column: Live Mock A4 Document preview */}
-              <div className="lg:col-span-7 bg-slate-800 p-8 flex flex-col items-center overflow-y-auto max-h-[92vh]">
-                <div className="w-full text-slate-300 text-[10px] uppercase font-bold tracking-widest text-center mb-4 flex justify-between items-center px-4">
-                  <span>LIVE COMPOSITOR PREVIEW (YEAR {editorLetterStudent.year || '1'})</span>
-                  <span className="text-xs text-teal-400 flex items-center gap-1 font-serif">
-                    <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" /> Dynamic Draft Mode
+              <div className="lg:col-span-7 bg-slate-800 p-4 sm:p-6 lg:p-8 flex flex-col items-center overflow-y-auto max-h-[92vh]">
+                <div className="w-full text-slate-300 text-[10px] uppercase font-bold tracking-widest text-center mb-4 flex flex-col xl:flex-row justify-between items-center gap-3 px-2">
+                  <span className="shrink-0">LIVE COMPOSITOR PREVIEW (YEAR {editorLetterStudent.year || '1'})</span>
+                  
+                  {/* Premium Zoom Presets and Adjuster */}
+                  <div className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-900 px-3 py-1 rounded-2xl border border-slate-700/60 transition-all text-white select-none shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => setLetterPreviewZoom(prev => Math.max(0.4, Number((prev - 0.05).toFixed(2))))}
+                      className="w-5 h-5 flex items-center justify-center rounded-lg hover:bg-slate-700 text-xs font-black transition-all cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      -
+                    </button>
+                    <span className="text-[10px] font-mono font-black min-w-[34px] text-center text-teal-400">
+                      {Math.round(letterPreviewZoom * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLetterPreviewZoom(prev => Math.min(1.2, Number((prev + 0.05).toFixed(2))))}
+                      className="w-5 h-5 flex items-center justify-center rounded-lg hover:bg-slate-700 text-xs font-black transition-all cursor-pointer"
+                      title="Zoom In"
+                    >
+                      +
+                    </button>
+                    <div className="h-3.5 w-px bg-slate-700 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => setLetterPreviewZoom(0.7)}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        letterPreviewZoom === 0.7 
+                          ? 'bg-teal-500 text-slate-950 shadow-md font-black' 
+                          : 'hover:bg-slate-700 text-slate-300'
+                      }`}
+                    >
+                      70%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLetterPreviewZoom(0.85)}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        letterPreviewZoom === 0.85 
+                          ? 'bg-teal-500 text-slate-950 shadow-md font-black' 
+                          : 'hover:bg-slate-700 text-slate-300'
+                      }`}
+                    >
+                      Fit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLetterPreviewZoom(1.0)}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        letterPreviewZoom === 1.0 
+                          ? 'bg-teal-500 text-slate-950 shadow-md font-black' 
+                          : 'hover:bg-slate-700 text-slate-300'
+                      }`}
+                    >
+                      100%
+                    </button>
+                  </div>
+
+                  <span className="text-xs text-teal-400 flex items-center gap-1.5 font-serif shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping" /> Dynamic Draft Mode
                   </span>
                 </div>
 
-                {/* A4 Paper mockup */}
-                <div className="w-full max-w-[620px] bg-white rounded-xl shadow-2xl p-10 text-slate-800 select-none border border-gray-300 flex flex-col font-sans relative text-left leading-relaxed text-[10px]">
+                {/* A4 Paper mockup with scale */}
+                <div 
+                  className="w-full bg-white rounded-xl shadow-2xl p-6 sm:p-8 md:p-10 text-slate-800 select-none border border-gray-300 flex flex-col font-sans relative text-left leading-relaxed text-[10px] origin-top transition-all duration-150 ease-out"
+                  style={{
+                    transform: `scale(${letterPreviewZoom})`,
+                    transformOrigin: 'top center',
+                    width: `${100 / letterPreviewZoom}%`,
+                    maxWidth: '620px',
+                    marginBottom: `calc(${(letterPreviewZoom - 1) * 100}% + ${(letterPreviewZoom - 1) * 140}px)`
+                  }}
+                >
                   
                   {/* School header */}
                   <div className="flex items-center justify-between border-b-2 border-double border-indigo-900 pb-3 mb-6 gap-3">

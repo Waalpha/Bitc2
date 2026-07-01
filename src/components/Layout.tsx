@@ -431,7 +431,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </aside>
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10 scroll-smooth pb-12 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative scroll-smooth pb-12 lg:pb-0">
         {/* Top Navbar */}
         <header className={`h-20 ${isStudent ? 'bg-[#0B1221]/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
             <div className="flex items-center gap-4 flex-1">
