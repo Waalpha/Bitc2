@@ -19,7 +19,7 @@ export const Fees: React.FC = () => {
   const [classFees, setClassFees] = useState<ClassFee[]>([]);
   const [myBalance, setMyBalance] = useState<FeeBalance | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [balanceFilter, setBalanceFilter] = useState<'all' | 'outstanding' | 'overpaid'>('all');
+  const [balanceFilter, setBalanceFilter] = useState<'all' | 'outstanding' | 'overpaid' | 'suspended'>('all');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAddingClassFee, setIsAddingClassFee] = useState(false);
@@ -44,6 +44,7 @@ export const Fees: React.FC = () => {
   });
   const [feeGroups, setFeeGroups] = useState<FeeGroup[]>([]);
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
+  const [suspendedStudentIds, setSuspendedStudentIds] = useState<Set<string>>(new Set());
   const [classFeeForm, setClassFeeForm] = useState({ classId: '', title: '', amount: 0, period: 'monthly' as 'semester' | 'yearly' | 'monthly', feeType: '', feeGroup: '' });
   const [editingFeeId, setEditingFeeId] = useState<string | null>(null);
   const [editingFeeTypeId, setEditingFeeTypeId] = useState<string | null>(null);
@@ -837,7 +838,7 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
-  const handlePrintOutstandingBalances = (studentsToPrint: User[], filterType: 'all' | 'outstanding' | 'overpaid') => {
+  const handlePrintOutstandingBalances = (studentsToPrint: User[], filterType: 'all' | 'outstanding' | 'overpaid' | 'suspended') => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       addToast("Failed to open print window. Please allow popups.", "error");
@@ -848,7 +849,9 @@ export const Fees: React.FC = () => {
       ? 'Outstanding Fee Balances Report' 
       : filterType === 'overpaid' 
         ? 'Prepaid Credits Report' 
-        : 'Student Fee Balances Summary';
+        : filterType === 'suspended'
+          ? 'Suspended Fee Billing Report (Absentees)'
+          : 'Student Fee Balances Summary';
 
     // Calculate sum totals
     let totalInvoiced = 0;
@@ -1692,7 +1695,56 @@ export const Fees: React.FC = () => {
       // Load all students
       const usersSnap = await getDocs(collection(db, 'users'));
       const allUsers = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-      setStudents(allUsers.filter(u => String(u.role).toLowerCase() === 'student'));
+      const filteredStudents = allUsers.filter(u => String(u.role).toLowerCase() === 'student');
+      setStudents(filteredStudents);
+
+      // Determine students with suspended monthly fees due to 2-month absence (60 days)
+      try {
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+
+        const attendanceSnap = await getDocs(collection(db, 'attendance'));
+
+        const studentPresenceCount: { [studentId: string]: number } = {};
+
+        attendanceSnap.docs.forEach(doc => {
+          const data = doc.data();
+          const date = data.date;
+          if (date && date >= sixtyDaysAgoStr) {
+            const records = data.records || {};
+            for (const [studentId, status] of Object.entries(records)) {
+              if (status === 'present' || status === 'late' || status === 'excused') {
+                studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+              }
+            }
+          }
+        });
+
+        const now = new Date();
+        const suspended = new Set<string>();
+
+        filteredStudents.forEach(student => {
+          const sUid = student.uid;
+          
+          // Skip check for new students registered in the last 30 days
+          const createdAtStr = student.createdAt || (student as any).admissionDate;
+          const createdDate = createdAtStr ? new Date(createdAtStr) : null;
+          const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
+
+          if (!isNewStudent) {
+            const presenceCount = studentPresenceCount[sUid] || 0;
+
+            if (presenceCount === 0) {
+              suspended.add(sUid);
+            }
+          }
+        });
+
+        setSuspendedStudentIds(suspended);
+      } catch (err) {
+        console.error("Error determining suspended students on client side:", err);
+      }
 
       if (fullLoad) {
         // Load classes
@@ -2495,6 +2547,9 @@ export const Fees: React.FC = () => {
     if (balanceFilter === 'overpaid') {
       return balAmt < 0;
     }
+    if (balanceFilter === 'suspended') {
+      return suspendedStudentIds.has(s.uid);
+    }
     return true;
   });
 
@@ -2928,6 +2983,18 @@ export const Fees: React.FC = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                       Credit / Prepaid
                     </button>
+                    <button
+                      onClick={() => setBalanceFilter('suspended')}
+                      className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        balanceFilter === 'suspended'
+                          ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/20'
+                          : 'text-gray-400 hover:text-amber-500'
+                      }`}
+                      title="Students with billing suspended due to 2-month absence"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      Suspended ({suspendedStudentIds.size})
+                    </button>
                   </div>
                   <button
                     onClick={() => handlePrintOutstandingBalances(filteredStudents, balanceFilter)}
@@ -2963,8 +3030,15 @@ export const Fees: React.FC = () => {
                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                               {student.name.charAt(0)}
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-text-primary">{student.name}</p>
+                             <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold text-text-primary">{student.name}</p>
+                                {suspendedStudentIds.has(student.uid) && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 border border-amber-500/20" title="Billing suspended: No attendance in past 2 months">
+                                    SUSPENDED
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-text-muted">{student.email}</p>
                             </div>
                           </div>

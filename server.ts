@@ -1572,24 +1572,20 @@ async function automateMonthlyFees() {
   sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
   const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
 
-  const classAttendanceCount: { [classId: string]: number } = {};
   const studentPresenceCount: { [studentId: string]: number } = {};
 
   try {
-    const attendanceSnap = await db.collection('attendance')
-      .where('date', '>=', sixtyDaysAgoStr)
-      .get();
+    const attendanceSnap = await db.collection('attendance').get();
 
     attendanceSnap.docs.forEach((doc: any) => {
       const data = doc.data();
-      const classId = data.classId;
-      if (classId) {
-        classAttendanceCount[classId] = (classAttendanceCount[classId] || 0) + 1;
-      }
-      const records = data.records || {};
-      for (const [studentId, status] of Object.entries(records)) {
-        if (status === 'present' || status === 'late' || status === 'excused') {
-          studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+      const date = data.date;
+      if (date && date >= sixtyDaysAgoStr) {
+        const records = data.records || {};
+        for (const [studentId, status] of Object.entries(records)) {
+          if (status === 'present' || status === 'late' || status === 'excused') {
+            studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+          }
         }
       }
     });
@@ -1629,33 +1625,16 @@ async function automateMonthlyFees() {
         continue;
       }
 
-      // Check for 2-month absence billing suspension
-      const studentClassIds = (() => {
-        const classIds = (student as any).classIds;
-        const classId = (student as any).classId;
-        const cids: string[] = [];
-        if (Array.isArray(classIds)) {
-          cids.push(...classIds.map(String));
-        } else if (classIds) {
-          cids.push(String(classIds));
-        }
-        if (classId) {
-          cids.push(String(classId));
-        }
-        return cids.map(c => c.trim()).filter(Boolean);
-      })();
-
-      // Evaluate enrollment date - skip check for students registered in the last 60 days
+      // Evaluate enrollment date - skip check for students registered in the last 30 days
       const createdAtStr = (student as any).createdAt || (student as any).admissionDate;
       const createdDate = createdAtStr ? new Date(createdAtStr) : null;
-      const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 60 * 24 * 60 * 60 * 1000;
+      const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
 
       if (!isNewStudent) {
-        const hasAttendanceRecordedForStudentClasses = studentClassIds.some(cid => (classAttendanceCount[cid] || 0) > 0);
         const presenceCount = studentPresenceCount[sUid] || 0;
         
-        // If their classes have active attendance sessions but they have 0 presences, suspend billing
-        if (hasAttendanceRecordedForStudentClasses && presenceCount === 0) {
+        // If they have 0 presences in the last 60 days, suspend billing
+        if (presenceCount === 0) {
           console.log(`[Suspended Billing] Student ${student.name || sUid} was absent for the last 60 days. Skipping billing.`);
           suspendedCount++;
           continue;
