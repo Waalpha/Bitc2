@@ -249,7 +249,7 @@ export const StudentAdmission: React.FC = () => {
             
             .closing { margin-top: 20px; page-break-inside: avoid; }
             .signature-space { height: 80px; margin-top: 10px; position: relative; }
-            .stamp { position: absolute; top: -25px; left: 15px; max-height: 135px; opacity: 0.95; mix-blend-mode: multiply; }
+            .stamp { position: absolute; top: -25px; left: 120px; width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; opacity: 0.95; mix-blend-mode: multiply; z-index: 1; }
             .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
             .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
             .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }

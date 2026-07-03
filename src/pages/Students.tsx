@@ -566,7 +566,7 @@ export const Students: React.FC = () => {
             
             .closing { margin-top: 30px; page-break-inside: avoid; }
             .signature-space { height: 70px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -15px; left: 15px; max-height: 90px; opacity: 0.85; mix-blend-mode: multiply; }
+            .stamp { position: absolute; top: -15px; left: 120px; width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; opacity: 0.85; mix-blend-mode: multiply; z-index: 1; }
             .signature-line { border-top: 1px solid #1a202c; width: 250px; margin-top: 10px; }
             .signatory-name { font-weight: 800; margin-top: 5px; font-size: 14px; }
             .signatory-title { font-size: 12px; color: #4a5568; font-weight: 600; text-transform: uppercase; }
@@ -770,7 +770,7 @@ export const Students: React.FC = () => {
             
             .closing { margin-top: 20px; page-break-inside: avoid; }
             .signature-space { height: 80px; margin-top: 10px; position: relative; }
-            .stamp { position: absolute; top: -25px; left: 15px; max-height: 135px; opacity: 0.95; mix-blend-mode: multiply; }
+            .stamp { position: absolute; top: -25px; left: 120px; width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; opacity: 0.95; mix-blend-mode: multiply; z-index: 1; }
             .signature-line { border-top: 1px solid #475569; width: 200px; margin-top: 5px; }
             .signatory-name { font-weight: 800; margin-top: 4px; font-size: 12px; color: #1e293b; }
             .signatory-title { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
@@ -1341,8 +1341,8 @@ export const Students: React.FC = () => {
             
             .closing { margin-top: 35px; page-break-inside: avoid; }
             .signature-space { height: 110px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -35px; left: 45px; max-height: 140px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; }
-            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
+            .stamp { position: absolute; top: -25px; left: 120px; max-height: 95px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; z-index: 1; }
+            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; z-index: 10; }
             .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
             .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
             .signatory-title { font-size: 11px; color: #718096; font-weight: 600; text-transform: uppercase; }
@@ -1436,11 +1436,13 @@ export const Students: React.FC = () => {
               }
               .signature-svg {
                 max-height: 45px !important;
+                z-index: 10 !important;
               }
               .stamp {
-                max-height: 140px !important;
-                top: -30px !important;
-                left: 45px !important;
+                max-height: 95px !important;
+                top: -20px !important;
+                left: 120px !important;
+                z-index: 1 !important;
               }
               .signature-line {
                 margin-top: 4px !important;
@@ -1541,7 +1543,7 @@ export const Students: React.FC = () => {
             <div class="signature-space">
               ${config.showSealRef ? (settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" style="z-index: 1;" />` : `
                 <!-- Graphic verification stamp overlay -->
-                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px; z-index: 1;">
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 4cm; height: 4cm; z-index: 1;">
                   <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
                   <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
                   <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
@@ -1789,8 +1791,8 @@ export const Students: React.FC = () => {
             
             .closing { margin-top: 35px; page-break-inside: avoid; }
             .signature-space { height: 110px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -35px; left: 45px; max-height: 140px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; }
-            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
+            .stamp { position: absolute; top: -25px; left: 120px; max-height: 95px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; z-index: 1; }
+            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; z-index: 10; }
             .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
             .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
             .signatory-title { font-size: 11px; color: #718096; font-weight: 600; text-transform: uppercase; }
@@ -1884,11 +1886,13 @@ export const Students: React.FC = () => {
               }
               .signature-svg {
                 max-height: 45px !important;
+                z-index: 10 !important;
               }
               .stamp {
-                max-height: 140px !important;
-                top: -30px !important;
-                left: 45px !important;
+                max-height: 95px !important;
+                top: -20px !important;
+                left: 120px !important;
+                z-index: 1 !important;
               }
               .signature-line {
                 margin-top: 4px !important;
@@ -2008,7 +2012,7 @@ export const Students: React.FC = () => {
             <div class="signature-space">
               ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" style="z-index: 1;" />` : `
                 <!-- Graphic verification stamp overlay -->
-                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px; z-index: 1;">
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 4cm; height: 4cm; z-index: 1;">
                   <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
                   <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
                   <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
@@ -2121,7 +2125,8 @@ export const Students: React.FC = () => {
             
             .closing { margin-top: 25px; page-break-inside: avoid; }
             .signature-space { height: 60px; margin-top: 10px; position: relative; }
-            .stamp { position: absolute; top: -10px; left: 10px; max-height: 80px; opacity: 0.85; mix-blend-mode: multiply; }
+            .stamp { position: absolute; top: -10px; left: 120px; max-height: 80px; opacity: 0.85; mix-blend-mode: multiply; z-index: 1; }
+            .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; z-index: 10; }
             .signature-line { border-top: 1px solid #1a202c; width: 220px; margin-top: 8px; }
             .signatory-name { font-weight: 800; margin-top: 5px; font-size: 13px; }
             .signatory-title { font-size: 11px; color: #4a5568; font-weight: 600; text-transform: uppercase; }

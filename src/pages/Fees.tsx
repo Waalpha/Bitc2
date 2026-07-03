@@ -325,7 +325,7 @@ export const Fees: React.FC = () => {
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { max-height: 135px; min-height: 100px; width: auto; object-fit: contain; transform: rotate(-3deg); }
+            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-3deg); }
 
             .invoice-footer {
               text-align: center;
@@ -696,7 +696,7 @@ export const Fees: React.FC = () => {
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { width: 80px; height: 80px; object-fit: contain; transform: rotate(-5deg); }
+            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-5deg); }
             .statement-footer {
               text-align: center;
               font-size: 9px;
@@ -1015,7 +1015,7 @@ export const Fees: React.FC = () => {
               bottom: 10px;
               opacity: 0.85; 
             }
-            .stamp { width: 95px; height: 95px; object-fit: contain; transform: rotate(-5deg); }
+            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-5deg); }
             .report-footer {
               text-align: center;
               font-size: 10px;
@@ -1152,7 +1152,7 @@ export const Fees: React.FC = () => {
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { width: 75px; height: 75px; object-fit: contain; transform: rotate(-6deg); }
+            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-6deg); }
             @media print {
               .no-print { display: none; }
               body { padding: 0; }

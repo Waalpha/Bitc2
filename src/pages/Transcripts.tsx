@@ -2185,8 +2185,8 @@ export const Transcripts: React.FC = () => {
           }
 
           #transcript-view-element .stamp-seal-container {
-            width: 140px !important;
-            height: 140px !important;
+            width: 4cm !important;
+            height: 4cm !important;
           }
 
           #transcript-view-element .stamp-seal-container p {
