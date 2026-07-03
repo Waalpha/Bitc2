@@ -1500,6 +1500,20 @@ export const Transcripts: React.FC = () => {
                         />
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Defaults to the uploaded college stamp. Clear to use the simulated seal.</span>
                       </div>
+                      
+                      {/* Checkbox toggle for isSignoffPrinted */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
+                        <input
+                          id="is-signoff-printed-toggle"
+                          type="checkbox"
+                          checked={isSignoffPrinted}
+                          onChange={(e) => setIsSignoffPrinted(e.target.checked)}
+                          className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700 cursor-pointer"
+                        />
+                        <label htmlFor="is-signoff-printed-toggle" className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                          Display Signatures & Seal on Transcript
+                        </label>
+                      </div>
                     </div>
                   </div>
 
@@ -1923,11 +1937,11 @@ export const Transcripts: React.FC = () => {
                   {/* Stamp / Logo seal */}
                   <div className="md:w-4/12 flex justify-center py-4 print:py-0 shrink-0">
                     {stampUrlOverride ? (
-                      <div className="relative w-28 h-28 flex items-center justify-center select-none rotate-[-5deg]">
+                      <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center select-none rotate-[-5deg]">
                         <img 
                           src={stampUrlOverride} 
                           alt="Official Stamp" 
-                          className="w-28 h-28 object-contain opacity-90 mix-blend-multiply"
+                          className="w-36 h-36 object-contain opacity-95 mix-blend-multiply"
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -1935,13 +1949,13 @@ export const Transcripts: React.FC = () => {
                         />
                       </div>
                     ) : (
-                      <div className="relative w-28 h-28 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-80 rotate-[-10deg] print:border-black print:text-black">
+                      <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-85 rotate-[-10deg] print:border-black print:text-black">
                         <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
                         <div>
-                          <p className="font-extrabold text-[8px] leading-none mb-1">REGISTRAR</p>
+                          <p className="font-extrabold text-[9px] leading-none mb-1">REGISTRAR</p>
                           <p className="font-black leading-none my-0.5">BITC</p>
-                          <p className="font-black text-[7px] leading-tight mt-1">OFFICIAL SEAL</p>
-                          <p className="font-bold text-[6px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
+                          <p className="font-black text-[8px] leading-tight mt-1">OFFICIAL SEAL</p>
+                          <p className="font-bold text-[7px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
                         </div>
                       </div>
                     )}
@@ -2168,13 +2182,13 @@ export const Transcripts: React.FC = () => {
             gap: 10px !important;
           }
 
-          #transcript-view-element .w-28 {
-            width: 60px !important;
-            height: 60px !important;
+          #transcript-view-element .stamp-seal-container {
+            width: 140px !important;
+            height: 140px !important;
           }
 
-          #transcript-view-element .w-28 p {
-            font-size: 6px !important;
+          #transcript-view-element .stamp-seal-container p {
+            font-size: 9px !important;
           }
 
           #transcript-view-element .h-14 {

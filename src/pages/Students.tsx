@@ -131,8 +131,9 @@ export const Students: React.FC = () => {
     paragraph3: '',
     paragraph4: '',
     paragraph5: '',
-    signatoryName: 'OFFICE OF THE ACADEMIC REGISTRAR',
-    signatoryTitle: 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+    signatoryName: localStorage.getItem('letter_signatoryName') || 'OFFICE OF THE ACADEMIC REGISTRAR',
+    signatoryTitle: localStorage.getItem('letter_signatoryTitle') || 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+    signatureUrl: localStorage.getItem('letter_signatureUrl') || '',
     showSignRef: true,
     showSealRef: true,
     // Live update student database flags
@@ -1339,8 +1340,8 @@ export const Students: React.FC = () => {
             }
             
             .closing { margin-top: 35px; page-break-inside: avoid; }
-            .signature-space { height: 75px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -15px; left: 30px; max-height: 90px; opacity: 0.8; mix-blend-mode: multiply; pointer-events: none; }
+            .signature-space { height: 110px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -35px; left: 45px; max-height: 140px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; }
             .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
             .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
             .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
@@ -1430,15 +1431,16 @@ export const Students: React.FC = () => {
                 page-break-inside: avoid;
               }
               .signature-space {
-                height: 45px !important;
+                height: 80px !important;
                 margin-top: 5px !important;
               }
               .signature-svg {
-                max-height: 35px !important;
+                max-height: 45px !important;
               }
               .stamp {
-                max-height: 65px !important;
-                top: -10px !important;
+                max-height: 140px !important;
+                top: -30px !important;
+                left: 45px !important;
               }
               .signature-line {
                 margin-top: 4px !important;
@@ -1537,16 +1539,9 @@ export const Students: React.FC = () => {
           <div class="closing">
             <p>Yours faithfully,</p>
             <div class="signature-space">
-              ${config.showSignRef ? `
-              <!-- Digital verified registrar signature -->
-              <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px;">
-                <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
-                <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
-              </svg>
-              ` : ''}
-              ${config.showSealRef ? (settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : `
+              ${config.showSealRef ? (settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" style="z-index: 1;" />` : `
                 <!-- Graphic verification stamp overlay -->
-                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px;">
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px; z-index: 1;">
                   <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
                   <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
                   <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
@@ -1557,6 +1552,17 @@ export const Students: React.FC = () => {
                   <text x="50" y="70" font-family="sans-serif" font-size="5.5" font-weight="bold" fill="#1e3a8a" text-anchor="middle">SEALED</text>
                 </svg>
               `) : ''}
+              ${config.showSignRef ? (
+                config.signatureUrl ? `
+                <img src="${config.signatureUrl}" class="signature-svg" style="width: 150px; height: 50px; object-fit: contain; mix-blend-mode: multiply; position: absolute; left: 10px; top: 0; z-index: 10;" referrerPolicy="no-referrer" />
+                ` : `
+                <!-- Digital verified registrar signature -->
+                <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px; z-index: 10;">
+                  <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                  <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+                </svg>
+                `
+              ) : ''}
             </div>
             <div class="signature-line"></div>
             <div class="signatory-name font-sans">${config.signatoryName}</div>
@@ -1640,6 +1646,10 @@ export const Students: React.FC = () => {
     const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
     const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     const academicYear = new Date().getFullYear();
+
+    const storedSigName = localStorage.getItem('letter_signatoryName') || 'OFFICE OF THE ACADEMIC REGISTRAR';
+    const storedSigTitle = localStorage.getItem('letter_signatoryTitle') || 'ADMISSIONS, ATTACHMENTS & PLACEMENT';
+    const storedSigUrl = localStorage.getItem('letter_signatureUrl') || '';
     
     // Determine placement type dynamically
     const isMedical = student.course?.toLowerCase().includes('nurs') || 
@@ -1778,8 +1788,8 @@ export const Students: React.FC = () => {
             }
             
             .closing { margin-top: 35px; page-break-inside: avoid; }
-            .signature-space { height: 75px; margin-top: 15px; position: relative; }
-            .stamp { position: absolute; top: -15px; left: 30px; max-height: 90px; opacity: 0.8; mix-blend-mode: multiply; pointer-events: none; }
+            .signature-space { height: 110px; margin-top: 15px; position: relative; }
+            .stamp { position: absolute; top: -35px; left: 45px; max-height: 140px; opacity: 0.85; mix-blend-mode: multiply; pointer-events: none; }
             .signature-svg { position: absolute; top: 0px; left: 10px; max-height: 45px; opacity: 0.9; }
             .signature-line { border-top: 1px solid #4a5568; width: 220px; margin-top: 8px; }
             .signatory-name { font-weight: 700; margin-top: 6px; font-size: 13px; color: #1a202c; }
@@ -1869,15 +1879,16 @@ export const Students: React.FC = () => {
                 page-break-inside: avoid;
               }
               .signature-space {
-                height: 45px !important;
+                height: 80px !important;
                 margin-top: 5px !important;
               }
               .signature-svg {
-                max-height: 35px !important;
+                max-height: 45px !important;
               }
               .stamp {
-                max-height: 65px !important;
-                top: -10px !important;
+                max-height: 140px !important;
+                top: -30px !important;
+                left: 45px !important;
               }
               .signature-line {
                 margin-top: 4px !important;
@@ -1995,14 +2006,9 @@ export const Students: React.FC = () => {
           <div class="closing">
             <p>Yours faithfully,</p>
             <div class="signature-space">
-              <!-- Digital verified registrar signature -->
-              <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px;">
-                <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
-                <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
-              </svg>
-              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : `
+              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" style="z-index: 1;" />` : `
                 <!-- Graphic verification stamp overlay -->
-                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px;">
+                <svg class="stamp" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 80px; z-index: 1;">
                   <circle cx="50" cy="50" r="42" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="140" />
                   <circle cx="50" cy="50" r="38" stroke="#1e3a8a" stroke-width="1" />
                   <text x="50" y="24" font-family="'Cinzel', serif" font-size="6" font-weight="bold" fill="#1e3a8a" text-anchor="middle">OFFICIAL REGISTRY</text>
@@ -2013,10 +2019,19 @@ export const Students: React.FC = () => {
                   <text x="50" y="70" font-family="sans-serif" font-size="5.5" font-weight="bold" fill="#1e3a8a" text-anchor="middle">SEALED</text>
                 </svg>
               `}
+              ${storedSigUrl ? `
+              <img src="${storedSigUrl}" class="signature-svg" style="width: 150px; height: 50px; object-fit: contain; mix-blend-mode: multiply; position: absolute; left: 10px; top: 0; z-index: 10;" referrerPolicy="no-referrer" />
+              ` : `
+              <!-- Digital verified registrar signature -->
+              <svg class="signature-svg" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 150px; height: 50px; z-index: 10;">
+                <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M80 50 L 260 20" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+              </svg>
+              `}
             </div>
             <div class="signature-line"></div>
-            <div class="signatory-name font-sans">OFFICE OF THE ACADEMIC REGISTRAR</div>
-            <div class="signatory-title font-sans">ADMISSIONS, ATTACHMENTS &amp; PLACEMENT</div>
+            <div class="signatory-name font-sans">${storedSigName}</div>
+            <div class="signatory-title font-sans">${storedSigTitle}</div>
           </div>
 
           <div class="footer">
@@ -3456,8 +3471,9 @@ export const Students: React.FC = () => {
         paragraph3: defaultP3,
         paragraph4: defaultP4,
         paragraph5: defaultP5,
-        signatoryName: 'OFFICE OF THE ACADEMIC REGISTRAR',
-        signatoryTitle: 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+        signatoryName: localStorage.getItem('letter_signatoryName') || 'OFFICE OF THE ACADEMIC REGISTRAR',
+        signatoryTitle: localStorage.getItem('letter_signatoryTitle') || 'ADMISSIONS, ATTACHMENTS & PLACEMENT',
+        signatureUrl: localStorage.getItem('letter_signatureUrl') || '',
         showSignRef: true,
         showSealRef: true,
         // Live update student database flags
@@ -5784,7 +5800,11 @@ export const Students: React.FC = () => {
                           <input
                             type="text"
                             value={letterConfig.signatoryName}
-                            onChange={(e) => setLetterConfig(prev => ({ ...prev, signatoryName: e.target.value }))}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setLetterConfig(prev => ({ ...prev, signatoryName: val }));
+                              localStorage.setItem('letter_signatoryName', val);
+                            }}
                             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
                           />
                         </div>
@@ -5793,10 +5813,33 @@ export const Students: React.FC = () => {
                           <input
                             type="text"
                             value={letterConfig.signatoryTitle}
-                            onChange={(e) => setLetterConfig(prev => ({ ...prev, signatoryTitle: e.target.value }))}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setLetterConfig(prev => ({ ...prev, signatoryTitle: val }));
+                              localStorage.setItem('letter_signatoryTitle', val);
+                            }}
                             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
                           />
                         </div>
+                      </div>
+
+                      {/* Custom digital signature image input */}
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 block mb-1">Custom Signature Image URL</label>
+                        <input
+                          type="text"
+                          value={letterConfig.signatureUrl}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setLetterConfig(prev => ({ ...prev, signatureUrl: val }));
+                            localStorage.setItem('letter_signatureUrl', val);
+                          }}
+                          placeholder="Paste image URL (PNG/JPG/SVG/Base64)"
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-teal-100"
+                        />
+                        <p className="text-[9px] text-gray-400 mt-1 leading-normal">
+                          Paste a PNG signature URL. Leaving this empty uses the realistic simulated signature.
+                        </p>
                       </div>
 
                       {/* Signature Toggles */}
@@ -6037,22 +6080,34 @@ export const Students: React.FC = () => {
                   <div className="mt-8 text-[9.5px]">
                     <div>Yours faithfully,</div>
                     <div className="h-10 relative mt-2">
-                      {letterConfig.showSignRef && (
-                        <svg className="absolute left-[10px] top-0 max-h-8" viewBox="0 0 300 80" fill="none" style={{ width: '80px' }}>
-                          <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" strokeWidth="3" fill="none"/>
-                          <path d="M80 50 L 260 20" stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4 4"/>
-                        </svg>
-                      )}
-                      
                       {letterConfig.showSealRef && (
                         settings?.stampUrl ? (
-                          <img src={settings?.stampUrl} className="absolute left-[80px] top-[-10px] max-h-12 mix-blend-multiply opacity-80" />
+                          <img src={settings?.stampUrl} className="absolute left-[80px] top-[-10px] max-h-12 mix-blend-multiply opacity-80 z-0" />
                         ) : (
-                          <svg className="absolute left-[80px] top-[-10px] max-h-12 opacity-85" viewBox="0 0 100 100" style={{ width: '45px', height: '45px' }}>
+                          <svg className="absolute left-[80px] top-[-10px] max-h-12 opacity-85 z-0" viewBox="0 0 100 100" style={{ width: '45px', height: '45px' }}>
                             <circle cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="3" fill="none"/>
-                            <text x="50" y="32" fontSize="7" fontWeight="bold" fill="#1e3a8a" text-anchor="middle">REGISTRY</text>
+                            <text x="50" y="32" fontSize="7" fontWeight="bold" fill="#1e3a8a" textAnchor="middle">REGISTRY</text>
                             <path d="M20 50 L80 50" stroke="#1e3a8a" strokeWidth="2" />
                             <text x="50" y="65" fontSize="8" fontWeight="black" fill="#1e3a8a" text-anchor="middle">SEAL</text>
+                          </svg>
+                        )
+                      )}
+
+                      {letterConfig.showSignRef && (
+                        letterConfig.signatureUrl ? (
+                          <img 
+                            src={letterConfig.signatureUrl} 
+                            alt="Signature" 
+                            className="absolute left-[10px] top-[-5px] h-10 object-contain mix-blend-multiply z-10" 
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <svg className="absolute left-[10px] top-0 max-h-8 z-10" viewBox="0 0 300 80" fill="none" style={{ width: '80px' }}>
+                            <path d="M10 40 C 50 35, 120 10, 160 30 C 180 40, 200 60, 210 45 C 220 30, 230 10, 240 25 C 250 40, 260 50, 280 45" stroke="#1d4ed8" strokeWidth="3" fill="none"/>
+                            <path d="M80 50 L 260 20" stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4 4"/>
                           </svg>
                         )
                       )}
