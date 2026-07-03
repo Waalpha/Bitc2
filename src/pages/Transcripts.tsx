@@ -1936,28 +1936,30 @@ export const Transcripts: React.FC = () => {
 
                   {/* Stamp / Logo seal */}
                   <div className="md:w-4/12 flex justify-center py-4 print:py-0 shrink-0">
-                    {stampUrlOverride ? (
-                      <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center select-none rotate-[-5deg]">
-                        <img 
-                          src={stampUrlOverride} 
-                          alt="Official Stamp" 
-                          className="w-36 h-36 object-contain opacity-95 mix-blend-multiply"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-85 rotate-[-10deg] print:border-black print:text-black">
-                        <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
-                        <div>
-                          <p className="font-extrabold text-[9px] leading-none mb-1">REGISTRAR</p>
-                          <p className="font-black leading-none my-0.5">BITC</p>
-                          <p className="font-black text-[8px] leading-tight mt-1">OFFICIAL SEAL</p>
-                          <p className="font-bold text-[7px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
+                    {isSignoffPrinted && (
+                      stampUrlOverride ? (
+                        <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center select-none rotate-[-5deg]">
+                          <img 
+                            src={stampUrlOverride} 
+                            alt="Official Stamp" 
+                            className="w-36 h-36 object-contain opacity-95 mix-blend-multiply"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         </div>
-                      </div>
+                      ) : (
+                        <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-85 rotate-[-10deg] print:border-black print:text-black">
+                          <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
+                          <div>
+                            <p className="font-extrabold text-[9px] leading-none mb-1">REGISTRAR</p>
+                            <p className="font-black leading-none my-0.5">BITC</p>
+                            <p className="font-black text-[8px] leading-tight mt-1">OFFICIAL SEAL</p>
+                            <p className="font-bold text-[7px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
+                          </div>
+                        </div>
+                      )
                     )}
                   </div>
 
