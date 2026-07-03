@@ -57,6 +57,7 @@ export const Transcripts: React.FC = () => {
   const [registrarNameOverride, setRegistrarNameOverride] = useState(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
   const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
   const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
+  const [stampUrlOverride, setStampUrlOverride] = useState(localStorage.getItem('transcript_stampUrl') || '/stamp.png');
 
   // Custom grades override state
   const [customResults, setCustomResults] = useState<any[] | null>(null);
@@ -771,6 +772,7 @@ export const Transcripts: React.FC = () => {
     setRegistrarNameOverride(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
+    setStampUrlOverride(localStorage.getItem('transcript_stampUrl') || (settings && settings.stampUrl) || '/stamp.png');
   }, [settings]);
 
   // Load custom results when selectedStudent changes
@@ -1083,6 +1085,9 @@ export const Transcripts: React.FC = () => {
     } else if (field === 'signatureUrl') {
       setSignatureUrlOverride(value);
       localStorage.setItem('transcript_signatureUrl', value);
+    } else if (field === 'stampUrl') {
+      setStampUrlOverride(value);
+      localStorage.setItem('transcript_stampUrl', value);
     }
   };
 
@@ -1103,6 +1108,7 @@ export const Transcripts: React.FC = () => {
     setRegistrarNameOverride('PROF. J. K. KIBICHO, PHD');
     setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride('');
+    setStampUrlOverride('/stamp.png');
     
     localStorage.removeItem('transcript_schoolName');
     localStorage.removeItem('transcript_logoUrl');
@@ -1112,6 +1118,7 @@ export const Transcripts: React.FC = () => {
     localStorage.removeItem('transcript_registrarName');
     localStorage.removeItem('transcript_registrarTitle');
     localStorage.removeItem('transcript_signatureUrl');
+    localStorage.removeItem('transcript_stampUrl');
   };
 
   const results = customResults !== null ? customResults : getTranscriptResults();
@@ -1480,6 +1487,18 @@ export const Transcripts: React.FC = () => {
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated registrar signature.</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Official Stamp Image URL</label>
+                        <input
+                          id="stamp-url-input"
+                          type="text"
+                          value={stampUrlOverride}
+                          onChange={(e) => handleSchoolDetailChange('stampUrl', e.target.value)}
+                          placeholder="Paste PNG/JPG/SVG stamp URL"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Defaults to the uploaded college stamp. Clear to use the simulated seal.</span>
                       </div>
                     </div>
                   </div>
@@ -1903,15 +1922,29 @@ export const Transcripts: React.FC = () => {
 
                   {/* Stamp / Logo seal */}
                   <div className="md:w-4/12 flex justify-center py-4 print:py-0 shrink-0">
-                    <div className="relative w-28 h-28 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-80 rotate-[-10deg] print:border-black print:text-black">
-                      <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
-                      <div>
-                        <p className="font-extrabold text-[8px] leading-none mb-1">REGISTRAR</p>
-                        <p className="font-black leading-none my-0.5">BITC</p>
-                        <p className="font-black text-[7px] leading-tight mt-1">OFFICIAL SEAL</p>
-                        <p className="font-bold text-[6px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
+                    {stampUrlOverride ? (
+                      <div className="relative w-28 h-28 flex items-center justify-center select-none rotate-[-5deg]">
+                        <img 
+                          src={stampUrlOverride} 
+                          alt="Official Stamp" 
+                          className="w-28 h-28 object-contain opacity-90 mix-blend-multiply"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
                       </div>
-                    </div>
+                    ) : (
+                      <div className="relative w-28 h-28 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-80 rotate-[-10deg] print:border-black print:text-black">
+                        <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
+                        <div>
+                          <p className="font-extrabold text-[8px] leading-none mb-1">REGISTRAR</p>
+                          <p className="font-black leading-none my-0.5">BITC</p>
+                          <p className="font-black text-[7px] leading-tight mt-1">OFFICIAL SEAL</p>
+                          <p className="font-bold text-[6px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Blockchain Authenticity Verification QR Code */}
