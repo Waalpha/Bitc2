@@ -966,6 +966,24 @@ export const Fees: React.FC = () => {
             .badge-monthly { background-color: #ecfdf5; color: #059669; }
             .badge-semester { background-color: #eff6ff; color: #2563eb; }
             .badge-yearly { background-color: #fffbeb; color: #d97706; }
+            .stamp-section {
+              margin-top: 30px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              position: relative;
+            }
+            .stamp-container { 
+              position: absolute; 
+              right: 40px;
+              bottom: 10px;
+              opacity: 0.85; 
+              pointer-events: none; 
+              z-index: 50; 
+            }
+            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-5deg); }
             .footer {
               border-top: 1px solid #e2e8f0;
               padding-top: 20px;
@@ -978,6 +996,7 @@ export const Fees: React.FC = () => {
             @media print {
               body { padding: 0; }
               button { display: none; }
+              .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
           </style>
         </head>
@@ -1053,6 +1072,21 @@ export const Fees: React.FC = () => {
               <li><strong>Installment Plans:</strong> Students may request customized monthly installment agreements at the finance registry.</li>
               <li><strong>Access:</strong> Tuition fee clearing is required before proceeding to end-of-semester clinical attachments and practical evaluations.</li>
             </ul>
+          </div>
+
+          <div class="stamp-section" style="margin-bottom: 30px;">
+            <div>
+              <p style="font-size: 12px; margin: 0; font-weight: 600; color: #475569;">Authorized Signature / Finance Office</p>
+              <div style="border-bottom: 1px dashed #cbd5e1; width: 220px; height: 40px;"></div>
+              <p style="font-size: 11px; margin-top: 6px; color: #94a3b8;">Printed on standard physical register on ${format(new Date(), 'yyyy-MM-dd HH:mm')}</p>
+            </div>
+
+            <div class="stamp-container">
+              ${settings?.stampUrl 
+                ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" />` 
+                : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" />`
+              }
+            </div>
           </div>
 
           <div class="footer">
