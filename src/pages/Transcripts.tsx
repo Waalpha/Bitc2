@@ -54,10 +54,15 @@ export const Transcripts: React.FC = () => {
   const [addressOverride, setAddressOverride] = useState('');
   const [phoneOverride, setPhoneOverride] = useState('');
   const [emailOverride, setEmailOverride] = useState('');
-  const [registrarNameOverride, setRegistrarNameOverride] = useState(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
+  const [registrarNameOverride, setRegistrarNameOverride] = useState(localStorage.getItem('transcript_registrarName') || 'PROF. PATRICK NJUGUNA, PHD');
   const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
   const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
   const [stampUrlOverride, setStampUrlOverride] = useState(localStorage.getItem('transcript_stampUrl') || '/stamp.png');
+  
+  // Principal details overrides
+  const [principalNameOverride, setPrincipalNameOverride] = useState(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
+  const [principalTitleOverride, setPrincipalTitleOverride] = useState(localStorage.getItem('transcript_principalTitle') || 'COLLEGE PRINCIPAL');
+  const [principalSignatureUrlOverride, setPrincipalSignatureUrlOverride] = useState(localStorage.getItem('transcript_principalSignatureUrl') || '');
 
   // Custom grades override state
   const [customResults, setCustomResults] = useState<any[] | null>(null);
@@ -593,13 +598,16 @@ export const Transcripts: React.FC = () => {
                   </div>
                 </td>
                 <td class="sign-cell" style="text-align:right;">
-                  <p class="sign-title" style="text-align:right;">REGISTRY VERIFICATION</p>
-                  <div style="height:45px; vertical-align:middle; text-align:right; padding-bottom:5px;">
-                    <span style="font-size:7pt; color:#64748b; font-family:Courier,monospace;">QR CODE LINKED TO DATABASE<br/>verify.bitc.ac.ke</span>
+                  <p class="sign-title" style="text-align:right;">${principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                  <div style="height:45px; vertical-align:bottom; text-align:right; padding-bottom:5px;">
+                    ${principalSignatureUrlOverride 
+                      ? `<img src="${principalSignatureUrlOverride}" alt="Principal Signature" style="max-height: 45px; width: auto;" />`
+                      : `<span style="font-family:'Brush Script MT', 'Lucida Handwriting', cursive; font-size:20pt; color:#047857; font-weight:bold;">Principal Signature</span>`
+                    }
                   </div>
                   <div class="sign-line" style="text-align:right;">
-                    <p class="sign-name" style="text-align:right;">SECURE CODE</p>
-                    <p class="sign-title" style="text-align:right;">REF: ${generateAutomatedSerial(selectedStudent)}</p>
+                    <p class="sign-name" style="text-align:right;">${principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
+                    <p class="sign-title" style="text-align:right;">APPROVED & VERIFIED</p>
                   </div>
                 </td>
               </tr>
@@ -769,10 +777,13 @@ export const Transcripts: React.FC = () => {
       setPhoneOverride(localStorage.getItem('transcript_phone') || settings.publicPhone || '+254 727 114 355 / +254 707 760 239');
       setEmailOverride(localStorage.getItem('transcript_email') || settings.publicEmail || 'info@bitc.ac.ke');
     }
-    setRegistrarNameOverride(localStorage.getItem('transcript_registrarName') || 'PROF. J. K. KIBICHO, PHD');
+    setRegistrarNameOverride(localStorage.getItem('transcript_registrarName') || 'PROF. PATRICK NJUGUNA, PHD');
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
     setStampUrlOverride(localStorage.getItem('transcript_stampUrl') || (settings && settings.stampUrl) || '/stamp.png');
+    setPrincipalNameOverride(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
+    setPrincipalTitleOverride(localStorage.getItem('transcript_principalTitle') || 'COLLEGE PRINCIPAL');
+    setPrincipalSignatureUrlOverride(localStorage.getItem('transcript_principalSignatureUrl') || '');
   }, [settings]);
 
   // Load custom results when selectedStudent changes
@@ -1088,6 +1099,15 @@ export const Transcripts: React.FC = () => {
     } else if (field === 'stampUrl') {
       setStampUrlOverride(value);
       localStorage.setItem('transcript_stampUrl', value);
+    } else if (field === 'principalName') {
+      setPrincipalNameOverride(value);
+      localStorage.setItem('transcript_principalName', value);
+    } else if (field === 'principalTitle') {
+      setPrincipalTitleOverride(value);
+      localStorage.setItem('transcript_principalTitle', value);
+    } else if (field === 'principalSignatureUrl') {
+      setPrincipalSignatureUrlOverride(value);
+      localStorage.setItem('transcript_principalSignatureUrl', value);
     }
   };
 
@@ -1105,10 +1125,13 @@ export const Transcripts: React.FC = () => {
       setPhoneOverride('+254 727 114 355 / +254 707 760 239');
       setEmailOverride('info@bitc.ac.ke');
     }
-    setRegistrarNameOverride('PROF. J. K. KIBICHO, PHD');
+    setRegistrarNameOverride('PROF. PATRICK NJUGUNA, PHD');
     setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride('');
     setStampUrlOverride('/stamp.png');
+    setPrincipalNameOverride('OFFICE OF THE PRINCIPAL');
+    setPrincipalTitleOverride('COLLEGE PRINCIPAL');
+    setPrincipalSignatureUrlOverride('');
     
     localStorage.removeItem('transcript_schoolName');
     localStorage.removeItem('transcript_logoUrl');
@@ -1119,6 +1142,9 @@ export const Transcripts: React.FC = () => {
     localStorage.removeItem('transcript_registrarTitle');
     localStorage.removeItem('transcript_signatureUrl');
     localStorage.removeItem('transcript_stampUrl');
+    localStorage.removeItem('transcript_principalName');
+    localStorage.removeItem('transcript_principalTitle');
+    localStorage.removeItem('transcript_principalSignatureUrl');
   };
 
   const results = customResults !== null ? customResults : getTranscriptResults();
@@ -1453,7 +1479,7 @@ export const Transcripts: React.FC = () => {
                   {/* Registrar & Signature Details */}
                   <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
                     <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-wider mb-3">
-                      <span>Registrar & Custom Signature</span>
+                      <span>Official Signatures & Stamp</span>
                     </h4>
                     <div className="space-y-3">
                       <div>
@@ -1477,7 +1503,7 @@ export const Transcripts: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Signature Image URL (Optional)</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Registrar Signature Image URL (Optional)</label>
                         <input
                           id="signature-url-input"
                           type="text"
@@ -1487,6 +1513,43 @@ export const Transcripts: React.FC = () => {
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated registrar signature.</span>
+                      </div>
+
+                      {/* Principal Signature overrides */}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-850 mt-2">
+                        <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">College Principal Settings</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Principal Name / Signatory</label>
+                        <input
+                          id="principal-name-input"
+                          type="text"
+                          value={principalNameOverride}
+                          onChange={(e) => handleSchoolDetailChange('principalName', e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Principal Title / Office</label>
+                        <input
+                          id="principal-title-input"
+                          type="text"
+                          value={principalTitleOverride}
+                          onChange={(e) => handleSchoolDetailChange('principalTitle', e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Principal Signature Image URL (Optional)</label>
+                        <input
+                          id="principal-signature-url-input"
+                          type="text"
+                          value={principalSignatureUrlOverride}
+                          onChange={(e) => handleSchoolDetailChange('principalSignatureUrl', e.target.value)}
+                          placeholder="Paste PNG/JPG/SVG signature URL"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated principal signature.</span>
                       </div>
                       <div>
                         <label className="text-[10px] uppercase font-bold text-slate-400">Official Stamp Image URL</label>
@@ -1908,7 +1971,7 @@ export const Transcripts: React.FC = () => {
                 <div className="flex flex-col md:flex-row gap-8 items-end pt-4 justify-between">
                   
                   {/* Digital Signature */}
-                  <div className="md:w-5/12 text-left">
+                  <div className="md:w-[38%] text-left">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
                     <div className="h-14 flex items-center justify-start py-2 relative text-blue-800">
                       {isSignoffPrinted && (
@@ -1935,7 +1998,7 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* Stamp / Logo seal */}
-                  <div className="md:w-4/12 flex justify-center py-4 print:py-0 shrink-0">
+                  <div className="md:w-[24%] flex justify-center py-4 print:py-0 shrink-0">
                     {isSignoffPrinted && (
                       stampUrlOverride ? (
                         <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center select-none rotate-[-5deg]">
@@ -1963,21 +2026,31 @@ export const Transcripts: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Blockchain Authenticity Verification QR Code */}
-                  <div className="md:w-3/12 flex flex-col items-center md:items-end justify-center shrink-0">
-                    <div className="p-2 border border-slate-200 bg-white rounded-2xl print:border-black shrink-0">
-                      <QRCodeCanvas
-                        value={`https://bitc.ac.ke/verify/transcript/${generateAutomatedSerial(selectedStudent)}`}
-                        size={64}
-                        level="M"
-                      />
+                  {/* College Principal Signature */}
+                  <div className="md:w-[38%] text-right flex flex-col items-end">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">{principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                    <div className="h-14 flex items-center justify-end py-2 relative text-emerald-800">
+                      {isSignoffPrinted && (
+                        principalSignatureUrlOverride ? (
+                          <img 
+                            src={principalSignatureUrlOverride} 
+                            alt="Principal Signature" 
+                            className="h-12 w-auto object-contain max-h-12" 
+                            referrerPolicy="no-referrer" 
+                          />
+                        ) : (
+                          /* Realistic Principal Autograph SVG */
+                          <svg className="h-12 w-auto opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 45 C35 15, 55 55, 75 25 C95 5, 115 65, 135 35 C155 15, 140 45, 175 25" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M30 40 L170 30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          </svg>
+                        )
+                      )}
                     </div>
-                    <span className="text-[8px] text-right font-bold text-slate-400 mt-2 tracking-widest uppercase text-center md:text-right">
-                      SECURE DB VERIFICATION CODE
-                    </span>
-                    <span className="text-[9px] font-black font-mono text-blue-600 mt-0.5 uppercase tracking-tight select-all leading-none">
-                      {generateAutomatedSerial(selectedStudent)}
-                    </span>
+                    <div className="border-t border-slate-200 pt-2.5 w-full max-w-[240px] text-right print:border-black">
+                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
+                      <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1 print:text-black">APPROVED & VERIFIED</p>
+                    </div>
                   </div>
 
                 </div>
