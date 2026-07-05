@@ -1,0 +1,237 @@
+{
+  "unit_programming": {
+    "name": "Introduction to Programming",
+    "classId": "class_cs101",
+    "status": "active"
+  },
+  "unit_db": {
+    "name": "Database Systems",
+    "classId": "class_cs101",
+    "status": "active"
+  },
+  "unit_algorithms": {
+    "name": "Algorithms & Data Structures",
+    "classId": "class_cs101",
+    "status": "active"
+  },
+  "unit_circuits": {
+    "name": "Circuit Analysis",
+    "classId": "class_ee201",
+    "status": "active"
+  },
+  "unit_housekeeping": {
+    "name": "Housekeeping & Facility Sanitization",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_predeparture": {
+    "name": "Pre-departure Training & Relocation Readiness",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_client_dietary": {
+    "name": "Client Dietary & Nutrition Management",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_psychosocial": {
+    "name": "Psychosocial Support & Mental Caregiving",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_first_aid": {
+    "name": "Basic Clinical First Aid & Emergency Care",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_special_needs": {
+    "name": "Special Needs Care & Patient Handling",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_catering_services": {
+    "name": "Catering Services & Nutritional Meal Prep",
+    "classId": "class_healthcare",
+    "status": "active"
+  },
+  "unit_networks": {
+    "name": "Network Security",
+    "classId": "class_it302",
+    "status": "active"
+  },
+  "39O3Hx5kzGIfDzq4z3R1": {
+    "status": "active",
+    "name": "First Aid",
+    "createdAt": "2026-05-08T08:51:37.458Z",
+    "updatedAt": "2026-05-12T17:00:48.545Z",
+    "classId": "g4acl1uAijqcKxexryz0"
+  },
+  "4v1d9pHnWBpEcBYCRBm7": {
+    "classId": "g4acl1uAijqcKxexryz0",
+    "updatedAt": "2026-06-03T09:15:12.791Z",
+    "createdAt": "2026-05-08T08:45:26.725Z",
+    "name": "Housekeeping",
+    "status": "active"
+  },
+  "6T0zU9GiOedLuyIm7e0m": {
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "updatedAt": "2026-05-08T08:49:19.874Z",
+    "createdAt": "2026-05-08T08:41:46.972Z",
+    "name": "Pre-Departure",
+    "status": "active"
+  },
+  "9UrHx08lK2QRFHmFFJfZ": {
+    "name": "Special Needs",
+    "classId": "BJqtKncoA2CrIlURmRNA",
+    "status": "active",
+    "createdAt": "2026-05-08T08:40:48.436Z"
+  },
+  "AxFFtk9Zdh4lhn79hO7h": {
+    "status": "active",
+    "createdAt": "2026-05-08T08:38:52.884Z",
+    "name": "Paediatrics",
+    "classId": "BJqtKncoA2CrIlURmRNA"
+  },
+  "MXDR03NFs8fEiWsWzbNS": {
+    "createdAt": "2026-05-13T07:04:28.614Z",
+    "status": "active",
+    "classId": "DRgJX5HEPah6a76r1Kt9",
+    "name": "Beauty Therapy Practicals"
+  },
+  "UUd4rfDKEd3C4aQoJMuW": {
+    "name": "HOUSEKEEPING",
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "status": "active",
+    "createdAt": "2026-06-03T09:18:59.190Z"
+  },
+  "Ux4gABqnignrPx04yMHD": {
+    "createdAt": "2026-05-15T07:36:20.929Z",
+    "status": "active",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "name": "Conduit Systems"
+  },
+  "W0UwQwiyFs09MpmfiiJF": {
+    "name": "Trunking Systems ",
+    "status": "active",
+    "updatedAt": "2026-05-15T08:59:21.742Z",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "createdAt": "2026-05-15T07:37:14.652Z"
+  },
+  "X4OqVNJmUJwkdUOQauaj": {
+    "createdAt": "2026-05-15T07:35:57.995Z",
+    "status": "active",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "name": "PVC Sheathed Cable Installation"
+  },
+  "bQLRvw6kes4WZvOT7eUd": {
+    "name": "Hairdressing  Practicals",
+    "classId": "DRgJX5HEPah6a76r1Kt9",
+    "status": "active",
+    "createdAt": "2026-05-13T07:03:15.550Z"
+  },
+  "cUqLlNLMC47VaKI9odHD": {
+    "status": "completed",
+    "name": "Communication Skills",
+    "createdAt": "2026-05-13T07:12:11.209Z",
+    "updatedAt": "2026-05-13T07:12:25.953Z",
+    "classId": "DRgJX5HEPah6a76r1Kt9"
+  },
+  "dPjVB9GQtyK71Wsu5QJX": {
+    "createdAt": "2026-05-15T08:37:26.858Z",
+    "status": "active",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "name": "Communication Skills"
+  },
+  "eYjt0PQxFIXN2uTLzA9N": {
+    "status": "active",
+    "createdAt": "2026-05-13T07:01:53.095Z",
+    "name": "Hairdressing Theory",
+    "classId": "DRgJX5HEPah6a76r1Kt9"
+  },
+  "fpJet91VVAbW9IDTE3M6": {
+    "status": "active",
+    "name": "Beauty Therapy Theory",
+    "createdAt": "2026-05-13T07:03:51.916Z",
+    "classId": "DRgJX5HEPah6a76r1Kt9",
+    "updatedAt": "2026-05-13T07:04:51.085Z"
+  },
+  "gcYaSMR0xjIvgK5b05Ez": {
+    "status": "active",
+    "name": "Psychosocial Care",
+    "createdAt": "2026-05-08T08:42:19.110Z",
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "updatedAt": "2026-05-08T08:49:34.812Z"
+  },
+  "hehDCXTScpgUUGql7gev": {
+    "status": "active",
+    "createdAt": "2026-05-08T08:40:22.381Z",
+    "name": "Caregiving & Catering",
+    "classId": "BJqtKncoA2CrIlURmRNA"
+  },
+  "hlEGOYg7MeMgbVDBAYiU": {
+    "name": "Client Dietary Needs",
+    "classId": "reMvOzkXrWVIYjR0lpx3",
+    "status": "active",
+    "createdAt": "2026-05-08T08:45:01.117Z"
+  },
+  "iYjGkOicjkNvd1pdq59V": {
+    "createdAt": "2026-05-08T08:37:10.874Z",
+    "status": "active",
+    "classId": "BJqtKncoA2CrIlURmRNA",
+    "name": "Health Promotion"
+  },
+  "jAXjcK8sSEVTdukXqS0H": {
+    "name": "Bells and Alarms",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "status": "active",
+    "createdAt": "2026-05-15T08:35:18.785Z"
+  },
+  "jC6RPUiTzvLsM39E7Z55": {
+    "name": "Special Needs",
+    "classId": "g4acl1uAijqcKxexryz0",
+    "status": "active",
+    "createdAt": "2026-05-08T08:50:47.947Z"
+  },
+  "oC7xJwerAHgaN4FN4GgF": {
+    "name": "Entrepreneurship",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "status": "active",
+    "createdAt": "2026-05-15T08:36:11.989Z"
+  },
+  "rF11wrYu35iXvs8wwETL": {
+    "status": "active",
+    "createdAt": "2026-05-15T08:35:50.167Z",
+    "name": "Maching Winding",
+    "classId": "0fcmE2MMzOegvpwSr82c"
+  },
+  "rNOZjMa9fqBNYNX3QcHx": {
+    "name": "Solar PV S ystems",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "status": "active",
+    "createdAt": "2026-05-15T08:34:41.925Z"
+  },
+  "uMaxs03lO17bYeexrrm8": {
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "name": "Digital Literacy",
+    "createdAt": "2026-05-15T08:36:44.165Z",
+    "status": "active"
+  },
+  "ub4G2r6V9AwMcGw4mWnK": {
+    "name": "First Aid",
+    "classId": "BJqtKncoA2CrIlURmRNA",
+    "status": "active",
+    "createdAt": "2026-05-08T08:41:09.765Z"
+  },
+  "ubvGzh1mPoh0geZc4KIM": {
+    "status": "active",
+    "createdAt": "2026-05-08T08:38:13.072Z",
+    "name": "Communication Skills",
+    "classId": "BJqtKncoA2CrIlURmRNA"
+  },
+  "wdujOf1OP2UHubsAb5eb": {
+    "createdAt": "2026-05-08T08:51:16.130Z",
+    "status": "active",
+    "classId": "g4acl1uAijqcKxexryz0",
+    "name": "Caregiving & Catering"
+  }
+}

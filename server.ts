@@ -251,6 +251,45 @@ async function reactivateAllAccounts(firestoreAdmin?: admin.firestore.Firestore)
   }
 }
 
+// Sync new local items (classes, units, feeConfigs) to remote Firestore
+async function syncLocalDataToRemote(firestoreAdmin: admin.firestore.Firestore) {
+  const collections = ['classes', 'units', 'feeConfigs'];
+  console.log("[MIGRATION] Checking for local healthcare data to sync to Remote Firestore...");
+  for (const colName of collections) {
+    try {
+      const localData = readCollection(colName);
+      if (!localData || Object.keys(localData).length === 0) continue;
+      
+      const batch = firestoreAdmin.batch();
+      let count = 0;
+      
+      for (const [id, value] of Object.entries(localData)) {
+        const val: any = value;
+        const isHealthcare = id.includes('healthcare') || 
+                            id.includes('caregiver') || 
+                            (val && val.classId === 'class_healthcare');
+        if (isHealthcare) {
+          const docRef = firestoreAdmin.collection(colName).doc(id);
+          const docSnap = await docRef.get();
+          if (!docSnap.exists) {
+            batch.set(docRef, val);
+            count++;
+          }
+        }
+      }
+      
+      if (count > 0) {
+        await batch.commit();
+        console.log(`[MIGRATION] Successfully pushed ${count} local healthcare documents to remote Firestore for "${colName}".`);
+      } else {
+        console.log(`[MIGRATION] No new healthcare documents needed to be pushed for "${colName}".`);
+      }
+    } catch (err: any) {
+      console.log(`[MIGRATION] Error syncing "${colName}" to remote:`, err?.message || err);
+    }
+  }
+}
+
 // Initialize Firebase Admin
 let db: any = localDbFirestore;
 try {
@@ -272,7 +311,10 @@ try {
   const remoteDb = admin.firestore();
   db = remoteDb;
   console.log("Firebase Admin initialized, launching one-time background migration check.");
-  migrateFromFirestore(remoteDb)
+  syncLocalDataToRemote(remoteDb)
+    .then(() => {
+      return migrateFromFirestore(remoteDb);
+    })
     .then(() => {
       return reactivateAllAccounts(remoteDb);
     })

@@ -1,0 +1,109 @@
+{
+  "fee_tuition_cs101": {
+    "classId": "class_cs101",
+    "title": "Semester 1 Tuition Fee",
+    "amount": 1500,
+    "period": "semester",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "fee_tuition_ee201": {
+    "classId": "class_ee201",
+    "title": "Semester 1 Tuition Fee",
+    "amount": 1800,
+    "period": "semester",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "fee_exam_all": {
+    "classId": "class_cs101",
+    "title": "External Examination Board Fee",
+    "amount": 250,
+    "period": "semester",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "fee_monthly_lab_cs101": {
+    "classId": "class_cs101",
+    "title": "Computer Lab Maintenance Fee",
+    "amount": 100,
+    "period": "monthly",
+    "createdAt": "2026-05-28T12:00:00.000Z"
+  },
+  "fee_healthcare_tuition_s1": {
+    "classId": "class_healthcare",
+    "title": "Healthcare Tuition Fee (Semester 1)",
+    "amount": 30000,
+    "period": "semester",
+    "createdAt": "2026-07-04T12:00:00.000Z"
+  },
+  "fee_healthcare_tuition_s2": {
+    "classId": "class_healthcare",
+    "title": "Healthcare Tuition Fee (Semester 2)",
+    "amount": 30000,
+    "period": "semester",
+    "createdAt": "2026-07-04T12:00:00.000Z"
+  },
+  "fee_healthcare_lab_attachment": {
+    "classId": "class_healthcare",
+    "title": "Caregiver Practical Lab & Attachment Fee",
+    "amount": 10000,
+    "period": "yearly",
+    "createdAt": "2026-07-04T12:00:00.000Z"
+  },
+  "fee_healthcare_exam": {
+    "classId": "class_healthcare",
+    "title": "Medical Assessment & Examination Fee",
+    "amount": 6000,
+    "period": "yearly",
+    "createdAt": "2026-07-04T12:00:00.000Z"
+  },
+  "fee_healthcare_registration": {
+    "classId": "class_healthcare",
+    "title": "Healthcare Admission & Registration Fee",
+    "amount": 4000,
+    "period": "yearly",
+    "createdAt": "2026-07-04T12:00:00.000Z"
+  },
+  "FvfzkYVFOyGVgVXeWr32": {
+    "amount": 1000,
+    "createdAt": "2026-04-24T07:49:40.555Z",
+    "classId": "g4acl1uAijqcKxexryz0",
+    "title": "Tution Fees",
+    "period": "monthly"
+  },
+  "Zj3eyp6tgbcMtoLxvGHX": {
+    "period": "monthly",
+    "title": "Tution Fees",
+    "createdAt": "2026-04-24T07:48:18.836Z",
+    "classId": "0fcmE2MMzOegvpwSr82c",
+    "amount": 1000
+  },
+  "nzh5TnxMB2e5IjbL60G9": {
+    "amount": 1000,
+    "createdAt": "2026-04-24T07:49:09.699Z",
+    "classId": "BJqtKncoA2CrIlURmRNA",
+    "title": "Tution Fees",
+    "period": "monthly"
+  },
+  "p7ZFjSANO06BxFpGiLLj": {
+    "title": "Hostel",
+    "period": "monthly",
+    "createdAt": "2026-04-24T07:50:00.083Z",
+    "classId": "KBq6JevSwisu65DqXily",
+    "amount": 2000
+  },
+  "r1jkOUOhpsvlli0a53xT": {
+    "classId": "DRgJX5HEPah6a76r1Kt9",
+    "createdAt": "2026-04-24T07:48:43.747Z",
+    "amount": 1000,
+    "period": "monthly",
+    "title": "Tution Fees"
+  },
+  "vYBOUA7er3WtUGf4feT2": {
+    "title": "Full Course ",
+    "createdAt": "2026-07-05T08:12:27.238Z",
+    "classId": "PnIHUERuUTaV9ksOQgZ9",
+    "period": "yearly",
+    "feeType": "",
+    "amount": 80000,
+    "feeGroup": ""
+  }
+}

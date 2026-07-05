@@ -59,6 +59,24 @@ export function seedDatabase() {
       "longitude": 36.8225,
       "radius": 150
     },
+    "class_healthcare": {
+      "name": "Healthcare Support Services & Caregiver",
+      "teacherId": "tech_dr_smith",
+      "unitIds": [
+        "unit_housekeeping",
+        "unit_predeparture",
+        "unit_client_dietary",
+        "unit_psychosocial",
+        "unit_first_aid",
+        "unit_special_needs",
+        "unit_catering_services"
+      ],
+      "startTime": "08:30",
+      "endTime": "16:30",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "radius": 150
+    },
     "class_it302": {
       "name": "Information Technology",
       "teacherId": "tech_dr_smith",
@@ -91,6 +109,41 @@ export function seedDatabase() {
     "unit_circuits": {
       "name": "Circuit Analysis",
       "classId": "class_ee201",
+      "status": "active"
+    },
+    "unit_housekeeping": {
+      "name": "Housekeeping & Facility Sanitization",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_predeparture": {
+      "name": "Pre-departure Training & Relocation Readiness",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_client_dietary": {
+      "name": "Client Dietary & Nutrition Management",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_psychosocial": {
+      "name": "Psychosocial Support & Mental Caregiving",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_first_aid": {
+      "name": "Basic Clinical First Aid & Emergency Care",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_special_needs": {
+      "name": "Special Needs Care & Patient Handling",
+      "classId": "class_healthcare",
+      "status": "active"
+    },
+    "unit_catering_services": {
+      "name": "Catering Services & Nutritional Meal Prep",
+      "classId": "class_healthcare",
       "status": "active"
     },
     "unit_networks": {
@@ -320,6 +373,41 @@ export function seedDatabase() {
       "amount": 100,
       "period": "monthly",
       "createdAt": "2026-05-28T12:00:00.000Z"
+    },
+    "fee_healthcare_tuition_s1": {
+      "classId": "class_healthcare",
+      "title": "Healthcare Tuition Fee (Semester 1)",
+      "amount": 30000,
+      "period": "semester",
+      "createdAt": "2026-07-04T12:00:00.000Z"
+    },
+    "fee_healthcare_tuition_s2": {
+      "classId": "class_healthcare",
+      "title": "Healthcare Tuition Fee (Semester 2)",
+      "amount": 30000,
+      "period": "semester",
+      "createdAt": "2026-07-04T12:00:00.000Z"
+    },
+    "fee_healthcare_lab_attachment": {
+      "classId": "class_healthcare",
+      "title": "Caregiver Practical Lab & Attachment Fee",
+      "amount": 10000,
+      "period": "yearly",
+      "createdAt": "2026-07-04T12:00:00.000Z"
+    },
+    "fee_healthcare_exam": {
+      "classId": "class_healthcare",
+      "title": "Medical Assessment & Examination Fee",
+      "amount": 6000,
+      "period": "yearly",
+      "createdAt": "2026-07-04T12:00:00.000Z"
+    },
+    "fee_healthcare_registration": {
+      "classId": "class_healthcare",
+      "title": "Healthcare Admission & Registration Fee",
+      "amount": 4000,
+      "period": "yearly",
+      "createdAt": "2026-07-04T12:00:00.000Z"
     }
   });
 

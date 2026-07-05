@@ -1,0 +1,52 @@
+{
+  "HQijpSPgWRCiNmINTyAQ": {
+    "date": "2026-04-30T00:00:00.000Z",
+    "recordedBy": "Daud",
+    "updatedAt": "2026-05-12T11:55:52.277Z",
+    "title": "Garbage Collector",
+    "category": "Maintenance",
+    "createdAt": "2026-05-12T11:55:52.277Z",
+    "amount": 1500
+  },
+  "Nz8aRwTG1I1LVXtD8IqB": {
+    "date": "2026-04-30T00:00:00.000Z",
+    "updatedAt": "2026-05-14T22:43:50.914Z",
+    "recordedBy": "Daud",
+    "title": "Salary ",
+    "category": "Salaries",
+    "createdAt": "2026-05-12T11:54:49.869Z",
+    "amount": 60000
+  },
+  "OUApO4uFzlHv1JyK0RcM": {
+    "category": "Utilities",
+    "title": "Internet",
+    "amount": 2000,
+    "createdAt": "2026-05-12T11:56:47.316Z",
+    "date": "2026-04-30T00:00:00.000Z",
+    "recordedBy": "Daud",
+    "updatedAt": "2026-05-12T11:56:47.316Z"
+  },
+  "VVcQu0dSkeC2L2a1BxOr": {
+    "amount": 13000,
+    "title": "Electricity",
+    "category": "Electricity",
+    "recordedBy": "Daud",
+    "date": "2026-04-24T00:00:00.000Z"
+  },
+  "XxBCZAVIFCk8YklEi9mE": {
+    "amount": 80000,
+    "category": "House Rent",
+    "title": "Rent",
+    "recordedBy": "Daud",
+    "date": "2026-04-24T00:00:00.000Z"
+  },
+  "kgoWWxPJL5CvJ3IB4x8y": {
+    "date": "2026-05-17T00:00:00.000Z",
+    "updatedAt": "2026-05-17T17:20:16.553Z",
+    "recordedBy": "David Gacheru ",
+    "title": "Uniform logo ",
+    "category": "Utilities",
+    "amount": 3500,
+    "createdAt": "2026-05-17T17:20:16.553Z"
+  }
+}

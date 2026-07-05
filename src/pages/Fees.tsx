@@ -11,7 +11,8 @@ import { Toast, ToastMessage } from '../components/Toast';
 export const Fees: React.FC = () => {
   const { user, userData, hasPermission, settings, studentContext } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
-  const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'reports'>('individual');
+  const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'structure' | 'reports'>('individual');
+  const [structureClassId, setStructureClassId] = useState<string>('all');
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [students, setStudents] = useState<User[]>([]);
@@ -829,6 +830,241 @@ export const Fees: React.FC = () => {
               window.print();
               setTimeout(() => { window.close(); }, 500);
             };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handlePrintFeeStructure = (targetClassId: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const cls = classes.find(c => String(c.id) === String(targetClassId));
+    const className = cls ? cls.name : 'All Academic Programs';
+    const todayStr = format(new Date(), 'MMMM dd, yyyy');
+
+    const filteredFees = classFees.filter(fee => 
+      targetClassId === 'all' || String(fee.classId) === String(targetClassId) || String(fee.classId) === 'all'
+    );
+
+    const totalAmount = filteredFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+
+    const html = `
+      <html>
+        <head>
+          <title>Official Fees Structure - ${className}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 40px; 
+              color: #1e293b; 
+              line-height: 1.5; 
+              background-color: #ffffff;
+            }
+            .header-container {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-b: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .college-title {
+              font-size: 24px;
+              font-weight: 800;
+              color: #1e3a8a;
+              text-transform: uppercase;
+              letter-spacing: -0.5px;
+            }
+            .college-subtitle {
+              font-size: 11px;
+              color: #64748b;
+              font-weight: 600;
+              text-transform: uppercase;
+              margin-top: 2px;
+            }
+            .document-title {
+              font-size: 18px;
+              font-weight: 700;
+              color: #0f172a;
+              text-align: right;
+            }
+            .meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 30px;
+            }
+            .meta-item {
+              font-size: 13px;
+              color: #475569;
+            }
+            .meta-value {
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .fees-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .fees-table th {
+              background-color: #f8fafc;
+              border-bottom: 2px solid #e2e8f0;
+              padding: 12px;
+              font-size: 11px;
+              font-weight: 700;
+              color: #475569;
+              text-transform: uppercase;
+              text-align: left;
+            }
+            .fees-table td {
+              padding: 12px;
+              border-bottom: 1px solid #f1f5f9;
+              font-size: 13px;
+              color: #334155;
+            }
+            .fees-table tr:hover {
+              background-color: #f8fafc;
+            }
+            .total-box {
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 40px;
+            }
+            .total-label {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .total-value {
+              font-size: 20px;
+              font-weight: 800;
+              color: #1e3a8a;
+            }
+            .badge {
+              display: inline-block;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 3px 8px;
+              border-radius: 12px;
+              text-transform: uppercase;
+            }
+            .badge-monthly { background-color: #ecfdf5; color: #059669; }
+            .badge-semester { background-color: #eff6ff; color: #2563eb; }
+            .badge-yearly { background-color: #fffbeb; color: #d97706; }
+            .footer {
+              border-top: 1px solid #e2e8f0;
+              padding-top: 20px;
+              font-size: 11px;
+              color: #64748b;
+              text-align: center;
+              line-height: 1.6;
+              margin-top: 50px;
+            }
+            @media print {
+              body { padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div style="display: flex; gap: 16px; align-items: center;">
+              ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 60px; width: auto;" />` : ''}
+              <div>
+                <div class="college-title">${(settings?.schoolName || 'Breakthrough International Training College (BITC)').toUpperCase()}</div>
+                <div class="college-subtitle">Pioneering Excellence in Professional & Healthcare Education</div>
+              </div>
+            </div>
+            <div>
+              <div class="document-title">OFFICIAL FEES STRUCTURE</div>
+              <div style="font-size: 11px; color: #64748b; text-align: right; margin-top: 4px;">Issued on ${todayStr}</div>
+            </div>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div>Course/Program: <span class="meta-value">${className}</span></div>
+              <div style="margin-top: 4px;">Structure Status: <span class="meta-value" style="color: #059669;">Approved & Active</span></div>
+            </div>
+            <div class="meta-item" style="text-align: right;">
+              <div>Reference Code: <span class="meta-value">FST-${targetClassId.substring(0, 6).toUpperCase()}</span></div>
+              <div style="margin-top: 4px;">Billing System: <span class="meta-value">Institutional Blueprint Standard</span></div>
+            </div>
+          </div>
+
+          <table class="fees-table">
+            <thead>
+              <tr>
+                <th width="40%">Fee Package / Title</th>
+                <th width="20%">Fee Type</th>
+                <th width="20%">Billing Cycle</th>
+                <th width="20%" style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredFees.map(fee => `
+                <tr>
+                  <td style="font-weight: 600; color: #0f172a;">${fee.title}</td>
+                  <td><span style="font-size: 11px; color: #475569; text-transform: uppercase;">${fee.feeType || 'Tuition'}</span></td>
+                  <td>
+                    <span class="badge badge-${fee.period || 'monthly'}">
+                      ${fee.period || 'monthly'}
+                    </span>
+                  </td>
+                  <td style="font-weight: 700; text-align: right; color: #0f172a;">Ksh ${(fee.amount || 0).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+              ${filteredFees.length === 0 ? `
+                <tr>
+                  <td colspan="4" style="text-align: center; color: #64748b; font-style: italic; padding: 30px;">
+                    No fee packages defined for this class.
+                  </td>
+                </tr>
+              ` : ''}
+            </tbody>
+          </table>
+
+          ${filteredFees.length > 0 ? `
+            <div class="total-box">
+              <span class="total-label">Total Cumulative Base Fees</span>
+              <span class="total-value">Ksh ${totalAmount.toLocaleString()}</span>
+            </div>
+          ` : ''}
+
+          <div style="margin-bottom: 40px;">
+            <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 10px;">General Financial Policies</h4>
+            <ul style="font-size: 12px; color: #475569; padding-left: 20px; line-height: 1.8;">
+              <li><strong>Payment Modes:</strong> All fees are payable directly to the college bank account or via our approved M-Pesa Till Number. Cash payments are not accepted at the campus.</li>
+              <li><strong>Installment Plans:</strong> Students may request customized monthly installment agreements at the finance registry.</li>
+              <li><strong>Access:</strong> Tuition fee clearing is required before proceeding to end-of-semester clinical attachments and practical evaluations.</li>
+            </ul>
+          </div>
+
+          <div class="footer">
+            <p>This is an official document of the ${settings?.schoolName || 'Breakthrough International Training College (BITC)'} Finance Office.</p>
+            <p>&copy; ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College (BITC)'}. All Rights Reserved.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            }
           </script>
         </body>
       </html>
@@ -1662,91 +1898,93 @@ export const Fees: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const loadFeesData = async (fullLoad = false) => {
-    if (!user || !isAdminView) return;
+    if (!user) return;
     if (fullLoad) setIsLoading(true);
     try {
-      // Load all balances
-      const feesSnap = await getDocs(collection(db, 'fees'));
-      const allBalances = feesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
-      
-      const dedupedMap = new Map<string, FeeBalance>();
-      const sorted = [...allBalances].sort((a, b) => (a.lastUpdated || '').localeCompare(b.lastUpdated || ''));
-      
-      sorted.forEach(bal => {
-        if (!bal.studentId) return;
-        const sId = String(bal.studentId).trim();
-        const existing = dedupedMap.get(sId);
-        if (!existing) {
-          dedupedMap.set(sId, bal);
-          return;
-        }
-        const balIsUidMatch = bal.id === sId;
-        const existingIsUidMatch = existing.id === sId;
-        if (balIsUidMatch && !existingIsUidMatch) {
-          dedupedMap.set(sId, bal);
-        } else if (balIsUidMatch === existingIsUidMatch) {
-          if ((bal.lastUpdated || '') >= (existing.lastUpdated || '')) {
+      if (isAdminView) {
+        // Load all balances
+        const feesSnap = await getDocs(collection(db, 'fees'));
+        const allBalances = feesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeBalance));
+        
+        const dedupedMap = new Map<string, FeeBalance>();
+        const sorted = [...allBalances].sort((a, b) => (a.lastUpdated || '').localeCompare(b.lastUpdated || ''));
+        
+        sorted.forEach(bal => {
+          if (!bal.studentId) return;
+          const sId = String(bal.studentId).trim();
+          const existing = dedupedMap.get(sId);
+          if (!existing) {
             dedupedMap.set(sId, bal);
+            return;
           }
-        }
-      });
-      setFeeBalances(Array.from(dedupedMap.values()));
+          const balIsUidMatch = bal.id === sId;
+          const existingIsUidMatch = existing.id === sId;
+          if (balIsUidMatch && !existingIsUidMatch) {
+            dedupedMap.set(sId, bal);
+          } else if (balIsUidMatch === existingIsUidMatch) {
+            if ((bal.lastUpdated || '') >= (existing.lastUpdated || '')) {
+              dedupedMap.set(sId, bal);
+            }
+          }
+        });
+        setFeeBalances(Array.from(dedupedMap.values()));
 
-      // Load all students
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const allUsers = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-      const filteredStudents = allUsers.filter(u => String(u.role).toLowerCase() === 'student');
-      setStudents(filteredStudents);
+        // Load all students
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const allUsers = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+        const filteredStudents = allUsers.filter(u => String(u.role).toLowerCase() === 'student');
+        setStudents(filteredStudents);
 
-      // Determine students with suspended monthly fees due to 2-month absence (60 days)
-      try {
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-        const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+        // Determine students with suspended monthly fees due to 2-month absence (60 days)
+        try {
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+          const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
 
-        const attendanceSnap = await getDocs(collection(db, 'attendance'));
+          const attendanceSnap = await getDocs(collection(db, 'attendance'));
 
-        const studentPresenceCount: { [studentId: string]: number } = {};
+          const studentPresenceCount: { [studentId: string]: number } = {};
 
-        attendanceSnap.docs.forEach(doc => {
-          const data = doc.data();
-          const date = data.date;
-          if (date && date >= sixtyDaysAgoStr) {
-            const records = data.records || {};
-            for (const [studentId, status] of Object.entries(records)) {
-              if (status === 'present' || status === 'late' || status === 'excused') {
-                studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+          attendanceSnap.docs.forEach(doc => {
+            const data = doc.data();
+            const date = data.date;
+            if (date && date >= sixtyDaysAgoStr) {
+              const records = data.records || {};
+              for (const [studentId, status] of Object.entries(records)) {
+                if (status === 'present' || status === 'late' || status === 'excused') {
+                  studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+                }
               }
             }
-          }
-        });
+          });
 
-        const now = new Date();
-        const suspended = new Set<string>();
+          const now = new Date();
+          const suspended = new Set<string>();
 
-        filteredStudents.forEach(student => {
-          const sUid = student.uid;
-          
-          // Skip check for new students registered in the last 30 days
-          const createdAtStr = student.createdAt || (student as any).admissionDate;
-          const createdDate = createdAtStr ? new Date(createdAtStr) : null;
-          const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
+          filteredStudents.forEach(student => {
+            const sUid = student.uid;
+            
+            // Skip check for new students registered in the last 30 days
+            const createdAtStr = student.createdAt || (student as any).admissionDate;
+            const createdDate = createdAtStr ? new Date(createdAtStr) : null;
+            const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
 
-          if (!isNewStudent) {
-            const presenceCount = studentPresenceCount[sUid] || 0;
+            if (!isNewStudent) {
+              const presenceCount = studentPresenceCount[sUid] || 0;
 
-            if (presenceCount === 0) {
-              suspended.add(sUid);
+              if (presenceCount === 0) {
+                suspended.add(sUid);
+              }
             }
-          }
-        });
+          });
 
-        setSuspendedStudentIds(suspended);
-      } catch (err) {
-        console.error("Error determining suspended students on client side:", err);
+          setSuspendedStudentIds(suspended);
+        } catch (err) {
+          console.error("Error determining suspended students on client side:", err);
+        }
       }
 
-      if (fullLoad) {
+      if (fullLoad || !isAdminView) {
         // Load classes
         const classesSnap = await getDocs(collection(db, 'classes'));
         setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
@@ -1767,9 +2005,11 @@ export const Fees: React.FC = () => {
         const groupsSnap = await getDocs(collection(db, 'feeGroups'));
         setFeeGroups(groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeeGroup)));
 
-        // Load expenses
-        const expensesSnap = await getDocs(collection(db, 'expenses'));
-        setExpenses(expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
+        if (isAdminView) {
+          // Load expenses
+          const expensesSnap = await getDocs(collection(db, 'expenses'));
+          setExpenses(expensesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
+        }
       }
     } catch (error) {
       console.error("Load fees data error:", error);
@@ -1788,6 +2028,7 @@ export const Fees: React.FC = () => {
       if (isAdminView) {
         loadFeesData(true);
       } else {
+        loadFeesData(true);
         // Student/Parent sees only the selected child's balance - listen live to see balance update live
         const targetStudentId = studentContext?.uid || user.uid;
         const q = query(collection(db, 'fees'), where('studentId', '==', targetStudentId));
@@ -2926,6 +3167,15 @@ export const Fees: React.FC = () => {
               Class Configurations
             </button>
             <button
+              onClick={() => setActiveTab('structure')}
+              className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'structure' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              <FileText size={18} />
+              Fees Structure
+            </button>
+            <button
               onClick={() => setActiveTab('reports')}
               className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'reports' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-secondary'
@@ -3330,6 +3580,161 @@ export const Fees: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'structure' && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-blue-950 to-indigo-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl border border-white/5 shadow-blue-950/20">
+                <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-5 flex items-center justify-center pointer-events-none">
+                  <Layers size={200} className="text-white" />
+                </div>
+                <div className="relative z-10 max-w-2xl">
+                  <span className="bg-blue-500/15 border border-blue-500/20 text-blue-400 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-widest mb-4 inline-block">
+                    Finance Office Blueprint
+                  </span>
+                  <h2 className="text-3xl font-extrabold tracking-tight mb-2">College Fee Structures</h2>
+                  <p className="text-blue-200/80 text-sm leading-relaxed">
+                    Review official institutional billing rates, program configurations, and print official fee structures.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4 items-stretch justify-between bg-bg-card p-6 rounded-2xl border border-white/5 shadow-sm">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
+                    Academic Course / Program
+                  </label>
+                  <select
+                    value={structureClassId}
+                    onChange={(e) => setStructureClassId(e.target.value)}
+                    className="w-full bg-[#111] border border-white/5 rounded-xl px-4 py-3 text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                  >
+                    <option value="all">🌐 All College Course Packages</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={() => handlePrintFeeStructure(structureClassId)}
+                    className="w-full md:w-auto bg-[#1e3a8a] text-white hover:bg-[#1e40af] transition-all px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-white/5 shadow-lg active:scale-[0.98] cursor-pointer"
+                  >
+                    <Printer size={16} />
+                    Print Structure PDF
+                  </button>
+                </div>
+              </div>
+
+              {(() => {
+                const filtered = classFees.filter(fee => 
+                  structureClassId === 'all' || String(fee.classId) === String(structureClassId) || String(fee.classId) === 'all'
+                );
+                
+                const activeClassName = structureClassId === 'all' 
+                  ? 'All College Programs' 
+                  : (classes.find(c => String(c.id) === String(structureClassId))?.name || 'Selected Class');
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-md font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                          <BookOpen size={18} className="text-primary" />
+                          Fee Packages for {activeClassName}
+                        </h3>
+                        <span className="text-xs font-bold text-text-muted bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+                          {filtered.length} Packages Found
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filtered.map((fee, idx) => (
+                          <div key={fee.id || idx} className="bg-bg-card p-6 rounded-2xl border border-white/5 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-white/15 transition-all">
+                            <div>
+                              <div className="flex justify-between items-start gap-4 mb-2">
+                                <h4 className="font-bold text-text-primary text-sm leading-tight">{fee.title}</h4>
+                                <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                  fee.period === 'yearly' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                  fee.period === 'semester' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                }`}>
+                                  {fee.period}
+                                </span>
+                              </div>
+                              <p className="text-xs text-text-muted mb-4">
+                                {classes.find(c => String(c.id) === String(fee.classId))?.name || 'All Programs'}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 mb-4">
+                                {fee.feeType && (
+                                  <span className="text-[10px] font-bold text-text-muted bg-white/5 border border-white/5 px-2 py-0.5 rounded uppercase">
+                                    Type: {fee.feeType}
+                                  </span>
+                                )}
+                                {fee.feeGroup && (
+                                  <span className="text-[10px] font-bold text-text-muted bg-white/5 border border-white/5 px-2 py-0.5 rounded uppercase">
+                                    Group: {fee.feeGroup}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="border-t border-white/5 pt-4 flex items-baseline justify-between mt-auto">
+                              <span className="text-xs text-text-muted">Approved Amount:</span>
+                              <span className="text-xl font-black text-primary">
+                                Ksh {fee.amount?.toLocaleString() || 0}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {filtered.length === 0 && (
+                          <div className="col-span-full bg-bg-card border border-white/5 rounded-3xl p-12 text-center text-text-muted italic">
+                            No approved fee structures found for this program.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-1 space-y-6">
+                      <div className="bg-bg-card p-6 rounded-2xl border border-white/5 shadow-sm">
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-white/5 pb-3">
+                          <Sparkles size={16} className="text-primary" />
+                          Finance Guidelines
+                        </h3>
+                        <div className="space-y-4 text-xs text-text-muted leading-relaxed">
+                          <div>
+                            <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">📅 Installment Arrangements</p>
+                            <p>Tuition fees can be subdivided into custom monthly installments upon authorization. Approved plans are added automatically to student portal ledgers.</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🏦 Direct Bank Deposits</p>
+                            <p>Direct bank payments require the official Admission Number as the payment reference. Hand-delivered cash is strictly prohibited on campus grounds.</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🛡️ Clinical Attachments</p>
+                            <p>All institutional core fee modules must be fully resolved before student clearance for clinical attachments or evaluation sessions.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-6 text-amber-200">
+                        <div className="flex gap-3">
+                          <span className="text-2xl mt-0.5">💡</span>
+                          <div>
+                            <h4 className="font-bold text-sm text-amber-300 mb-1">Instalment Calculation</h4>
+                            <p className="text-xs text-amber-200/80 leading-relaxed">
+                              If students clear their tuition fee in smaller custom increments, they are immediately logged on their statement ledger under transaction history.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -4024,37 +4429,37 @@ export const Fees: React.FC = () => {
                         )}
                       </div>
                     </div>
-                        <div className="text-right flex items-center gap-4">
-                          <div>
-                            <p className={`text-sm font-bold ${item.type === 'payment' ? 'text-green-600' : 'text-red-600'}`}>
-                              {item.type === 'payment' ? '-' : '+'}Ksh {item.amount}
-                            </p>
-                            <p className="text-xs text-gray-400 uppercase font-bold">{item.type}</p>
-                          </div>
-                          {item.type === 'payment' && (
-                            <button
-                              onClick={() => {
-                                const studentProfile = isAdminView 
-                                  ? students.find(s => s.uid === myBalance?.studentId) 
-                                  : { name: studentContext?.name || 'Student', email: studentContext?.email || '', admissionNumber: studentContext?.admissionNumber } as User;
-                                
-                                handlePrintReceipt(
-                                  studentProfile as User,
-                                  item,
-                                  {
-                                    total: myBalance?.totalAmount || 0,
-                                    paid: myBalance?.paidAmount || 0,
-                                    remaining: myBalance?.balance || 0
-                                  }
-                                );
-                              }}
-                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                              title="Print Receipt"
-                            >
-                              <Printer size={16} />
-                            </button>
-                          )}
-                        </div>
+                    <div className="text-right flex items-center gap-4">
+                      <div>
+                        <p className={`text-sm font-bold ${item.type === 'payment' ? 'text-green-600' : 'text-red-600'}`}>
+                          {item.type === 'payment' ? '-' : '+'}Ksh {item.amount}
+                        </p>
+                        <p className="text-xs text-gray-400 uppercase font-bold">{item.type}</p>
+                      </div>
+                      {item.type === 'payment' && (
+                        <button
+                          onClick={() => {
+                            const studentProfile = isAdminView 
+                              ? students.find(s => s.uid === myBalance?.studentId) 
+                              : { name: studentContext?.name || 'Student', email: studentContext?.email || '', admissionNumber: studentContext?.admissionNumber } as User;
+                            
+                            handlePrintReceipt(
+                              studentProfile as User,
+                              item,
+                              {
+                                total: myBalance?.totalAmount || 0,
+                                paid: myBalance?.paidAmount || 0,
+                                remaining: myBalance?.balance || 0
+                              }
+                            );
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Print Receipt"
+                        >
+                          <Printer size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {(!myBalance?.history || myBalance.history.length === 0) && (

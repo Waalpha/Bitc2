@@ -1,0 +1,58 @@
+{
+  "class_cs101": {
+    "name": "Computer Science 101",
+    "teacherId": "tech_prof_jones",
+    "unitIds": [
+      "unit_programming",
+      "unit_db",
+      "unit_algorithms"
+    ],
+    "startTime": "08:30",
+    "endTime": "16:30",
+    "latitude": -1.2921,
+    "longitude": 36.8219,
+    "radius": 150
+  },
+  "class_ee201": {
+    "name": "Electrical Engineering",
+    "teacherId": "tech_dr_smith",
+    "unitIds": [
+      "unit_circuits"
+    ],
+    "startTime": "09:00",
+    "endTime": "17:00",
+    "latitude": -1.2925,
+    "longitude": 36.8225,
+    "radius": 150
+  },
+  "class_healthcare": {
+    "name": "Healthcare Support Services & Caregiver",
+    "teacherId": "tech_dr_smith",
+    "unitIds": [
+      "unit_housekeeping",
+      "unit_predeparture",
+      "unit_client_dietary",
+      "unit_psychosocial",
+      "unit_first_aid",
+      "unit_special_needs",
+      "unit_catering_services"
+    ],
+    "startTime": "08:30",
+    "endTime": "16:30",
+    "latitude": -1.2921,
+    "longitude": 36.8219,
+    "radius": 150
+  },
+  "class_it302": {
+    "name": "Information Technology",
+    "teacherId": "tech_dr_smith",
+    "unitIds": [
+      "unit_networks"
+    ],
+    "startTime": "08:00",
+    "endTime": "16:00",
+    "latitude": -1.2915,
+    "longitude": 36.821,
+    "radius": 150
+  }
+}

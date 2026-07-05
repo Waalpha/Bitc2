@@ -1,7 +1,7 @@
 {
   "admin": {
-    "description": "Full system access",
     "name": "Admin",
+    "description": "Full system access",
     "permissions": [
       "manage_users",
       "manage_classes",
@@ -16,24 +16,34 @@
       "manage fees",
       "manage_subjects",
       "manage_units",
-      "manage_fees"
+      "manage_fees",
+      "manage_timetable",
+      "manage_chat",
+      "student_admission",
+      "manage_whatsapp",
+      "view_results",
+      "manage_marks"
     ]
   },
   "student": {
+    "permissions": [],
     "name": "Student",
-    "description": "View courses and take exams",
-    "permissions": []
+    "description": "View courses and take exams"
   },
   "teacher": {
+    "name": "Teacher",
     "permissions": [
       "manage_classes",
       "manage_courses",
       "manage_exams",
+      "mark_attendance",
       "view_students",
       "manage_subjects",
-      "manage_units"
+      "manage_units",
+      "manage_timetable",
+      "manage_marks",
+      "view_results"
     ],
-    "name": "Teacher",
     "description": "Manage classes and exams"
   }
 }
