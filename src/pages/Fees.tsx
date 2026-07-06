@@ -1453,7 +1453,7 @@ export const Fees: React.FC = () => {
           <div class="receipt-container">
             <div class="header">
               ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="School Logo" style="max-height: 80px; width: auto; margin-bottom: 10px;" />` : ''}
-              <h1>BITC</h1>
+              <h1 style="font-size: 16px; font-weight: 800; text-transform: uppercase;">${settings?.schoolName || 'Breakthrough International Training College'}</h1>
               <p style="font-weight: bold; color: #2563EB; margin-top: 5px;">SCHOOL FINANCE RECEIPT</p>
               <p>Official Payment Confirmation</p>
             </div>
@@ -1495,6 +1495,15 @@ export const Fees: React.FC = () => {
                 <span>Ksh ${payment.amount.toLocaleString()}</span>
               </div>
             </div>
+
+            <div style="margin-top: 20px; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; background-color: #f8fafc; text-align: left;">
+              <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.05em;">Official Institution Bank Details:</p>
+              <p style="margin: 0; font-size: 10px; color: #475569; line-height: 1.45;">
+                <strong>Bank A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
+                <strong>Account Number (A/C. No.):</strong> 032000025240 &bull; <strong>Branch:</strong> Thika Makongeni
+              </p>
+            </div>
+
             <div class="footer">
               <div class="stamp-container">
                 ${settings?.stampUrl 
@@ -1504,7 +1513,7 @@ export const Fees: React.FC = () => {
               </div>
               <p>Thank you for your payment.</p>
               <p>This is a computer generated receipt and does not require a physical signature.</p>
-              <p style="margin-top: 10px; font-weight: bold;">(c) ${new Date().getFullYear()} BITC School Management System</p>
+              <p style="margin-top: 10px; font-weight: bold;">(c) ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College'}</p>
             </div>
           </div>
           <script>
