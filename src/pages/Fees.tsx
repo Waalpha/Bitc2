@@ -1430,16 +1430,16 @@ export const Fees: React.FC = () => {
             .summary { margin-left: auto; max-width: 200px; }
             .summary-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
             .summary-item.total { border-top: 2px solid #eee; margin-top: 6px; padding-top: 6px; font-weight: bold; color: #111827; }
-            .footer { margin-top: 20px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 10px; position: relative; }
+            .footer { margin-top: 25px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 10px; position: relative; }
             .stamp-container { 
               position: absolute; 
-              bottom: 40px; 
-              ${settings?.stampPosition === 'left' ? 'left: 20px;' : settings?.stampPosition === 'center' ? 'left: 50%; transform: translateX(-50%);' : 'right: 20px;'}
-              opacity: 1; 
+              bottom: 2px; 
+              ${settings?.stampPosition === 'left' ? 'left: 10px;' : settings?.stampPosition === 'center' ? 'left: 50%; transform: translateX(-50%);' : 'right: 10px;'}
+              opacity: 0.85; 
               pointer-events: none; 
-              z-index: 50; 
+              z-index: 5; 
             }
-            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-6deg); }
+            .stamp { width: 5.0cm !important; height: 5.0cm !important; max-width: 5.0cm !important; max-height: 5.0cm !important; object-fit: contain; transform: rotate(-8deg); mix-blend-mode: multiply; }
             @media print {
               .no-print { display: none; }
               body { padding: 0; }
@@ -1496,24 +1496,33 @@ export const Fees: React.FC = () => {
               </div>
             </div>
 
-            <div style="margin-top: 20px; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; background-color: #f8fafc; text-align: left;">
-              <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.05em;">Official Institution Bank Details:</p>
-              <p style="margin: 0; font-size: 10px; color: #475569; line-height: 1.45;">
-                <strong>Bank A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
-                <strong>Account Number (A/C. No.):</strong> 032000025240 &bull; <strong>Branch:</strong> Thika Makongeni
-              </p>
-            </div>
-
-            <div class="footer">
-              <div class="stamp-container">
-                ${settings?.stampUrl 
-                  ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" />` 
-                  : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" />`
-                }
+            <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; display: flex; gap: 20px; justify-content: space-between; align-items: flex-end; position: relative;">
+              <!-- Left Column: Bank Details & Terms -->
+              <div style="flex: 1; min-width: 0; text-align: left; z-index: 10;">
+                <div style="border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; background-color: #f8fafc; margin-bottom: 15px; position: relative; z-index: 20;">
+                  <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.05em;">Official Institution Bank Details:</p>
+                  <p style="margin: 0; font-size: 10px; color: #475569; line-height: 1.45;">
+                    <strong>Bank A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
+                    <strong>Account Number (A/C. No.):</strong> 032000025240 &bull; <strong>Branch:</strong> Thika Makongeni
+                  </p>
+                </div>
+                
+                <div style="font-size: 10px; color: #9ca3af; line-height: 1.45;">
+                  <p style="margin: 0 0 4px 0;">Thank you for your payment.</p>
+                  <p style="margin: 0 0 4px 0;">This is a computer generated receipt and does not require a physical signature.</p>
+                  <p style="margin: 0; font-weight: bold;">(c) ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College'}</p>
+                </div>
               </div>
-              <p>Thank you for your payment.</p>
-              <p>This is a computer generated receipt and does not require a physical signature.</p>
-              <p style="margin-top: 10px; font-weight: bold;">(c) ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College'}</p>
+
+              <!-- Right Column: Dedicated 5cm Stamp Area -->
+              <div style="width: 5.0cm; height: 5.0cm; position: relative; flex-shrink: 0; display: flex; align-items: flex-end; justify-content: flex-end;">
+                <div class="stamp-container" style="position: absolute; bottom: 0; right: 0;">
+                  ${settings?.stampUrl 
+                    ? `<img src="${settings.stampUrl}" class="stamp" alt="Official Stamp" style="width: 5.0cm !important; height: 5.0cm !important; max-width: 5.0cm !important; max-height: 5.0cm !important;" />` 
+                    : `<img src="${window.location.host.includes('localhost') ? '/stamp.png' : window.location.origin + '/stamp.png'}" class="stamp" alt="Official Stamp" style="width: 5.0cm !important; height: 5.0cm !important; max-width: 5.0cm !important; max-height: 5.0cm !important;" />`
+                  }
+                </div>
+              </div>
             </div>
           </div>
           <script>
