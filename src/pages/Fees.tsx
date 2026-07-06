@@ -438,6 +438,16 @@ export const Fees: React.FC = () => {
               </div>
             </div>
 
+            <div class="invoice-footer" style="margin-top: 30px; text-align: left; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+              <p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Payment Instructions (Bank Deposit):</p>
+              <p style="margin: 0; font-size: 10px; color: #334155; line-height: 1.4;">
+                <strong>Bank Account Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
+                <strong>Account Number (A/C. No.):</strong> 032000025240<br />
+                <strong>Branch:</strong> Thika Makongeni<br />
+                <em>Note: Always write the student's full name and Admission Number as the reference on the deposit slip.</em>
+              </p>
+            </div>
+
             <div class="invoice-footer">
               <p>Please note that all fee payments are governed by the college financial blueprint guidelines. Always retain official printed invoices & receipts for verification.</p>
               <p style="margin-top: 8px; font-weight: bold; color: #1e3a8a;">Breakthrough International Training College • Registrar Finances Portal</p>
@@ -864,9 +874,9 @@ export const Fees: React.FC = () => {
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
             body { 
               font-family: 'Inter', sans-serif; 
-              padding: 40px; 
+              padding: 35px; 
               color: #1e293b; 
-              line-height: 1.5; 
+              line-height: 1.45; 
               background-color: #ffffff;
             }
             .header-container {
@@ -874,11 +884,11 @@ export const Fees: React.FC = () => {
               justify-content: space-between;
               align-items: flex-start;
               border-b: 2px solid #e2e8f0;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
+              padding-bottom: 12px;
+              margin-bottom: 22px;
             }
             .college-title {
-              font-size: 24px;
+              font-size: 21px;
               font-weight: 800;
               color: #1e3a8a;
               text-transform: uppercase;
@@ -889,10 +899,10 @@ export const Fees: React.FC = () => {
               color: #64748b;
               font-weight: 600;
               text-transform: uppercase;
-              margin-top: 2px;
+              margin-top: 3px;
             }
             .document-title {
-              font-size: 18px;
+              font-size: 17px;
               font-weight: 700;
               color: #0f172a;
               text-align: right;
@@ -900,8 +910,8 @@ export const Fees: React.FC = () => {
             .meta-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 20px;
-              margin-bottom: 30px;
+              gap: 16px;
+              margin-bottom: 20px;
             }
             .meta-item {
               font-size: 13px;
@@ -914,22 +924,22 @@ export const Fees: React.FC = () => {
             .fees-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 30px;
+              margin-bottom: 20px;
             }
             .fees-table th {
               background-color: #f8fafc;
               border-bottom: 2px solid #e2e8f0;
-              padding: 12px;
-              font-size: 11px;
+              padding: 10px 14px;
+              font-size: 10.5px;
               font-weight: 700;
               color: #475569;
               text-transform: uppercase;
               text-align: left;
             }
             .fees-table td {
-              padding: 12px;
+              padding: 9px 14px;
               border-bottom: 1px solid #f1f5f9;
-              font-size: 13px;
+              font-size: 12.5px;
               color: #334155;
             }
             .fees-table tr:hover {
@@ -938,28 +948,28 @@ export const Fees: React.FC = () => {
             .total-box {
               background-color: #f8fafc;
               border: 1px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 20px;
+              border-radius: 8px;
+              padding: 12px 18px;
               display: flex;
               justify-content: space-between;
               align-items: center;
-              margin-bottom: 40px;
+              margin-bottom: 25px;
             }
             .total-label {
-              font-size: 14px;
+              font-size: 13px;
               font-weight: 700;
               color: #0f172a;
             }
             .total-value {
-              font-size: 20px;
+              font-size: 18px;
               font-weight: 800;
               color: #1e3a8a;
             }
             .badge {
               display: inline-block;
-              font-size: 10px;
+              font-size: 9.5px;
               font-weight: 700;
-              padding: 3px 8px;
+              padding: 2.5px 7px;
               border-radius: 12px;
               text-transform: uppercase;
             }
@@ -969,7 +979,7 @@ export const Fees: React.FC = () => {
             .stamp-section {
               margin-top: 30px;
               border-top: 1px solid #e2e8f0;
-              padding-top: 20px;
+              padding-top: 15px;
               display: flex;
               justify-content: space-between;
               align-items: center;
@@ -983,15 +993,15 @@ export const Fees: React.FC = () => {
               pointer-events: none; 
               z-index: 50; 
             }
-            .stamp { width: 4cm !important; height: 4cm !important; max-width: 4cm !important; max-height: 4cm !important; object-fit: contain; transform: rotate(-5deg); }
+            .stamp { width: 3.4cm !important; height: 3.4cm !important; max-width: 3.4cm !important; max-height: 3.4cm !important; object-fit: contain; transform: rotate(-5deg); }
             .footer {
               border-top: 1px solid #e2e8f0;
-              padding-top: 20px;
-              font-size: 11px;
+              padding-top: 12px;
+              font-size: 10.5px;
               color: #64748b;
               text-align: center;
-              line-height: 1.6;
-              margin-top: 50px;
+              line-height: 1.45;
+              margin-top: 25px;
             }
             @media print {
               body { padding: 0; }
@@ -1002,8 +1012,8 @@ export const Fees: React.FC = () => {
         </head>
         <body>
           <div class="header-container">
-            <div style="display: flex; gap: 16px; align-items: center;">
-              ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 60px; width: auto;" />` : ''}
+            <div style="display: flex; gap: 14px; align-items: center;">
+              ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 52px; width: auto;" />` : ''}
               <div>
                 <div class="college-title">${(settings?.schoolName || 'Breakthrough International Training College (BITC)').toUpperCase()}</div>
                 <div class="college-subtitle">Pioneering Excellence in Professional & Healthcare Education</div>
@@ -1011,18 +1021,18 @@ export const Fees: React.FC = () => {
             </div>
             <div>
               <div class="document-title">OFFICIAL FEES STRUCTURE</div>
-              <div style="font-size: 11px; color: #64748b; text-align: right; margin-top: 4px;">Issued on ${todayStr}</div>
+              <div style="font-size: 11px; color: #64748b; text-align: right; margin-top: 2px;">Issued on ${todayStr}</div>
             </div>
           </div>
 
           <div class="meta-grid">
             <div class="meta-item">
               <div>Course/Program: <span class="meta-value">${className}</span></div>
-              <div style="margin-top: 4px;">Structure Status: <span class="meta-value" style="color: #059669;">Approved & Active</span></div>
+              <div style="margin-top: 2px;">Structure Status: <span class="meta-value" style="color: #059669;">Approved & Active</span></div>
             </div>
             <div class="meta-item" style="text-align: right;">
               <div>Reference Code: <span class="meta-value">FST-${targetClassId.substring(0, 6).toUpperCase()}</span></div>
-              <div style="margin-top: 4px;">Billing System: <span class="meta-value">Institutional Blueprint Standard</span></div>
+              <div style="margin-top: 2px;">Billing System: <span class="meta-value">Institutional Blueprint Standard</span></div>
             </div>
           </div>
 
@@ -1039,7 +1049,7 @@ export const Fees: React.FC = () => {
               ${filteredFees.map(fee => `
                 <tr>
                   <td style="font-weight: 600; color: #0f172a;">${fee.title}</td>
-                  <td><span style="font-size: 11px; color: #475569; text-transform: uppercase;">${fee.feeType || 'Tuition'}</span></td>
+                  <td><span style="font-size: 10px; color: #475569; text-transform: uppercase;">${fee.feeType || 'Tuition'}</span></td>
                   <td>
                     <span class="badge badge-${fee.period || 'monthly'}">
                       ${fee.period || 'monthly'}
@@ -1050,7 +1060,7 @@ export const Fees: React.FC = () => {
               `).join('')}
               ${filteredFees.length === 0 ? `
                 <tr>
-                  <td colspan="4" style="text-align: center; color: #64748b; font-style: italic; padding: 30px;">
+                  <td colspan="4" style="text-align: center; color: #64748b; font-style: italic; padding: 20px;">
                     No fee packages defined for this class.
                   </td>
                 </tr>
@@ -1065,20 +1075,27 @@ export const Fees: React.FC = () => {
             </div>
           ` : ''}
 
-          <div style="margin-bottom: 40px;">
-            <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 10px;">General Financial Policies</h4>
-            <ul style="font-size: 12px; color: #475569; padding-left: 20px; line-height: 1.8;">
-              <li><strong>Payment Modes:</strong> All fees are payable directly to the college bank account or via our approved M-Pesa Till Number. Cash payments are not accepted at the campus.</li>
-              <li><strong>Installment Plans:</strong> Students may request customized monthly installment agreements at the finance registry.</li>
-              <li><strong>Access:</strong> Tuition fee clearing is required before proceeding to end-of-semester clinical attachments and practical evaluations.</li>
+          <div style="margin-bottom: 25px;">
+            <h4 style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 8px;">General Financial Policies</h4>
+            <ul style="font-size: 11px; color: #475569; padding-left: 18px; line-height: 1.6; margin: 0;">
+              <li><strong>Payment Modes:</strong> All fees are payable directly to the official college bank account:
+                <div style="margin: 6px 0; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 6px; font-size: 11px; color: #1e293b; max-width: 600px; line-height: 1.45; display: block; font-weight: 500;">
+                  <strong>A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE &bull; 
+                  <strong>A/C. No.:</strong> 032000025240 &bull; 
+                  <strong>Branch:</strong> Thika Makongeni
+                </div>
+                <span style="display: block; margin-top: 4px; font-weight: 600; color: #b91c1c;">Please Note: Cash payments are strictly prohibited on campus.</span>
+              </li>
+              <li style="margin-top: 4px;"><strong>Installment Plans:</strong> Students may request monthly installment agreements at the finance registry.</li>
+              <li style="margin-top: 4px;"><strong>Access:</strong> Tuition fee clearing is required before proceeding to end-of-semester clinical attachments.</li>
             </ul>
           </div>
 
-          <div class="stamp-section" style="margin-bottom: 30px;">
+          <div class="stamp-section" style="margin-bottom: 20px;">
             <div>
               <p style="font-size: 12px; margin: 0; font-weight: 600; color: #475569;">Authorized Signature / Finance Office</p>
-              <div style="border-bottom: 1px dashed #cbd5e1; width: 220px; height: 40px;"></div>
-              <p style="font-size: 11px; margin-top: 6px; color: #94a3b8;">Printed on standard physical register on ${format(new Date(), 'yyyy-MM-dd HH:mm')}</p>
+              <div style="border-bottom: 1px dashed #cbd5e1; width: 200px; height: 35px;"></div>
+              <p style="font-size: 9.5px; margin-top: 6px; color: #94a3b8;">Printed on standard physical register on ${format(new Date(), 'yyyy-MM-dd HH:mm')}</p>
             </div>
 
             <div class="stamp-container">
@@ -1090,8 +1107,8 @@ export const Fees: React.FC = () => {
           </div>
 
           <div class="footer">
-            <p>This is an official document of the ${settings?.schoolName || 'Breakthrough International Training College (BITC)'} Finance Office.</p>
-            <p>&copy; ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College (BITC)'}. All Rights Reserved.</p>
+            <p style="margin: 0;">This is an official document of the ${settings?.schoolName || 'Breakthrough International Training College (BITC)'} Finance Office.</p>
+            <p style="margin: 2px 0 0 0;">&copy; ${new Date().getFullYear()} ${settings?.schoolName || 'Breakthrough International Training College (BITC)'}. All Rights Reserved.</p>
           </div>
 
           <script>
@@ -3745,7 +3762,15 @@ export const Fees: React.FC = () => {
                           </div>
                           <div>
                             <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🏦 Direct Bank Deposits</p>
-                            <p>Direct bank payments require the official Admission Number as the payment reference. Hand-delivered cash is strictly prohibited on campus grounds.</p>
+                            <div className="bg-bg-card border border-white/5 p-4 rounded-2xl space-y-1.5 my-2 text-text-primary shadow-inner">
+                              <p className="font-black text-xs text-primary tracking-wide">BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] uppercase font-bold text-text-muted">A/C No:</span>
+                                <span className="font-mono text-sm font-black text-text-primary bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg select-all">032000025240</span>
+                              </div>
+                              <p className="text-[10px] font-bold text-text-muted">Branch: Thika Makongeni</p>
+                            </div>
+                            <p className="mt-2">Direct bank payments require the official Admission Number as the payment reference. Hand-delivered cash is strictly prohibited on campus grounds.</p>
                           </div>
                           <div>
                             <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🛡️ Clinical Attachments</p>
@@ -4426,9 +4451,26 @@ export const Fees: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200">
-              <h3 className="text-lg font-bold mb-2">Payment Methods</h3>
-              <p className="text-blue-100 text-sm">You can pay your fees via bank transfer or at the school office.</p>
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-blue-900/10 border border-blue-500/15">
+              <h3 className="text-lg font-extrabold tracking-tight mb-2">Payment Methods</h3>
+              <p className="text-blue-100 text-sm mb-4">You can pay your fees via direct bank deposit or transfer:</p>
+              
+              <div className="bg-white/10 border border-white/20 p-4 rounded-xl space-y-2.5 shadow-inner">
+                <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Official Bank Account
+                </span>
+                <div className="space-y-1">
+                  <p className="font-extrabold text-sm tracking-tight text-white leading-tight">BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[10px] font-bold text-blue-200 uppercase">A/C No:</span>
+                    <p className="font-mono text-sm font-black text-white bg-blue-950/30 border border-white/10 px-2.5 py-1 rounded-lg select-all">032000025240</p>
+                  </div>
+                  <p className="text-xs font-semibold text-blue-200">Branch: Thika Makongeni</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-blue-100/95 leading-relaxed mt-4 bg-blue-700/30 p-2.5 rounded-xl border border-blue-500/10">
+                ⚠️ <strong>Reference Note:</strong> Please specify your official <strong>Admission Number</strong> as the reference/narrative on all deposits. Cash payments on campus are strictly prohibited.
+              </p>
             </div>
           </div>
 
