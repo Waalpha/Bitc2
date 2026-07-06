@@ -338,16 +338,57 @@ export const Fees: React.FC = () => {
               padding-top: 15px;
             }
 
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
               .no-print { display: none; }
-              body { padding: 15px; background-color: #ffffff; }
+              body { padding: 15px; background-color: #ffffff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               tr { page-break-inside: avoid; }
               @page { size: portrait; margin: 0.4in; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="invoice-container">
             <div class="header-flex">
               <div class="school-info">
@@ -715,10 +756,45 @@ export const Fees: React.FC = () => {
               margin-top: 20px;
               font-weight: 500;
             }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
               .no-print { display: none; }
-              body { padding: 10px 15px; background-color: #ffffff; }
+              body { padding: 10px 15px; background-color: #ffffff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               tr { page-break-inside: avoid; }
               h3, h2, h1 { page-break-after: avoid; }
               @page { size: portrait; margin: 0.4in; }
@@ -726,6 +802,12 @@ export const Fees: React.FC = () => {
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="statement-container">
             <div class="header-flex">
               <div class="school-info">
@@ -1003,14 +1085,55 @@ export const Fees: React.FC = () => {
               line-height: 1.45;
               margin-top: 25px;
             }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 0; }
+              body { padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               button { display: none; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header-container">
             <div style="display: flex; gap: 14px; align-items: center;">
               ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 52px; width: auto;" />` : ''}
@@ -1309,14 +1432,55 @@ export const Fees: React.FC = () => {
               color: #94a3b8;
               margin-top: 50px;
             }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 10px; }
+              body { padding: 10px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .no-print { display: none; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="report-container">
             <div class="header-flex">
               <div class="school-info">
@@ -1440,16 +1604,57 @@ export const Fees: React.FC = () => {
               z-index: 5; 
             }
             .stamp { width: 5.0cm !important; height: 5.0cm !important; max-width: 5.0cm !important; max-height: 5.0cm !important; object-fit: contain; transform: rotate(-8deg); mix-blend-mode: multiply; }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 10cm;
+              height: 10cm;
+              max-width: 10cm;
+              max-height: 10cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 30pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
               .no-print { display: none; }
-              body { padding: 0; }
+              body { padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .receipt-container { border: none; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               @page { size: portrait; margin: 0.4in; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="receipt-container">
             <div class="header">
               ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="School Logo" style="max-height: 80px; width: auto; margin-bottom: 10px;" />` : ''}
@@ -1570,14 +1775,55 @@ export const Fees: React.FC = () => {
             
             .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 20px; }
             
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 20px; }
+              body { padding: 20px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               @page { margin: 0; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" />` : ''}
             <h1>BREAKTHROUGH INTERNATIONAL</h1>
@@ -1847,13 +2093,54 @@ export const Fees: React.FC = () => {
             .badge-overpaid { background: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
 
             .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 10px; }
+              body { padding: 10px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               @page { margin: 1.5cm; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             <h1>${reportTitle}</h1>
             <p>Generated on ${dateStr} • Filter: ${currentFilter.toUpperCase()}</p>
@@ -3097,13 +3384,54 @@ export const Fees: React.FC = () => {
             
             .total-row { background: #f9fafb; font-weight: 700; }
             
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 20px; }
+              body { padding: 20px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               @page { margin: 1cm; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
             <h1>BREAKTHROUGH INTERNATIONAL</h1>

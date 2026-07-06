@@ -1324,9 +1324,44 @@ void loop() {
               letter-spacing: 0.12em;
               font-weight: 600;
             }
+             .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 20px; }
+              body { padding: 20px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .permit-container { border: 4px double #000000; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
           <script>
@@ -1337,6 +1372,12 @@ void loop() {
           </script>
         </head>
         <body>
+          <div class="watermark-container">
+            ${globalSettings?.logoUrl 
+              ? `<img src="${globalSettings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(globalSettings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="permit-container">
             <div class="header">
               <div class="logo-title">

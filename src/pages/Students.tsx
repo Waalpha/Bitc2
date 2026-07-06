@@ -581,13 +581,54 @@ export const Students: React.FC = () => {
               font-style: italic;
             }
 
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 30px 40px; margin: 0; }
+              body { padding: 30px 40px; margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : ''}
             <h1 class="school-name">${schoolName}</h1>
@@ -785,13 +826,54 @@ export const Students: React.FC = () => {
               font-style: italic;
             }
  
+             .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 15px; margin: 0; }
+              body { padding: 15px; margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${logoHtml}
             <h1 class="school-name">${schoolName}</h1>
@@ -1082,16 +1164,57 @@ export const Students: React.FC = () => {
               padding-top: 15px;
             }
 
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
               .no-print { display: none; }
-              body { padding: 15px; background-color: #ffffff; }
+              body { padding: 15px; background-color: #ffffff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .stamp-container { opacity: 1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               tr { page-break-inside: avoid; }
               @page { size: portrait; margin: 0.4in; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="invoice-container">
             <div class="header-flex">
               <div class="school-info">
@@ -1461,10 +1584,50 @@ export const Students: React.FC = () => {
                 font-size: 8px !important;
               }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header-container">
             <div class="logo-box">
               ${headerLogoHtml}
@@ -1911,10 +2074,50 @@ export const Students: React.FC = () => {
                 font-size: 8px !important;
               }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header-container">
             <div class="logo-box">
               ${headerLogoHtml}
@@ -2141,13 +2344,54 @@ export const Students: React.FC = () => {
               font-style: italic;
             }
 
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
             @media print {
-              body { padding: 20px 40px; margin: 0; }
+              body { padding: 20px 40px; margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               .no-print { display: none; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : ''}
             <h1 class="school-name">${schoolName}</h1>
@@ -3289,9 +3533,52 @@ export const Students: React.FC = () => {
             h1 { color: #333; }
             .header { display: flex; justify-content: mb-20px; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
             .footer { margin-top: 20px; font-size: 10px; color: #666; text-align: right; }
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.10;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 36pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #1e3a8a;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+            @media print {
+              body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              .watermark-container { opacity: 0.14 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
           </style>
         </head>
         <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
           <div class="header">
             ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="School Logo" style="max-height: 50px; width: auto; margin-right: 20px;" />` : ''}
             <h1>BITC - ${className}</h1>
