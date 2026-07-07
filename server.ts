@@ -1863,6 +1863,7 @@ async function applyLatePaymentPenalties(bypassDayCheck = false) {
   const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
 
   const studentPresenceCount: { [studentId: string]: number } = {};
+  let hasRecentAttendance = false;
   try {
     const attendanceSnap = await db.collection('attendance').get();
     attendanceSnap.docs.forEach((doc: any) => {
@@ -1873,6 +1874,7 @@ async function applyLatePaymentPenalties(bypassDayCheck = false) {
         for (const [studentId, status] of Object.entries(records)) {
           if (status === 'present' || status === 'late' || status === 'excused') {
             studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+            hasRecentAttendance = true;
           }
         }
       }
@@ -1882,10 +1884,18 @@ async function applyLatePaymentPenalties(bypassDayCheck = false) {
   }
 
   const penaltyDescription = `Late Payment Penalty (${currentMonthYear})`;
+  console.log(`[Late Penalty] Start penalty application. Total students: ${students.length}. today's date: ${dayOfMonth}, penaltyDay limit: ${penaltyDay}, isPenaltyEnabled: ${isPenaltyEnabled}, bypassDayCheck: ${bypassDayCheck}, hasRecentAttendance: ${hasRecentAttendance}`);
 
   for (const student of students) {
     const sUid = student.uid ? String(student.uid).trim() : '';
     if (!sUid) {
+      skippedCount++;
+      continue;
+    }
+
+    // Skip deactivated students
+    if ((student as any).disabled === true || (student as any).disabled === 'true') {
+      console.log(`[Late Penalty] Skipping disabled student: ${sUid}`);
       skippedCount++;
       continue;
     }
@@ -1895,40 +1905,98 @@ async function applyLatePaymentPenalties(bypassDayCheck = false) {
     const createdDate = createdAtStr ? new Date(createdAtStr) : null;
     const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
 
-    if (!isNewStudent) {
+    if (!isNewStudent && hasRecentAttendance) {
       const presenceCount = studentPresenceCount[sUid] || 0;
       if (presenceCount === 0) {
-        // Suspend penalty for inactive students
+        console.log(`[Late Penalty] Student ${sUid} suspended due to inactivity (0 attendance in 60 days)`);
         suspendedCount++;
         continue;
       }
     }
 
-    // Get current fee balance document
-    const feesRef = db.collection('fees').doc(sUid);
-    const feeDoc = await feesRef.get();
-    if (!feeDoc.exists) {
+    // Find all fee documents for this student to resolve any duplicate/random ID documents
+    const querySnap = await db.collection('fees').where('studentId', '==', sUid).get();
+    let allDocs = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+    // Also check if there is a document with ID sUid directly
+    const directDoc = await db.collection('fees').doc(sUid).get();
+    if (directDoc.exists) {
+      if (!allDocs.some(d => d.id === sUid)) {
+        allDocs.push({ id: sUid, ...directDoc.data() as any });
+      }
+    }
+
+    if (allDocs.length === 0) {
+      console.log(`[Late Penalty] No fee document exists for student ${sUid}. Skipping.`);
       skippedCount++;
       continue;
     }
 
-    const feeData = feeDoc.data() || { balance: 0, totalAmount: 0, paidAmount: 0, history: [] };
-
-    // If their current balance is <= 0, they don't owe money, so no penalty!
-    if (Number(feeData.balance || 0) <= 0) {
-      skippedCount++;
-      continue;
+    // Determine primary document (prefer ID matching sUid, else sort by lastUpdated descending)
+    let primary: any = allDocs.find(d => d.id === sUid);
+    if (!primary) {
+      primary = [...allDocs].sort((a, b) => (b.lastUpdated || '').localeCompare(b.lastUpdated || ''))[0];
     }
+
+    // Find other documents for this student to merge
+    const others = allDocs.filter(d => d.id !== primary.id);
+
+    // Merge duplicate documents into primary to fix data consistency
+    let totalAmount = Number(primary.totalAmount || 0);
+    let paidAmount = Number(primary.paidAmount || 0);
+    let history = [...(primary.history || [])];
+
+    for (const o of others) {
+      totalAmount += Number(o.totalAmount || 0);
+      paidAmount += Number(o.paidAmount || 0);
+
+      const oHistory = o.history || [];
+      for (const h of oHistory) {
+        if (!h) continue;
+        const isDup = history.some(existing =>
+          existing &&
+          existing.date === h.date &&
+          existing.amount === h.amount &&
+          existing.type === h.type
+        );
+        if (!isDup) {
+          history.push(h);
+        }
+      }
+
+      // Delete the duplicate document to prevent further confusion
+      try {
+        await db.collection('fees').doc(o.id).delete();
+        await db.collection('fee_balances').doc(o.id).delete();
+      } catch (err) {
+        console.warn(`[Late Penalty] Failed to delete duplicate document ${o.id}:`, err);
+      }
+    }
+
+    // Filter nulls and sort history by date ascending
+    history = history.filter(Boolean).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    const currentBalance = totalAmount - paidAmount;
 
     // Check if penalty already applied for this month
-    const alreadyApplied = (feeData.history || []).filter(Boolean).some((h: any) => 
-      String(h.description || '') === penaltyDescription && h.type === 'charge'
+    const alreadyApplied = history.some((h: any) =>
+      h && String(h.description || '') === penaltyDescription && h.type === 'charge'
     );
 
     if (alreadyApplied) {
+      console.log(`[Late Penalty] Penalty already applied for ${currentMonthYear} to student ${sUid}. Skipping.`);
       skippedCount++;
       continue;
     }
+
+    // If their current balance is <= 0, they don't owe money, so no penalty!
+    if (currentBalance <= 0) {
+      console.log(`[Late Penalty] Student ${sUid} has no outstanding balance (balance: ${currentBalance}). Skipping.`);
+      skippedCount++;
+      continue;
+    }
+
+    console.log(`[Late Penalty] Applying penalty of Ksh ${penaltyAmount} to student ${sUid}. Existing balance: ${currentBalance}`);
 
     // Apply the late fee charge!
     const historyItem = {
@@ -1938,25 +2006,28 @@ async function applyLatePaymentPenalties(bypassDayCheck = false) {
       description: penaltyDescription
     };
 
-    const newTotal = Number(feeData.totalAmount || 0) + penaltyAmount;
-    const newPaid = Number(feeData.paidAmount || 0);
+    const newTotal = totalAmount + penaltyAmount;
+    const newPaid = paidAmount;
+    const newBalance = newTotal - newPaid;
+    const finalHistory = [...history, historyItem];
 
-    await feesRef.set({
+    // Standardize and write the primary document under sUid document ID
+    await db.collection('fees').doc(sUid).set({
       studentId: sUid,
       totalAmount: newTotal,
       paidAmount: newPaid,
-      balance: newTotal - newPaid,
+      balance: newBalance,
       lastUpdated: timestamp,
-      history: [...(feeData.history || []), historyItem]
-    }, { merge: true });
+      history: finalHistory
+    });
 
-    // Sync fee_balances collection
+    // Sync fee_balances collection under sUid
     try {
       await db.collection('fee_balances').doc(sUid).set({
         studentId: sUid,
         totalAmount: newTotal,
         paidAmount: newPaid,
-        balance: newTotal - newPaid,
+        balance: newBalance,
         lastUpdated: timestamp
       }, { merge: true });
     } catch (err) {
