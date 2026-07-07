@@ -388,49 +388,194 @@ export const Classes: React.FC = () => {
                 {/* Students Section */}
                 <div>
                   <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Students</h3>
-                  <div className="space-y-3">
-                    {students.map((student) => {
-                      const balance = feeBalances.find(b => b.studentId === student.uid);
+                  <div className="space-y-6">
+                    {(() => {
+                      const now = new Date();
+                      const currentYear = now.getFullYear();
+                      const currentMonth = now.getMonth();
+
+                      const overpaid: { student: User; balance?: FeeBalance }[] = [];
+                      const paidThisMonth: { student: User; balance?: FeeBalance }[] = [];
+                      const outstanding: { student: User; balance?: FeeBalance }[] = [];
+
+                      students.forEach(student => {
+                        const balance = feeBalances.find(b => b.studentId === student.uid);
+                        const hasPaidThisMonth = balance?.history?.some(h => {
+                          if (h.type !== 'payment') return false;
+                          const d = new Date(h.date);
+                          return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+                        }) || false;
+
+                        if (balance && balance.balance < 0) {
+                          overpaid.push({ student, balance });
+                        } else if (hasPaidThisMonth) {
+                          paidThisMonth.push({ student, balance });
+                        } else {
+                          outstanding.push({ student, balance });
+                        }
+                      });
+
+                      if (students.length === 0) {
+                        return <p className="text-gray-500 text-center py-4">No students enrolled in this class.</p>;
+                      }
+
                       return (
-                        <div key={student.uid} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
-                              {student.name.charAt(0)}
+                        <>
+                          {/* Overpaid Section */}
+                          <div className="border border-sky-100 bg-sky-50/10 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-2 border-b border-sky-100 pb-1">
+                              <span className="text-xs font-bold uppercase tracking-wider text-sky-600 flex items-center gap-1.5">
+                                <CheckCircle size={14} className="text-sky-500" />
+                                Overpaid / Credit ({overpaid.length})
+                              </span>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{student.name}</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-gray-500">{student.email}</p>
-                                {isAdmin && balance && (
-                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${balance.balance > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                    Bal: Ksh {balance.balance}
-                                  </span>
-                                )}
-                              </div>
+                            <div className="space-y-2">
+                              {overpaid.map(({ student, balance }) => (
+                                <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-sky-100/60 shadow-2xs group hover:border-sky-300 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 text-xs font-bold">
+                                      {student.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-xs text-gray-500">{student.email}</p>
+                                        {balance && (
+                                          <span className="text-xs font-extrabold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">
+                                            Credit: Ksh {Math.abs(balance.balance)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {balance && (
+                                      <div className="hidden group-hover:flex items-center gap-1 text-xs font-bold text-gray-400">
+                                        Paid: Ksh {balance.paidAmount}
+                                      </div>
+                                    )}
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleRemoveStudent(student.uid)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                                        title="Remove from class"
+                                      >
+                                        <X size={16} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {overpaid.length === 0 && (
+                                <p className="text-xs text-gray-400 italic py-1">No overpaid students in this class.</p>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {isAdmin && balance && (
-                              <div className="hidden group-hover:flex items-center gap-1 text-xs font-bold text-gray-400">
-                                Paid: Ksh {balance.paidAmount}
-                              </div>
-                            )}
-                            {isAdmin && (
-                              <button
-                                onClick={() => handleRemoveStudent(student.uid)}
-                                className="text-gray-400 hover:text-red-600 transition-colors"
-                                title="Remove from class"
-                              >
-                                <X size={18} />
-                              </button>
-                            )}
+
+                          {/* Paid This Month Section */}
+                          <div className="border border-emerald-100 bg-emerald-50/10 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-2 border-b border-emerald-100 pb-1">
+                              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
+                                <CheckCircle size={14} className="text-emerald-500" />
+                                Paid This Month ({paidThisMonth.length})
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              {paidThisMonth.map(({ student, balance }) => (
+                                <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-emerald-100/60 shadow-2xs group hover:border-emerald-300 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold">
+                                      {student.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-xs text-gray-500">{student.email}</p>
+                                        {balance && (
+                                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                            Bal: Ksh {balance.balance}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {balance && (
+                                      <div className="hidden group-hover:flex items-center gap-1 text-xs font-bold text-gray-400">
+                                        Paid: Ksh {balance.paidAmount}
+                                      </div>
+                                    )}
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleRemoveStudent(student.uid)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                                        title="Remove from class"
+                                      >
+                                        <X size={16} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {paidThisMonth.length === 0 && (
+                                <p className="text-xs text-gray-400 italic py-1">No payments made this month.</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
+
+                          {/* Pending / Outstanding Section */}
+                          <div className="border border-rose-100 bg-rose-50/5 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-2 border-b border-rose-100 pb-1">
+                              <span className="text-xs font-bold uppercase tracking-wider text-rose-600 flex items-center gap-1.5">
+                                <XCircle size={14} className="text-rose-400" />
+                                Outstanding / Unpaid This Month ({outstanding.length})
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              {outstanding.map(({ student, balance }) => (
+                                <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-rose-100/40 shadow-2xs group hover:border-rose-300 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-700 text-xs font-bold">
+                                      {student.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-xs text-gray-500">{student.email}</p>
+                                        {balance && (
+                                          <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${balance.balance > 0 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-gray-50 text-gray-600'}`}>
+                                            Bal: Ksh {balance.balance}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {balance && (
+                                      <div className="hidden group-hover:flex items-center gap-1 text-xs font-bold text-gray-400">
+                                        Paid: Ksh {balance.paidAmount}
+                                      </div>
+                                    )}
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleRemoveStudent(student.uid)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                                        title="Remove from class"
+                                      >
+                                        <X size={16} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {outstanding.length === 0 && (
+                                <p className="text-xs text-gray-400 italic py-1">No outstanding balances.</p>
+                              )}
+                            </div>
+                          </div>
+                        </>
                       );
-                    })}
-                    {students.length === 0 && (
-                      <p className="text-gray-500 text-center py-4">No students enrolled in this class.</p>
-                    )}
+                    })()}
                   </div>
                 </div>
 

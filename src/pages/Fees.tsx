@@ -52,7 +52,7 @@ export const Fees: React.FC = () => {
   const [editingFeeGroupId, setEditingFeeGroupId] = useState<string | null>(null);
   const [editingHistoryIndex, setEditingHistoryIndex] = useState<number | null>(null);
   const [auditSelectedClassId, setAuditSelectedClassId] = useState<string | null>(null);
-  const [auditStatusFilter, setAuditStatusFilter] = useState<'all' | 'paid' | 'unpaid' | 'overpaid'>('all');
+  const [auditStatusFilter, setAuditStatusFilter] = useState<'all' | 'paid' | 'unpaid' | 'overpaid' | 'paid_this_month'>('all');
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [printConfirm, setPrintConfirm] = useState<{ student: User, item: any, balance: any } | null>(null);
@@ -1973,6 +1973,7 @@ export const Fees: React.FC = () => {
     let paidCount = 0;
     let unpaidCount = 0;
     let overpaidCount = 0;
+    let paidThisMonthCount = 0;
 
     let totalOutstanding = 0;
     let totalPrepaid = 0;
@@ -1987,6 +1988,17 @@ export const Fees: React.FC = () => {
 
       totalInvoiced += totalAmount;
       totalPaid += paidAmount;
+
+      const hasPaidThisMonth = balObj?.history?.some(h => {
+        if (h.type !== 'payment') return false;
+        const d = new Date(h.date);
+        const now = new Date();
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      }) || false;
+
+      if (hasPaidThisMonth) {
+        paidThisMonthCount++;
+      }
 
       let status: 'paid' | 'unpaid' | 'overpaid' = 'paid';
       if (balance > 0) {
@@ -2010,7 +2022,8 @@ export const Fees: React.FC = () => {
         totalAmount,
         paidAmount,
         balance,
-        status
+        status,
+        paidThisMonth: hasPaidThisMonth
       };
     });
 
@@ -2019,6 +2032,7 @@ export const Fees: React.FC = () => {
       paidCount,
       unpaidCount,
       overpaidCount,
+      paidThisMonthCount,
       totalOutstanding,
       totalPrepaid,
       totalInvoiced,
@@ -4390,6 +4404,7 @@ export const Fees: React.FC = () => {
                     if (auditStatusFilter === 'paid') return s.status === 'paid';
                     if (auditStatusFilter === 'unpaid') return s.status === 'unpaid';
                     if (auditStatusFilter === 'overpaid') return s.status === 'overpaid';
+                    if (auditStatusFilter === 'paid_this_month') return s.paidThisMonth;
                     return true;
                   });
 
@@ -4417,6 +4432,12 @@ export const Fees: React.FC = () => {
                             className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-slate-800 text-white border-slate-800 shadow-sm"
                           >
                             All ({stats.totalStudents})
+                          </button>
+                          <button
+                            onClick={() => setAuditStatusFilter('paid_this_month')}
+                            className="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer bg-teal-600 text-white border-teal-600 shadow-sm"
+                          >
+                            Paid This Month ({stats.paidThisMonthCount || 0})
                           </button>
                           <button
                             onClick={() => setAuditStatusFilter('paid')}
@@ -4491,7 +4512,12 @@ export const Fees: React.FC = () => {
                                     </span>
                                   </td>
                                   <td className="px-8 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-4">
+                                    <div className="flex items-center justify-end gap-2">
+                                      {s.paidThisMonth && (
+                                        <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-100">
+                                          Paid This Month
+                                        </span>
+                                      )}
                                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${
                                         s.status === 'paid' 
                                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
