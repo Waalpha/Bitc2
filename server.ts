@@ -307,23 +307,36 @@ try {
     admin.initializeApp(options);
   }
   
-  // Trigger automatic migration once in the background
   const remoteDb = admin.firestore();
-  db = remoteDb;
-  console.log("Firebase Admin initialized, launching one-time background migration check.");
-  syncLocalDataToRemote(remoteDb)
+  console.log("Firebase Admin SDK initialized. Verifying database connection and permissions...");
+  
+  // Verify access permissions to prevent runtime PERMISSION_DENIED errors on subsequent requests
+  remoteDb.collection('settings').doc('global').get()
     .then(() => {
-      return migrateFromFirestore(remoteDb);
-    })
-    .then(() => {
-      return reactivateAllAccounts(remoteDb);
+      db = remoteDb;
+      console.log("Firebase Admin Firestore verified and active. Launching background migration checks.");
+      syncLocalDataToRemote(remoteDb)
+        .then(() => {
+          return migrateFromFirestore(remoteDb);
+        })
+        .then(() => {
+          return reactivateAllAccounts(remoteDb);
+        })
+        .catch(err => {
+          console.log("Migration task info status:", err?.message || err);
+        });
     })
     .catch(err => {
-      console.log("Migration task info status:", err?.message || err);
+      console.warn("Firebase Admin Firestore connection or permission verification failed. Falling back to robust offline sandbox mode.");
+      console.log("Verify details:", err?.message || err);
+      db = localDbFirestore;
+      reactivateAllAccounts().catch(localErr => {
+        console.log("Local reactivation info status:", localErr?.message || localErr);
+      });
     });
 } catch (error) {
   console.log("Firebase Admin initialization warning:", error);
-  // Perform local reactivation even if Firebase initialization failed/warned
+  db = localDbFirestore;
   reactivateAllAccounts().catch(err => {
     console.log("Local reactivation info status:", err?.message || err);
   });
@@ -1030,6 +1043,19 @@ async function startServer() {
     }
   });
 
+  // Manual trigger / run on-demand for late payment penalties calculation
+  apiRouter.post("/fees/apply-penalties", async (req, res) => {
+    try {
+      console.log("[FEES_PENALTIES] Manual trigger requested.");
+      const { bypassDayCheck } = req.body || {};
+      const result = await applyLatePaymentPenalties(!!bypassDayCheck);
+      res.json({ success: true, message: "Late payment penalty calculation executed successfully", result });
+    } catch (err: any) {
+      console.error("[FEES_PENALTIES] Penalty application failed:", err);
+      res.status(500).json({ success: false, error: err.message || "Manual penalty application run failed." });
+    }
+  });
+
   // 2. Proxy Download Endpoint
   apiRouter.get("/download", async (req, res) => {
     const { url, filename } = req.query;
@@ -1515,6 +1541,19 @@ async function startServer() {
     }
   });
 
+  // Daily Late Payment Penalty check at 1:30 AM
+  cron.schedule("30 1 * * *", async () => {
+    console.log("Running daily late payment penalty check...");
+    try {
+      const stats = await applyLatePaymentPenalties();
+      console.log("Daily late payment penalty check completed:", stats);
+    } catch (error) {
+      console.error("Late payment penalty check failed:", error);
+    }
+  });
+
+  console.log("Late payment penalty scheduler initialized.");
+
   // Monthly Automatic System Backups
   // Cron schedule: 0 2 1 * * (Every 1st of the month at 2:00 AM)
   cron.schedule("0 2 1 * *", async () => {
@@ -1544,6 +1583,16 @@ async function startServer() {
       console.error("[STARTUP] Background monthly fee check failed:", err);
     }
   }, 1500);
+
+  setTimeout(async () => {
+    console.log("[STARTUP] Starting automatic background late payment penalty check...");
+    try {
+      const stats = await applyLatePaymentPenalties();
+      console.log("[STARTUP] Background late payment penalty check complete:", stats);
+    } catch (err) {
+      console.error("[STARTUP] Background late payment penalty check failed:", err);
+    }
+  }, 4500);
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
@@ -1757,6 +1806,187 @@ async function automateMonthlyFees() {
     appliedCount,
     skippedCount,
     suspendedCount
+  };
+}
+
+async function applyLatePaymentPenalties(bypassDayCheck = false) {
+  if (!db) {
+    console.error("Late payment penalty check skipped: Firebase Admin not initialized.");
+    return { success: false, error: "Database not initialized" };
+  }
+  const now = new Date();
+  
+  const dayOfMonth = now.getDate();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentMonthYear = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  const timestamp = now.toISOString();
+
+  // Load late payment penalty settings
+  let penaltyAmount = 500; // Default penalty is Ksh 500
+  let penaltyDay = 5;      // Default deadline is the 5th
+  let isPenaltyEnabled = true;
+
+  try {
+    const settingsDoc = await db.collection('settings').doc('global').get();
+    if (settingsDoc.exists) {
+      const sData = settingsDoc.data();
+      if (sData?.penaltyAmount !== undefined) penaltyAmount = Number(sData.penaltyAmount);
+      if (sData?.penaltyDay !== undefined) penaltyDay = Number(sData.penaltyDay);
+      if (sData?.isPenaltyEnabled !== undefined) isPenaltyEnabled = !!sData.isPenaltyEnabled;
+    }
+  } catch (err) {
+    console.warn("Failed to load penalty settings from settings/global, using defaults:", err);
+  }
+
+  if (!isPenaltyEnabled) {
+    console.log("Late payment penalty is disabled in settings.");
+    return { success: true, message: "Late payment penalty is disabled", appliedCount: 0, skippedCount: 0 };
+  }
+
+  if (!bypassDayCheck && dayOfMonth < penaltyDay) {
+    console.log(`Today is day ${dayOfMonth}, which is before the penalty day of ${penaltyDay}. Skipping automatic penalty.`);
+    return { success: true, message: `Skipped: Today is day ${dayOfMonth}, before penalty day ${penaltyDay}`, appliedCount: 0, skippedCount: 0 };
+  }
+
+  // Fetch all students
+  const studentsSnap = await db.collection('users').where('role', '==', 'student').get();
+  const students = studentsSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+  // Check which students have outstanding balances
+  let appliedCount = 0;
+  let skippedCount = 0;
+  let suspendedCount = 0;
+
+  // Fetch attendance to respect billing suspension if they've been absent for 60 days
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+
+  const studentPresenceCount: { [studentId: string]: number } = {};
+  try {
+    const attendanceSnap = await db.collection('attendance').get();
+    attendanceSnap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      const date = data.date;
+      if (date && date >= sixtyDaysAgoStr) {
+        const records = data.records || {};
+        for (const [studentId, status] of Object.entries(records)) {
+          if (status === 'present' || status === 'late' || status === 'excused') {
+            studentPresenceCount[studentId] = (studentPresenceCount[studentId] || 0) + 1;
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching attendance for penalty suspension check:", err);
+  }
+
+  const penaltyDescription = `Late Payment Penalty (${currentMonthYear})`;
+
+  for (const student of students) {
+    const sUid = student.uid ? String(student.uid).trim() : '';
+    if (!sUid) {
+      skippedCount++;
+      continue;
+    }
+
+    // Skip check for new students registered in the last 30 days
+    const createdAtStr = (student as any).createdAt || (student as any).admissionDate;
+    const createdDate = createdAtStr ? new Date(createdAtStr) : null;
+    const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
+
+    if (!isNewStudent) {
+      const presenceCount = studentPresenceCount[sUid] || 0;
+      if (presenceCount === 0) {
+        // Suspend penalty for inactive students
+        suspendedCount++;
+        continue;
+      }
+    }
+
+    // Get current fee balance document
+    const feesRef = db.collection('fees').doc(sUid);
+    const feeDoc = await feesRef.get();
+    if (!feeDoc.exists) {
+      skippedCount++;
+      continue;
+    }
+
+    const feeData = feeDoc.data() || { balance: 0, totalAmount: 0, paidAmount: 0, history: [] };
+
+    // If their current balance is <= 0, they don't owe money, so no penalty!
+    if (Number(feeData.balance || 0) <= 0) {
+      skippedCount++;
+      continue;
+    }
+
+    // Check if penalty already applied for this month
+    const alreadyApplied = (feeData.history || []).filter(Boolean).some((h: any) => 
+      String(h.description || '') === penaltyDescription && h.type === 'charge'
+    );
+
+    if (alreadyApplied) {
+      skippedCount++;
+      continue;
+    }
+
+    // Apply the late fee charge!
+    const historyItem = {
+      date: timestamp,
+      amount: penaltyAmount,
+      type: 'charge',
+      description: penaltyDescription
+    };
+
+    const newTotal = Number(feeData.totalAmount || 0) + penaltyAmount;
+    const newPaid = Number(feeData.paidAmount || 0);
+
+    await feesRef.set({
+      studentId: sUid,
+      totalAmount: newTotal,
+      paidAmount: newPaid,
+      balance: newTotal - newPaid,
+      lastUpdated: timestamp,
+      history: [...(feeData.history || []), historyItem]
+    }, { merge: true });
+
+    // Sync fee_balances collection
+    try {
+      await db.collection('fee_balances').doc(sUid).set({
+        studentId: sUid,
+        totalAmount: newTotal,
+        paidAmount: newPaid,
+        balance: newTotal - newPaid,
+        lastUpdated: timestamp
+      }, { merge: true });
+    } catch (err) {
+      console.warn(`[Late Penalty] Failed to sync fee_balances for student ${sUid}:`, err);
+    }
+
+    // Add notification
+    const notificationMessage = `Late payment penalty of Ksh ${penaltyAmount} has been applied to your account for ${currentMonthYear} as fees were not fully cleared by date ${penaltyDay}.`;
+    await db.collection('notifications').add({
+      userId: sUid,
+      title: 'Late Payment Penalty Charged',
+      message: notificationMessage,
+      type: 'fee',
+      read: false,
+      createdAt: timestamp,
+      link: '/fees'
+    });
+
+    // Send Push Notification
+    await sendPushNotification(sUid, 'Late Payment Penalty Charged', notificationMessage, '/#/fees');
+    appliedCount++;
+  }
+
+  return {
+    success: true,
+    appliedCount,
+    skippedCount,
+    suspendedCount,
+    penaltyAmount,
+    penaltyDay
   };
 }
 

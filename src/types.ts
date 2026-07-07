@@ -362,6 +362,9 @@ export interface AppSettings {
     rating: number;
     avatar: string;
   }[];
+  isPenaltyEnabled?: boolean;
+  penaltyDay?: number;
+  penaltyAmount?: number;
 }
 
 export interface StyledText {

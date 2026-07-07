@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup, Expense } from '../types';
-import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar, Eye, EyeOff } from 'lucide-react';
+import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar, Eye, EyeOff, AlertTriangle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -56,6 +56,11 @@ export const Fees: React.FC = () => {
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [printConfirm, setPrintConfirm] = useState<{ student: User, item: any, balance: any } | null>(null);
+  const [isPenaltyEnabled, setIsPenaltyEnabled] = useState<boolean>(settings?.isPenaltyEnabled ?? true);
+  const [penaltyDay, setPenaltyDay] = useState<number>(settings?.penaltyDay ?? 5);
+  const [penaltyAmount, setPenaltyAmount] = useState<number>(settings?.penaltyAmount ?? 500);
+  const [isSavingPenaltySettings, setIsSavingPenaltySettings] = useState<boolean>(false);
+  const [isApplyingPenalties, setIsApplyingPenalties] = useState<boolean>(false);
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -2429,6 +2434,63 @@ export const Fees: React.FC = () => {
     };
   }, [user, isAdminView, studentContext?.uid]);
 
+  useEffect(() => {
+    if (settings) {
+      if (settings.isPenaltyEnabled !== undefined) setIsPenaltyEnabled(!!settings.isPenaltyEnabled);
+      if (settings.penaltyDay !== undefined) setPenaltyDay(Number(settings.penaltyDay));
+      if (settings.penaltyAmount !== undefined) setPenaltyAmount(Number(settings.penaltyAmount));
+    }
+  }, [settings]);
+
+  const handleSavePenaltySettings = async () => {
+    setIsSavingPenaltySettings(true);
+    try {
+      await updateDoc(doc(db, 'settings', 'global'), {
+        isPenaltyEnabled,
+        penaltyDay: Number(penaltyDay),
+        penaltyAmount: Number(penaltyAmount)
+      });
+      addToast("Penalty settings saved successfully!", "success");
+    } catch (error) {
+      console.error("Failed to save penalty settings:", error);
+      addToast("Failed to save penalty settings.", "error");
+    } finally {
+      setIsSavingPenaltySettings(false);
+    }
+  };
+
+  const handleApplyLatePaymentPenalties = async (bypassDayCheck = false) => {
+    setIsApplyingPenalties(true);
+    try {
+      const absoluteUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/api/fees/apply-penalties`
+        : '/api/fees/apply-penalties';
+      const response = await fetch(absoluteUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bypassDayCheck })
+      });
+      const data = await response.json();
+      if (data.success && data.result) {
+        const { appliedCount, skippedCount, suspendedCount, penaltyAmount: amt, penaltyDay: day } = data.result;
+        await loadFeesData(true);
+        addToast(
+          `Late penalties applied! Charged Ksh ${amt} to ${appliedCount} students. Skipped ${skippedCount} students.${suspendedCount ? ` Suspended for ${suspendedCount} student(s) due to absence.` : ''}`,
+          "success"
+        );
+      } else {
+        addToast(data.error || "Failed to calculate/apply penalties.", "error");
+      }
+    } catch (err: any) {
+      console.error("Failed to trigger penalty application:", err);
+      addToast(err.message || "An error occurred while calculating penalties.", "error");
+    } finally {
+      setIsApplyingPenalties(false);
+    }
+  };
+
   const handleEditHistoryItem = (student: User, item: any, index: number) => {
     setSelectedStudent(student);
     setEditingHistoryIndex(index);
@@ -3853,6 +3915,103 @@ export const Fees: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {userData?.role === 'admin' && (
+                <div className="bg-bg-card p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden mb-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 bg-rose-500/10 text-rose-500 rounded-lg">
+                          <AlertTriangle size={18} />
+                        </span>
+                        <h3 className="font-extrabold text-text-primary text-base">Late Payment Penalty</h3>
+                      </div>
+                      <p className="text-xs text-text-muted max-w-2xl">
+                        Automatically charge a penalty on or after the penalty day of each month to students who still have an outstanding school fee balance.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                        <span className="text-xs font-bold text-text-secondary uppercase">Status:</span>
+                        <button
+                          onClick={() => setIsPenaltyEnabled(!isPenaltyEnabled)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isPenaltyEnabled ? 'bg-rose-500' : 'bg-slate-700'}`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${isPenaltyEnabled ? 'translate-x-5' : 'translate-x-0'}`}
+                          />
+                        </button>
+                        <span className={`text-xs font-bold ${isPenaltyEnabled ? 'text-rose-500' : 'text-slate-400'}`}>
+                          {isPenaltyEnabled ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                        <span className="text-xs font-bold text-text-secondary uppercase">Date:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="28"
+                          value={penaltyDay}
+                          onChange={(e) => setPenaltyDay(Math.max(1, Math.min(28, Number(e.target.value))))}
+                          className="w-12 bg-transparent text-center text-xs font-extrabold text-primary border-b border-primary/20 focus:border-primary outline-none"
+                        />
+                        <span className="text-xs text-text-muted">th of month</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                        <span className="text-xs font-bold text-text-secondary uppercase">Amount:</span>
+                        <span className="text-xs font-bold text-text-muted">Ksh</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={penaltyAmount}
+                          onChange={(e) => setPenaltyAmount(Math.max(0, Number(e.target.value)))}
+                          className="w-16 bg-transparent text-center text-xs font-extrabold text-primary border-b border-primary/20 focus:border-primary outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleSavePenaltySettings}
+                          disabled={isSavingPenaltySettings}
+                          className="bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-primary/10 cursor-pointer"
+                        >
+                          {isSavingPenaltySettings ? "Saving..." : "Save Settings"}
+                        </button>
+
+                        <button
+                          onClick={() => handleApplyLatePaymentPenalties(false)}
+                          disabled={isApplyingPenalties || !isPenaltyEnabled}
+                          title="Run late penalties. This checks all students with outstanding balances and applies penalties if the grace day has passed."
+                          className="bg-rose-600 hover:bg-rose-500 disabled:bg-rose-600/30 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {isApplyingPenalties ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              Applying...
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={12} />
+                              Apply Penalties
+                            </>
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleApplyLatePaymentPenalties(true)}
+                          disabled={isApplyingPenalties}
+                          title="Bypasses the current day-of-month check. Charges students immediately for testing/manual adjustments."
+                          className="bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 border border-amber-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        >
+                          Force Run
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {classFees.map((fee, idx) => (
