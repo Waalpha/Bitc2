@@ -5325,9 +5325,11 @@ export const Fees: React.FC = () => {
                     return <div className="text-center py-12 text-gray-400 italic">No transactions found for this student.</div>;
                   }
 
+                  const studentPenalties = studentBalance.history?.filter(h => h.type === 'charge' && (h.description?.toLowerCase().includes('penalty') || h.description?.toLowerCase().includes('late payment'))).reduce((sum, h) => sum + h.amount, 0) || 0;
+
                   return (
                     <div className="p-1 space-y-4">
-                      <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Invoiced</p>
                           <p className="text-lg font-bold text-gray-900">Ksh {studentBalance.totalAmount.toLocaleString()}</p>
@@ -5335,6 +5337,10 @@ export const Fees: React.FC = () => {
                         <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm text-emerald-600">
                           <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">Total Paid</p>
                           <p className="text-lg font-bold">Ksh {studentBalance.paidAmount.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 shadow-sm text-rose-600">
+                          <p className="text-xs font-bold text-rose-600 uppercase tracking-widest mb-1">Penalties Charged</p>
+                          <p className="text-lg font-bold">Ksh {studentPenalties.toLocaleString()}</p>
                         </div>
                         <div className="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm text-red-600">
                           <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-1">Balance</p>
@@ -5356,16 +5362,24 @@ export const Fees: React.FC = () => {
                             {studentBalance.history.slice().reverse().map((item, id) => {
                               // Calculate original index because we sliced and reversed
                               const originalIdx = studentBalance.history.length - 1 - id;
+                              const isPenaltyItem = item.type === 'charge' && (item.description?.toLowerCase().includes('penalty') || item.description?.toLowerCase().includes('late payment'));
                               return (
-                                <tr key={item.date + originalIdx} className="hover:bg-gray-50 transition-colors">
+                                <tr key={item.date + originalIdx} className={`hover:bg-gray-50 transition-colors ${isPenaltyItem ? 'bg-rose-500/5' : ''}`}>
                                   <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
                                     {format(new Date(item.date), 'MMM dd, yyyy')}
                                   </td>
                                   <td className="px-4 py-3">
-                                    <p className="font-bold text-gray-900 leading-none">{item.description}</p>
-                                    <p className="text-xs text-gray-400 uppercase font-bold mt-1">{item.type}</p>
+                                    <p className="font-bold text-gray-900 leading-none flex items-center gap-1.5 flex-wrap">
+                                      {item.description}
+                                      {isPenaltyItem && (
+                                        <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                          Penalty
+                                        </span>
+                                      )}
+                                    </p>
+                                    <p className="text-xs text-gray-400 uppercase font-bold mt-1">{isPenaltyItem ? 'penalty' : item.type}</p>
                                   </td>
-                                  <td className={`px-4 py-3 text-right font-bold ${item.type === 'payment' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  <td className={`px-4 py-3 text-right font-bold ${item.type === 'payment' ? 'text-emerald-600' : isPenaltyItem ? 'text-rose-600' : 'text-red-600'}`}>
                                     {item.type === 'payment' ? '-' : '+'}Ksh {item.amount.toLocaleString()}
                                   </td>
                                   <td className="px-4 py-3 text-right">
