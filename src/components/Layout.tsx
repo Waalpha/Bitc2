@@ -149,7 +149,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       items: [
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: null },
         { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, showForStudentOnly: true },
-        { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: null },
+        { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: null, showForAdminOnly: true },
       ]
     },
     {
@@ -213,6 +213,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           const visibleItems = group.items.filter((item: any) => {
             if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
             if (item.showForStudentOnly && !isStudent) return false;
+            if (item.showForAdminOnly && isStudent) return false;
             if (isStudent && item.path === '/dashboard') return true; // Re-enable for student
             if (isStudent && item.path === '/exams') return true; // Show Exams page for students too so they can take exams
             if (item.role && userData?.role !== item.role) return false;

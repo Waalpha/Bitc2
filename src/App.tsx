@@ -33,11 +33,13 @@ import { CertificateVerification } from './pages/CertificateVerification';
 const ProtectedRoute = ({ 
   children, 
   requiredRole, 
-  excludeRole 
+  excludeRole,
+  requireAdminPortal
 }: { 
   children: React.ReactNode, 
   requiredRole?: string,
-  excludeRole?: string 
+  excludeRole?: string,
+  requireAdminPortal?: boolean
 }) => {
   const { user, userData, loading, isAuthReady, logout } = useAuth();
 
@@ -79,6 +81,10 @@ const ProtectedRoute = ({
         </div>
       </div>
     );
+  }
+
+  if (requireAdminPortal && (userData.role === 'student' || userData.role === 'parent')) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (requiredRole && userData.role !== requiredRole) {
@@ -132,7 +138,7 @@ export default function App() {
             <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute><Timetable /></ProtectedRoute>} />
-            <Route path="/transcripts" element={<ProtectedRoute><Transcripts /></ProtectedRoute>} />
+            <Route path="/transcripts" element={<ProtectedRoute requireAdminPortal={true}><Transcripts /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NavigateWrapper />} />
           </Routes>

@@ -21,7 +21,8 @@ import {
   MapPin,
   Mail,
   Phone,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -31,6 +32,21 @@ import { withOklabOklchPatch } from '../utils/canvasPatch';
 
 export const Transcripts: React.FC = () => {
   const { user, userData, settings, studentContext } = useAuth();
+
+  const isStudentOrParent = userData?.role === 'student' || userData?.role === 'parent';
+  if (isStudentOrParent) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-slate-50 dark:bg-slate-900 rounded-[32px] border border-slate-200/60 dark:border-slate-800">
+        <div className="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mb-4">
+          <AlertTriangle size={24} className="text-red-600" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-950 dark:text-white">Access Denied</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md font-medium leading-relaxed">
+          Academic transcripts are only accessible via the school administrator and registrar portal. Please contact the administration office if you require an official copy.
+        </p>
+      </div>
+    );
+  }
   
   // State for loaded data
   const [students, setStudents] = useState<User[]>([]);
