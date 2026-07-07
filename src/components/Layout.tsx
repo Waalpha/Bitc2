@@ -185,26 +185,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isDashboard = location.pathname === '/dashboard';
 
   const SidebarContent = () => (
-    <div className={`flex flex-col h-full ${isStudent ? 'bg-[#0B1221]' : 'bg-bg-dark'} text-text-secondary relative overflow-hidden`}>
+    <div className={`flex flex-col h-full ${isStudent ? 'bg-bg-dark' : 'bg-bg-dark'} text-text-secondary relative overflow-hidden`}>
       {/* Decorative gradient for sidebar */}
-      {!isStudent && (
-        <>
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        </>
-      )}
+      <>
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-40 h-40 bg-highlight/10 rounded-full blur-3xl pointer-events-none" />
+      </>
 
       <div className="p-8 mb-4 flex items-center gap-3 relative">
         {settings?.logoUrl ? (
           <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto" referrerPolicy="no-referrer" />
         ) : (
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20">
+          <div className="bg-gradient-to-br from-primary to-highlight p-2.5 rounded-2xl shadow-lg shadow-primary/20">
             <GraduationCap className="text-white w-6 h-6" />
           </div>
         )}
         <div className="overflow-hidden">
           <p className="text-white font-bold text-sm uppercase tracking-tight leading-none truncate">{settings?.appTitle || 'BITC Portal'}</p>
-          <p className={`text-[10px] uppercase tracking-widest font-bold ${isStudent ? 'text-blue-400' : 'text-primary'} mt-1.5 opacity-80`}>Smart Learning</p>
+          <p className={`text-[10px] uppercase tracking-widest font-bold text-primary mt-1.5 opacity-80`}>Smart Learning</p>
         </div>
       </div>
 
@@ -232,11 +230,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group relative ${
                       location.pathname === item.path
-                        ? `${isStudent ? 'bg-blue-600' : 'bg-primary'} text-white shadow-xl ${isStudent ? 'shadow-blue-900/40' : 'shadow-primary/30'}`
+                        ? `bg-primary text-white shadow-xl shadow-primary/30`
                         : 'text-text-muted hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <item.icon size={18} className={location.pathname === item.path ? 'text-white' : `text-text-muted group-hover:${isStudent ? 'text-blue-400' : 'text-primary'} transition-colors`} />
+                    <item.icon size={18} className={location.pathname === item.path ? 'text-white' : `text-text-muted group-hover:text-primary transition-colors`} />
                     <span className="flex-1">{item.name}</span>
                     {location.pathname === item.path && (
                       <motion.div 
@@ -255,12 +253,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       <div className="p-6 relative">
         <div className={`rounded-[24px] p-4 flex items-center gap-3 border border-white/5 group hover:bg-white/5 transition-all cursor-pointer ${isStudent ? 'bg-white/5' : 'bg-bg-card/50'}`}>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg ${isStudent ? 'bg-blue-600' : 'bg-gradient-to-br from-primary to-highlight'}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg bg-gradient-to-br from-primary to-highlight`}>
             {userData?.name?.charAt(0)}
           </div>
           <div className="overflow-hidden flex-1">
             <p className="text-text-primary text-xs font-bold truncate">{userData?.name}</p>
-            <p className={`text-[10px] uppercase tracking-widest font-bold ${isStudent ? 'text-blue-400' : 'text-primary'} opacity-60 mt-0.5`}>{userData?.role}</p>
+            <p className={`text-[10px] uppercase tracking-widest font-bold text-primary opacity-60 mt-0.5`}>{userData?.role}</p>
           </div>
         </div>
       </div>
@@ -419,11 +417,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   return (
-    <div className={`min-h-screen ${isStudent ? 'bg-[#0B1221]' : 'bg-bg-main'} flex overflow-hidden selection:bg-primary/20 selection:text-primary`} style={dynamicStyles}>
+    <div className={`min-h-screen ${isStudent ? 'bg-bg-main' : 'bg-bg-main'} flex overflow-hidden selection:bg-primary/20 selection:text-primary`} style={dynamicStyles}>
       {/* Background decoration */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-        <div className={`absolute top-[-10%] right-[-5%] w-[40%] h-[40%] ${isStudent ? 'bg-blue-600/10' : 'bg-primary/5'} rounded-full blur-[120px]`} />
-        <div className={`absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] ${isStudent ? 'bg-indigo-600/10' : 'bg-highlight/5'} rounded-full blur-[100px]`} />
+        <div className={`absolute top-[-10%] right-[-5%] w-[40%] h-[40%] ${isStudent ? 'bg-primary/5' : 'bg-primary/5'} rounded-full blur-[120px]`} />
+        <div className={`absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] ${isStudent ? 'bg-highlight/5' : 'bg-highlight/5'} rounded-full blur-[100px]`} />
       </div>
 
       {/* Desktop Sidebar */}
@@ -434,7 +432,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative scroll-smooth pb-12 lg:pb-0">
         {/* Top Navbar */}
-        <header className={`h-20 ${isStudent ? 'bg-[#0B1221]/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
+        <header className={`h-20 ${isStudent ? 'bg-bg-main/80 shadow-none border-white/5' : 'bg-bg-main/80 border-white shadow-sm'} backdrop-blur-xl border-b text-text-primary flex items-center justify-between px-6 sm:px-10 sticky top-0 z-30 transition-all duration-300`}>
             <div className="flex items-center gap-4 flex-1">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -450,7 +448,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <input 
                   type="text" 
                   placeholder="Search anything..."
-                  className={`w-full border-none rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-text-secondary placeholder:text-text-muted focus:ring-4 ${isStudent ? 'bg-white/5 focus:ring-blue-500/20 text-white' : 'bg-bg-card/50 focus:ring-primary/20 text-text-primary'} shadow-sm ring-1 ring-white/10 transition-all outline-none`}
+                  className={`w-full border-none rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-text-secondary placeholder:text-text-muted focus:ring-4 ${isStudent ? 'bg-white/5 focus:ring-primary/20 text-white' : 'bg-bg-card/50 focus:ring-primary/20 text-text-primary'} shadow-sm ring-1 ring-white/10 transition-all outline-none`}
                 />
               </div>
             </div>
@@ -484,11 +482,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className={`absolute right-0 mt-3 w-80 rounded-[28px] shadow-2xl py-4 z-50 p-5 border text-left ${
-                          isStudent ? 'bg-[#1A1F2E] border-white/10 text-white' : 'bg-bg-card border-white/5 text-text-primary'
+                          isStudent ? 'bg-bg-card border-white/10 text-white' : 'bg-bg-card border-white/5 text-text-primary'
                         }`}
                       >
                         <h4 className="text-xs font-bold uppercase tracking-wider mb-2 text-text-primary flex items-center gap-2">
-                          <Database size={14} className="text-blue-400" /> Database Cache Status
+                          <Database size={14} className="text-primary" /> Database Cache Status
                         </h4>
                         <p className="text-[11px] text-text-muted leading-relaxed mb-4">
                           {dbMode === 'real' 

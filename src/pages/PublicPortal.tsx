@@ -324,9 +324,9 @@ export function PublicPortal() {
   const descItalicClass = settings?.publicHeroDescriptionItalic ? 'italic' : 'not-italic';
 
   // Custom branding colors
-  const primaryColor = settings?.publicPrimaryColor || '#1E40AF';
-  const secondaryColor = settings?.publicSecondaryColor || '#10B981';
-  const accentColor = settings?.publicAccentColor || '#F59E0B';
+  const primaryColor = settings?.publicPrimaryColor || '#10B981';
+  const secondaryColor = settings?.publicSecondaryColor || '#F97316';
+  const accentColor = settings?.publicAccentColor || '#F97316';
 
   // About Section customizable data
   const aboutHeadline = settings?.aboutTitle || "A Breakthrough in Professional Education";
@@ -1020,36 +1020,36 @@ export function PublicPortal() {
       {/* ─────────────────────────────────────────────────────────────────
           2. HERO SECTION (HIGH CONVERTING GRID ACCENTED WITH BG CAROUSEL)
           ───────────────────────────────────────────────────────────────── */}
-      <section id="hero" className="relative py-16 lg:py-24 overflow-hidden border-b border-slate-100 dark:border-slate-900 bg-gradient-to-b from-blue-50/20 via-slate-50 to-[#F8FAFC] dark:from-slate-900/40 dark:via-slate-950 dark:to-slate-950">
+      <section id="hero" className="relative py-16 lg:py-24 overflow-hidden border-b border-emerald-700 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white">
         
         {/* Background Decorative Blur Orbs */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300/10 dark:bg-blue-600/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-300/10 dark:bg-emerald-600/5 rounded-full blur-3xl"></div>
-
+        <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+ 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
             {/* Left Column Content */}
             <div className={`lg:col-span-7 flex flex-col gap-6 ${alignClass}`}>
               
-              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/30 dark:border-blue-800/20 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-blue-400 font-alt`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-555 animate-ping"></span>
+              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white font-alt`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-455 animate-ping"></span>
                 <span>Admissions Ongoing - September 2026 Intake</span>
               </div>
-
-              <h1 className={`${titleFontFamily} ${titleWeightClass} ${titleItalicClass} ${titleSizeClass} ${titleAlignClass} text-slate-900 dark:text-white leading-[1.1] tracking-tight`}>
+ 
+              <h1 className={`${titleFontFamily} ${titleWeightClass} ${titleItalicClass} ${titleSizeClass} ${titleAlignClass} text-white leading-[1.1] tracking-tight`}>
                 {portalTitle}
               </h1>
-
-              <p className={`${descFontFamily} ${descWeightClass} ${descItalicClass} ${descSizeClass} ${descAlignClass} leading-relaxed text-slate-655 dark:text-slate-355 max-w-xl font-medium`}>
+ 
+              <p className={`${descFontFamily} ${descWeightClass} ${descItalicClass} ${descSizeClass} ${descAlignClass} leading-relaxed text-emerald-50 max-w-xl font-medium`}>
                 {portalDescription}
               </p>
-
+ 
               <div className={`flex flex-col sm:flex-row items-center gap-4 pt-2 ${buttonsAlignClass}`}>
                 <a
                   href="#contact"
                   onClick={() => setFormType('apply')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-805 text-white font-black font-alt text-xs uppercase tracking-wider shadow-lg shadow-blue-500/20 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-655 hover:to-orange-755 text-white font-black font-alt text-xs uppercase tracking-wider shadow-lg shadow-orange-500/30 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FileCheck2 size={16} />
                   <span>Apply Online Now</span>
@@ -1057,30 +1057,30 @@ export function PublicPortal() {
                 
                 <a
                   href="#programs"
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white dark:bg-slate-90 px-8 py-4 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold font-alt text-xs uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold font-alt text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                 >
                   <span>Explore Courses</span>
-                  <ArrowRight size={15} className="text-blue-600" />
+                  <ArrowRight size={15} className="text-orange-400 animate-pulse" />
                 </a>
               </div>
-
+ 
               {/* Accreditations Row */}
-              <div className="pt-6 border-t border-slate-200/50 dark:border-slate-850/50 w-full">
-                <p className={`text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 font-alt tracking-widest ${titleAlignClass} mb-3`}>
+              <div className="pt-6 border-t border-white/10 w-full">
+                <p className={`text-[10px] font-black uppercase text-emerald-200 font-alt tracking-widest ${titleAlignClass} mb-3`}>
                   Our Training & Exam Boards Accreditations
                 </p>
                 <div className={`flex flex-wrap gap-3 ${settings?.publicHeroAlign === 'center' ? 'justify-center' : settings?.publicHeroAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
-                  <span className="px-3 py-1 bg-white dark:bg-slate-900/60 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">NITA Accredited</span>
-                  <span className="px-3 py-1 bg-white dark:bg-slate-900/60 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">KNEC Registered</span>
-                  <span className="px-3 py-1 bg-white dark:bg-slate-900/60 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">TVET CDACC Certified</span>
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">NITA Accredited</span>
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">KNEC Registered</span>
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">TVET CDACC Certified</span>
                 </div>
               </div>
-
+ 
             </div>
-
+ 
             {/* Right Column Visual Image (With Glassmorphism Overlay Cards) */}
             <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-              <div className="relative mx-auto max-w-md w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-900 bg-slate-205">
+              <div className="relative mx-auto max-w-md w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-emerald-400/20 bg-emerald-800">
                 <img
                   src={heroImage}
                   alt="BITC Students Practice"
@@ -1090,28 +1090,28 @@ export function PublicPortal() {
                 
                 {/* Gradient shade overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
-
+ 
                 {/* Glassmorphism Dynamic Overlay Card 1: Experience */}
-                <div className="absolute bottom-6 left-6 right-6 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 py-4 px-5 rounded-2xl border border-white/20 dark:border-slate-800/30 flex items-center gap-4 shadow-xl">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg">
+                <div className="absolute bottom-6 left-6 right-6 backdrop-blur-md bg-emerald-950/80 py-4 px-5 rounded-2xl border border-white/10 flex items-center gap-4 shadow-xl">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-orange-500 text-white flex items-center justify-center text-lg shadow-lg">
                     💎
                   </div>
                   <div>
-                    <p className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest font-alt">Practical Education</p>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight mt-0.5">80% Hands-On Practical Training</p>
+                    <p className="text-[11px] font-extrabold text-orange-400 uppercase tracking-widest font-alt">Practical Education</p>
+                    <p className="text-xs font-bold text-white leading-tight mt-0.5">80% Hands-On Practical Training</p>
                   </div>
                 </div>
-
+ 
                 {/* Glassmorphism Dynamic Overlay Card 2: Intake */}
-                <div className="absolute top-6 right-6 backdrop-blur-md bg-blue-900/80 text-white px-4 py-3 rounded-2xl border border-blue-500/20 flex flex-col items-center gap-0.5 shadow-lg">
-                  <span className="text-[9px] font-black uppercase tracking-widest font-alt text-blue-200">APPLY FOR</span>
+                <div className="absolute top-6 right-6 backdrop-blur-md bg-orange-500 text-white px-4 py-3 rounded-2xl border border-orange-400/20 flex flex-col items-center gap-0.5 shadow-lg">
+                  <span className="text-[9px] font-black uppercase tracking-widest font-alt text-orange-100">APPLY FOR</span>
                   <span className="text-sm font-black tracking-tight leading-none uppercase font-heading">SEPT 2026</span>
-                  <span className="text-[9px] font-semibold text-emerald-400 leading-none mt-0.5">INTAKE ONGOING</span>
+                  <span className="text-[9px] font-semibold text-emerald-200 leading-none mt-0.5 font-alt">INTAKE ONGOING</span>
                 </div>
-
+ 
               </div>
             </div>
-
+ 
           </div>
         </div>
       </section>
