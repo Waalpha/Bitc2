@@ -3564,6 +3564,7 @@ export const Fees: React.FC = () => {
   };
 
   const computedStudentBalance = myBalance ? (myBalance.totalAmount - myBalance.paidAmount) : 0;
+  const totalPenalties = myBalance?.history?.filter(h => h.type === 'charge' && (h.description?.toLowerCase().includes('penalty') || h.description?.toLowerCase().includes('late payment'))).reduce((sum, h) => sum + h.amount, 0) || 0;
 
   if (!isAdminView && !myBalance) {
     return (
@@ -4919,6 +4920,15 @@ export const Fees: React.FC = () => {
                   🎉 You have pre-paid your fees! This credit covers future invoices automatically.
                 </p>
               )}
+              { computedStudentBalance > 0 && totalPenalties > 0 && (
+                <div className="text-xs text-rose-500 font-bold mb-4 bg-rose-500/10 py-2.5 px-3 rounded-xl border border-rose-500/20 text-left flex items-start gap-2">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5 text-rose-500" />
+                  <div>
+                    <span className="block font-black text-rose-600 uppercase tracking-wide text-[10px] mb-0.5">Late Penalty Charges</span>
+                    <span>Your outstanding balance includes <strong className="font-extrabold text-rose-600">Ksh {totalPenalties.toLocaleString()}</strong> in late payment penalties.</span>
+                  </div>
+                </div>
+              )}
               <div className={`grid grid-cols-2 gap-4 pt-6 border-t ${ computedStudentBalance < 0 ? 'border-emerald-500/15' : 'border-gray-50' }`}>
                 <div>
                   <p className={`text-xs mb-1 ${ computedStudentBalance < 0 ? 'text-emerald-500/70' : 'text-gray-400' }`}>Total Invoiced</p>
@@ -4970,12 +4980,22 @@ export const Fees: React.FC = () => {
                     acc.push({ description: current.description, amount: current.amount });
                   }
                   return acc;
-                }, []).map((charge, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                    <span className="text-sm text-gray-600">{charge.description}</span>
-                    <span className="text-sm font-bold text-gray-900">Ksh {charge.amount.toLocaleString()}</span>
-                  </div>
-                ))}
+                }, []).map((charge, idx) => {
+                  const isChargePenalty = charge.description?.toLowerCase().includes('penalty') || charge.description?.toLowerCase().includes('late payment');
+                  return (
+                    <div key={idx} className={`flex justify-between items-center py-2 border-b border-gray-50 last:border-0 ${isChargePenalty ? 'bg-rose-500/5 -mx-2 px-2 rounded-lg border-l-2 border-rose-500' : ''}`}>
+                      <span className="text-sm text-gray-600 flex flex-wrap items-center gap-1.5">
+                        {charge.description}
+                        {isChargePenalty && (
+                          <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            Penalty
+                          </span>
+                        )}
+                      </span>
+                      <span className={`text-sm font-bold ${isChargePenalty ? 'text-rose-600' : 'text-gray-900'}`}>Ksh {charge.amount.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
                 {(!myBalance?.history || myBalance.history.filter(h => h.type === 'charge').length === 0) && (
                   <p className="text-xs text-gray-400 italic text-center py-4">No fee breakdown available.</p>
                 )}
@@ -5012,36 +5032,52 @@ export const Fees: React.FC = () => {
             </div>
             <div className="bg-bg-card rounded-2xl shadow-xl border border-white/5 overflow-hidden">
               <div className="divide-y divide-gray-50">
-                {myBalance?.history?.slice().reverse().map((item, idx) => (
-                  <div key={item.date + idx} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        item.type === 'payment' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                      }`}>
-                        {item.type === 'payment' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                {myBalance?.history?.slice().reverse().map((item, idx) => {
+                  const isPenaltyItem = item.type === 'charge' && (item.description?.toLowerCase().includes('penalty') || item.description?.toLowerCase().includes('late payment'));
+                  return (
+                    <div key={item.date + idx} className={`p-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${isPenaltyItem ? 'bg-rose-500/5 border-l-4 border-rose-500' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          item.type === 'payment' ? 'bg-green-50 text-green-600' : isPenaltyItem ? 'bg-rose-100 text-rose-600 font-extrabold' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {item.type === 'payment' ? (
+                            <ArrowDownLeft size={20} />
+                          ) : isPenaltyItem ? (
+                            <AlertCircle size={20} className="text-rose-600" />
+                          ) : (
+                            <ArrowUpRight size={20} />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 flex flex-wrap items-center gap-1.5">
+                            {item.description}
+                            {isPenaltyItem && (
+                              <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                LATE PENALTY
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-400">{format(new Date(item.date), 'MMM dd, yyyy HH:mm')}</p>
+                          {item.attachmentUrl && (
+                            <a 
+                              href={item.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(item.attachmentUrl)}&filename=${encodeURIComponent(item.attachmentName || 'attachment')}` : item.attachmentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline mt-1 bg-blue-50 px-2 py-0.5 rounded w-fit"
+                            >
+                              <FileText size={10} />
+                              VIEW ATTACHMENT
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{item.description}</p>
-                        <p className="text-xs text-gray-400">{format(new Date(item.date), 'MMM dd, yyyy HH:mm')}</p>
-                        {item.attachmentUrl && (
-                          <a 
-                            href={item.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(item.attachmentUrl)}&filename=${encodeURIComponent(item.attachmentName || 'attachment')}` : item.attachmentUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline mt-1 bg-blue-50 px-2 py-0.5 rounded w-fit"
-                          >
-                            <FileText size={10} />
-                            VIEW ATTACHMENT
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center gap-4">
-                      <div>
-                        <p className={`text-sm font-bold ${item.type === 'payment' ? 'text-green-600' : 'text-red-600'}`}>
-                          {item.type === 'payment' ? '-' : '+'}Ksh {item.amount}
-                        </p>
-                        <p className="text-xs text-gray-400 uppercase font-bold">{item.type}</p>
+                      <div className="text-right flex items-center gap-4">
+                        <div>
+                          <p className={`text-sm font-bold ${item.type === 'payment' ? 'text-green-600' : isPenaltyItem ? 'text-rose-600' : 'text-red-600'}`}>
+                            {item.type === 'payment' ? '-' : '+'}Ksh {item.amount}
+                          </p>
+                          <p className="text-xs text-gray-400 uppercase font-bold">{isPenaltyItem ? 'penalty' : item.type}</p>
+                        </div>
                       </div>
                       {item.type === 'payment' && (
                         <button
@@ -5067,8 +5103,8 @@ export const Fees: React.FC = () => {
                         </button>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {(!myBalance?.history || myBalance.history.length === 0) && (
                   <div className="p-12 text-center text-gray-400 italic">
                     No transactions recorded yet.
