@@ -2462,29 +2462,138 @@ export const Fees: React.FC = () => {
   const handleApplyLatePaymentPenalties = async (bypassDayCheck = false) => {
     setIsApplyingPenalties(true);
     try {
-      const absoluteUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/api/fees/apply-penalties`
-        : '/api/fees/apply-penalties';
-      const response = await fetch(absoluteUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ bypassDayCheck })
-      });
-      const data = await response.json();
-      if (data.success && data.result) {
-        const { appliedCount, skippedCount, suspendedCount, penaltyAmount: amt, penaltyDay: day } = data.result;
-        await loadFeesData(true);
-        addToast(
-          `Late penalties applied! Charged Ksh ${amt} to ${appliedCount} students. Skipped ${skippedCount} students.${suspendedCount ? ` Suspended for ${suspendedCount} student(s) due to absence.` : ''}`,
-          "success"
-        );
-      } else {
-        addToast(data.error || "Failed to calculate/apply penalties.", "error");
+      const now = new Date();
+      const dayOfMonth = now.getDate();
+      
+      const pDay = Number(penaltyDay || 5);
+      const pAmt = Number(penaltyAmount || 500);
+
+      if (!bypassDayCheck && dayOfMonth < pDay) {
+        addToast(`Skipped: Today is day ${dayOfMonth}, which is before the penalty day of ${pDay}.`, "error");
+        setIsApplyingPenalties(false);
+        return;
       }
+
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentMonthYear = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+      const penaltyDescription = `Late Payment Penalty (${currentMonthYear})`;
+      const timestamp = now.toISOString();
+
+      let appliedCount = 0;
+      let skippedCount = 0;
+      let suspendedCount = 0;
+
+      for (const student of students) {
+        const sUid = student.uid ? String(student.uid).trim() : '';
+        if (!sUid) {
+          skippedCount++;
+          continue;
+        }
+
+        // Skip deactivated students
+        if ((student as any).disabled === true || (student as any).disabled === 'true') {
+          skippedCount++;
+          continue;
+        }
+
+        // Skip check for new students registered in the last 30 days
+        const createdAtStr = student.createdAt || (student as any).admissionDate;
+        const createdDate = createdAtStr ? new Date(createdAtStr) : null;
+        const isNewStudent = createdDate && (now.getTime() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000;
+
+        // Skip if suspended due to inactivity (0 attendance in 60 days)
+        if (!isNewStudent && suspendedStudentIds.has(sUid)) {
+          suspendedCount++;
+          continue;
+        }
+
+        // Find their existing fee balance record
+        const existingBalance = feeBalances.find(b => b.studentId === sUid);
+        if (!existingBalance) {
+          skippedCount++;
+          continue;
+        }
+
+        const currentBalance = Number(existingBalance.totalAmount || 0) - Number(existingBalance.paidAmount || 0);
+
+        // Check if penalty already applied for this month
+        const history = [...(existingBalance.history || [])];
+        const alreadyApplied = history.some((h: any) =>
+          h && String(h.description || '') === penaltyDescription && h.type === 'charge'
+        );
+
+        if (alreadyApplied) {
+          skippedCount++;
+          continue;
+        }
+
+        // If their current balance is <= 0, they don't owe money, so no penalty!
+        if (currentBalance <= 0) {
+          skippedCount++;
+          continue;
+        }
+
+        // Apply the late fee charge!
+        const historyItem = {
+          date: timestamp,
+          amount: pAmt,
+          type: 'charge',
+          description: penaltyDescription
+        };
+
+        const newTotal = Number(existingBalance.totalAmount || 0) + pAmt;
+        const newPaid = Number(existingBalance.paidAmount || 0);
+        const newBalance = newTotal - newPaid;
+        const finalHistory = [...history, historyItem];
+
+        // 1. Update the document in 'fees' collection
+        await updateDoc(doc(db, 'fees', existingBalance.id), {
+          totalAmount: newTotal,
+          paidAmount: newPaid,
+          balance: newBalance,
+          lastUpdated: timestamp,
+          history: finalHistory
+        });
+
+        // 2. Sync with 'fee_balances' collection
+        try {
+          await setDoc(doc(db, 'fee_balances', sUid), {
+            studentId: sUid,
+            totalAmount: newTotal,
+            paidAmount: newPaid,
+            balance: newBalance,
+            lastUpdated: timestamp
+          }, { merge: true });
+        } catch (err) {
+          console.error(`Failed to sync fee_balances for student ${sUid}:`, err);
+        }
+
+        // 3. Add notification
+        const notificationMessage = `Late payment penalty of Ksh ${pAmt} has been applied to your account for ${currentMonthYear} as fees were not fully cleared by date ${pDay}.`;
+        try {
+          await addDoc(collection(db, 'notifications'), {
+            userId: sUid,
+            title: 'Late Payment Penalty Charged',
+            message: notificationMessage,
+            type: 'fee',
+            read: false,
+            createdAt: timestamp,
+            link: '/fees'
+          });
+        } catch (err) {
+          console.error(`Failed to add notification for student ${sUid}:`, err);
+        }
+
+        appliedCount++;
+      }
+
+      await loadFeesData(true);
+      addToast(
+        `Late penalties applied! Charged Ksh ${pAmt} to ${appliedCount} students. Skipped ${skippedCount} students.${suspendedCount ? ` Suspended for ${suspendedCount} student(s) due to absence.` : ''}`,
+        "success"
+      );
     } catch (err: any) {
-      console.error("Failed to trigger penalty application:", err);
+      console.error("Failed to apply late penalties on client-side:", err);
       addToast(err.message || "An error occurred while calculating penalties.", "error");
     } finally {
       setIsApplyingPenalties(false);
