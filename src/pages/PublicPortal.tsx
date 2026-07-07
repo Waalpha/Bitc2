@@ -915,7 +915,7 @@ export function PublicPortal() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 font-heading font-black tracking-tighter text-base sm:text-lg">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 font-heading font-black tracking-tighter text-base sm:text-lg">
                 {settings?.appTitle || 'BITC'}
               </div>
             )}
@@ -2241,11 +2241,11 @@ export function PublicPortal() {
                 <img
                   src={settings?.publicLogoUrl || settings?.logoUrl}
                   alt={settings?.appTitle || "School Logo"}
-                  className="h-10 w-auto object-contain max-w-[110px] rounded bg-white p-1"
+                  className="h-12 w-auto object-contain max-w-[120px] rounded bg-white p-1 shadow-md border border-slate-800"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-base font-heading font-black">
+                <div className="h-12 w-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-base font-heading font-black shadow-lg shadow-emerald-900/30">
                   {settings?.appTitle || 'BITC'}
                 </div>
               )}

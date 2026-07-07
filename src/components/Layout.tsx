@@ -654,10 +654,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {children}
           
           <footer className="mt-20 pt-8 pb-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-2">
-            <div className="flex items-center gap-3 opacity-60">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${isStudent ? 'bg-blue-600/50' : 'bg-primary/50'}`}>
-                <GraduationCap size={16} />
-              </div>
+            <div className="flex items-center gap-3 opacity-65">
+              {settings?.logoUrl ? (
+                <img
+                  src={settings.logoUrl}
+                  alt={settings?.appTitle || "School Logo"}
+                  className="h-8 w-auto object-contain rounded bg-white p-0.5 shadow-sm border border-white/10"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${isStudent ? 'bg-primary/50' : 'bg-primary/50'}`}>
+                  <GraduationCap size={16} />
+                </div>
+              )}
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
                 {settings?.appTitle || 'BITC Portal'} <span className="mx-2 opacity-30">|</span> Smart Management
               </p>
