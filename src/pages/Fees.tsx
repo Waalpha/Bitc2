@@ -3608,7 +3608,7 @@ export const Fees: React.FC = () => {
     // Recent payments log
     const allPayments = activeFeeBalances.flatMap(fb => 
       (fb.history || [])
-        .filter(h => h.type === 'payment')
+        .filter(h => h.type === 'payment' && !(h.description && (h.description.toLowerCase().includes('adjustment') || h.description.toLowerCase().includes('adjust'))))
         .map(h => ({
           ...h,
           studentName: students.find(s => s.uid === fb.studentId)?.name || 'Unknown',
