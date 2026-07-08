@@ -75,6 +75,7 @@ export const Profile: React.FC = () => {
     course: '', // Used as Department for teachers
     admissionNumber: '', // Used as Staff ID for teachers
     year: '1', // Used as Experience for teachers
+    admissionDate: '',
     specialization: '',
     idNumber: '',
     nationality: '',
@@ -112,6 +113,7 @@ export const Profile: React.FC = () => {
         course: userData.course || '',
         admissionNumber: userData.admissionNumber || '',
         year: userData.year || '1',
+        admissionDate: userData.admissionDate || '',
         specialization: userData.specialization || '',
         idNumber: userData.idNumber || '',
         nationality: userData.nationality || '',
@@ -166,6 +168,7 @@ export const Profile: React.FC = () => {
   };
 
   const isStudent = userData?.role === 'student';
+  const isAdmin = userData?.role === 'admin';
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,8 +242,12 @@ export const Profile: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const dataToSave = { ...editForm };
+      if (!isAdmin) {
+        dataToSave.admissionDate = userData?.admissionDate || '';
+      }
       await updateDoc(doc(db, 'users', user.uid), {
-        ...editForm,
+        ...dataToSave,
         updatedAt: new Date().toISOString()
       });
       addToast('Profile updated successfully');
@@ -1012,6 +1019,25 @@ export const Profile: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {isStudent && (
+                      <div className="group">
+                        <label className={`block text-xs font-bold uppercase tracking-[0.2em] mb-2 ml-1 ${isStudent ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Date of Admission {!isAdmin && <span className="text-[10px] text-gray-500 font-normal lowercase italic">(admin only)</span>}
+                        </label>
+                        <input
+                          type="date"
+                          value={editForm.admissionDate}
+                          onChange={(e) => setEditForm({ ...editForm, admissionDate: e.target.value })}
+                          disabled={!isAdmin}
+                          className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
+                            isStudent 
+                            ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                            : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                          } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        />
+                      </div>
+                    )}
 
                     {isStudent && (
                       <div className="space-y-4 pt-4 border-t border-white/10">

@@ -185,7 +185,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isDashboard = location.pathname === '/dashboard';
 
   const SidebarContent = () => (
-    <div className={`flex flex-col h-full ${isStudent ? 'bg-bg-dark' : 'bg-bg-dark'} text-text-secondary relative overflow-hidden`}>
+    <div className="flex flex-col h-full bg-bg-dark text-slate-300 relative overflow-hidden">
       {/* Decorative gradient for sidebar */}
       <>
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -221,7 +221,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           return (
             <div key={group.title}>
-              <p className="px-4 text-[10px] font-bold tracking-widest text-text-muted mb-4 uppercase">{group.title}</p>
+              <p className="px-4 text-[10px] font-bold tracking-widest text-slate-400 mb-4 uppercase">{group.title}</p>
               <div className="space-y-1.5">
                 {visibleItems.map((item) => (
                   <Link
@@ -231,10 +231,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group relative ${
                       location.pathname === item.path
                         ? `bg-primary text-white shadow-xl shadow-primary/30`
-                        : 'text-text-muted hover:text-white hover:bg-white/5'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <item.icon size={18} className={location.pathname === item.path ? 'text-white' : `text-text-muted group-hover:text-primary transition-colors`} />
+                    <item.icon size={18} className={location.pathname === item.path ? 'text-white' : `text-slate-400 group-hover:text-primary transition-colors`} />
                     <span className="flex-1">{item.name}</span>
                     {location.pathname === item.path && (
                       <motion.div 
@@ -252,12 +252,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </nav>
 
       <div className="p-6 relative">
-        <div className={`rounded-[24px] p-4 flex items-center gap-3 border border-white/5 group hover:bg-white/5 transition-all cursor-pointer ${isStudent ? 'bg-white/5' : 'bg-bg-card/50'}`}>
+        <div className="rounded-[24px] p-4 flex items-center gap-3 border border-white/5 group hover:bg-white/5 transition-all cursor-pointer bg-white/5">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg bg-gradient-to-br from-primary to-highlight`}>
             {userData?.name?.charAt(0)}
           </div>
           <div className="overflow-hidden flex-1">
-            <p className="text-text-primary text-xs font-bold truncate">{userData?.name}</p>
+            <p className="text-white text-xs font-bold truncate">{userData?.name}</p>
             <p className={`text-[10px] uppercase tracking-widest font-bold text-primary opacity-60 mt-0.5`}>{userData?.role}</p>
           </div>
         </div>
@@ -448,7 +448,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <input 
                   type="text" 
                   placeholder="Search anything..."
-                  className={`w-full border-none rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-text-secondary placeholder:text-text-muted focus:ring-4 ${isStudent ? 'bg-white/5 focus:ring-primary/20 text-white' : 'bg-bg-card/50 focus:ring-primary/20 text-text-primary'} shadow-sm ring-1 ring-white/10 transition-all outline-none`}
+                  className="w-full border border-slate-200/50 rounded-2xl pl-12 pr-4 py-3 text-xs font-bold text-text-secondary placeholder:text-text-muted focus:ring-4 bg-bg-card focus:ring-primary/20 text-text-primary shadow-sm transition-all outline-none"
                 />
               </div>
             </div>
@@ -481,9 +481,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className={`absolute right-0 mt-3 w-80 rounded-[28px] shadow-2xl py-4 z-50 p-5 border text-left ${
-                          isStudent ? 'bg-bg-card border-white/10 text-white' : 'bg-bg-card border-white/5 text-text-primary'
-                        }`}
+                        className="absolute right-0 mt-3 w-80 rounded-[28px] shadow-2xl py-4 z-50 p-5 border text-left bg-bg-card border-slate-200/50 text-text-primary"
                       >
                         <h4 className="text-xs font-bold uppercase tracking-wider mb-2 text-text-primary flex items-center gap-2">
                           <Database size={14} className="text-primary" /> Database Cache Status
@@ -650,7 +648,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </header>
 
         {/* Page Content */}
-        <main className={`p-6 sm:p-10 max-w-[1700px] w-full mx-auto relative min-h-full ${isStudent ? 'text-white' : ''}`}>
+        <main className="p-6 sm:p-10 max-w-[1700px] w-full mx-auto relative min-h-full">
           {children}
           
           <footer className="mt-20 pt-8 pb-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-2">

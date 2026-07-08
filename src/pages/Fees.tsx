@@ -1971,6 +1971,159 @@ export const Fees: React.FC = () => {
     printWindow.document.close();
   };
 
+  const handlePrintRecentPaymentsList = (payments: any[]) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const totalAmount = payments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+    const dateStr = format(new Date(), 'MMMM dd, yyyy HH:mm');
+
+    const html = `
+      <html>
+        <head>
+          <title>Recent Payments Report - BITC</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #374151; line-height: 1.4; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #10c469; padding-bottom: 20px; }
+            .header img { max-height: 60px; margin-bottom: 10px; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 700; color: #143449; text-transform: uppercase; }
+            .header p { margin: 5px 0 0; color: #6b7280; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; }
+            
+            .stats-bar { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 30px; background: #f9fafb; padding: 15px 24px; border-radius: 16px; border: 1px solid #f3f4f6; }
+            .stat-item { flex: 1; }
+            .stat-label { font-size: 9px; font-weight: 800; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; }
+            .stat-value { font-size: 16px; font-weight: 700; color: #111827; }
+            
+            h2 { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #143449; border-left: 4px solid #10c469; padding-left: 10px; margin: 20px 0 15px; }
+            
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #f3f4f6; }
+            th { text-align: left; background: #f9fafb; padding: 10px 12px; font-size: 10px; font-weight: 800; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
+            td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; font-size: 11px; color: #4b5563; }
+            
+            .amount { text-align: right; font-weight: bold; color: #10c469; }
+            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 20px; }
+            
+            .total-row { background: #f9fafb; font-weight: 700; }
+            
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.08;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 12cm;
+              height: 12cm;
+              max-width: 12cm;
+              max-height: 12cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 32pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #143449;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
+            @media print {
+              body { padding: 20px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              .watermark-container { opacity: 0.12 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">${(settings?.schoolName || 'Breakthrough International').toUpperCase()}</div>`
+            }
+          </div>
+          <div class="header">
+            ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="Logo" />` : ''}
+            <h1>${settings?.schoolName || 'BREAKTHROUGH INTERNATIONAL'}</h1>
+            <p>Recent Payments Report (${payments.length} Records)</p>
+          </div>
+          
+          <div class="stats-bar">
+            <div class="stat-item">
+              <div class="stat-label">Total Transactions</div>
+              <div class="stat-value">${payments.length}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Total Amount Collected</div>
+              <div class="stat-value" style="color: #10c469;">Ksh ${totalAmount.toLocaleString()}</div>
+            </div>
+            <div class="stat-item" style="text-align: right;">
+              <div class="stat-label">Report Date</div>
+              <div class="stat-value" style="font-size: 12px; color: #6b7280;">${dateStr}</div>
+            </div>
+          </div>
+
+          <h2>Recent Payment Ledger</h2>
+          <table>
+            <thead>
+              <tr>
+                <th width="5%">#</th>
+                <th width="20%">Date & Time</th>
+                <th width="35%">Student Name</th>
+                <th width="25%">Description</th>
+                <th width="15%" class="amount">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payments.map((p, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${format(new Date(p.date), 'MMM dd, yyyy HH:mm')}</td>
+                  <td>
+                    <strong>${p.studentName}</strong>
+                  </td>
+                  <td>${p.description || 'N/A'}</td>
+                  <td class="amount">Ksh ${p.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="4" style="text-align: right; text-transform: uppercase;">Total Collected</td>
+                <td class="amount">Ksh ${totalAmount.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <p>Generated by BITC School Management System on ${new Date().toLocaleString()}</p>
+            <p>This document is a certified transaction record.</p>
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const getClassStats = (classId: string) => {
     const classStudents = students.filter(s => (s.classIds || []).includes(classId));
     const activeFeeBalances = feeBalances.filter(fb => classStudents.some(s => s.uid === fb.studentId));
@@ -3521,7 +3674,7 @@ export const Fees: React.FC = () => {
       collectionRate: monthCharged > 0 ? (monthCollected / monthCharged) * 100 : 0,
       classBreakdown,
       studentMonthlyData,
-      allPayments: allPayments.slice(0, 50)
+      allPayments: allPayments.slice(0, 100)
     };
   }, [isAdminView, feeBalances, students, classes, classFees, expenses]);
 
@@ -4946,8 +5099,21 @@ export const Fees: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                  <div className="p-6 border-b border-gray-50">
-                    <h3 className="font-bold text-gray-900 uppercase tracking-tight text-sm">Recent Payments</h3>
+                  <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-gray-900 uppercase tracking-tight text-sm">Recent Payments</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">Showing up to {reportStats.allPayments.length} student payments</p>
+                    </div>
+                    {reportStats.allPayments.length > 0 && (
+                      <button
+                        onClick={() => handlePrintRecentPaymentsList(reportStats.allPayments)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-sm shadow-emerald-100 cursor-pointer"
+                        title="Print all recent payments to PDF/Paper"
+                      >
+                        <Printer size={14} />
+                        <span>Print List (PDF)</span>
+                      </button>
+                    )}
                   </div>
                   <div className="divide-y divide-gray-50 flex-1">
                     {reportStats.allPayments.map((payment, idx) => (

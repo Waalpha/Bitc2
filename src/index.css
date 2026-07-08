@@ -8,23 +8,23 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Spec Provided Colors */
-  --color-deep-navy: #0F172A;
-  --color-dark-slate: #1E293B;
-  --color-charcoal-blue: #111827;
-  --color-royal-blue: #10B981; /* Vibrant Emerald Green primary */
-  --color-soft-white: #FFFFFF;
-  --color-gray-muted: #94A3B8;
-  --color-emerald-green: #10B981;
-  --color-bright-cyan: #F97316; /* Energetic Orange */
+  --color-deep-navy: #f2f5f7;
+  --color-dark-slate: #ffffff;
+  --color-charcoal-blue: #143449;
+  --color-royal-blue: #10c469; /* Vibrant primary green */
+  --color-soft-white: #2d2c2f;
+  --color-gray-muted: #64748b;
+  --color-emerald-green: #10c469;
+  --color-bright-cyan: #c0973c; /* Secondary gold */
 
   /* Brand Colors - Mapping Spec to Functional Names */
-  --color-primary: #10B981; /* Emerald Green */
-  --color-primary-hover: #059669; /* Darker green */
-  --color-highlight: #F97316; /* Vibrant Orange */
+  --color-primary: #10c469; /* Primary green */
+  --color-primary-hover: #143449; /* Primary hover navy */
+  --color-highlight: #c0973c; /* Secondary gold */
 
   /* Accent Colors */
-  --color-success: #10B981;
-  --color-cyan-vibe: #F97316;
+  --color-success: #10c469;
+  --color-cyan-vibe: #c0973c;
 
   /* Backgrounds */
   --color-bg-main: var(--color-deep-navy);
@@ -33,43 +33,44 @@
 
   /* Text Colors */
   --color-text-primary: var(--color-soft-white);
-  --color-text-secondary: #CBD5E1;
+  --color-text-secondary: #2d2c2fb5;
   --color-text-muted: var(--color-gray-muted);
 
   /* Overriding base Tailwind colors for consistency across the app */
-  --color-slate-900: var(--color-deep-navy);
-  --color-slate-800: var(--color-dark-slate);
+  --color-slate-900: #2d2c2f;
+  --color-slate-800: #334155;
   --color-slate-50: #f8fafc;
-  --color-white: var(--color-soft-white);
+  --color-white: #ffffff;
   
   /* Map all blue colors to our vibrant Emerald Green palette */
-  --color-blue-50: #ECFDF5;
-  --color-blue-100: #D1FAE5;
-  --color-blue-200: #A7F3D0;
-  --color-blue-300: #6EE7B7;
-  --color-blue-400: #34D399;
-  --color-blue-500: #10B981;
-  --color-blue-600: #10B981;
-  --color-blue-700: #059669;
-  --color-blue-800: #047857;
-  --color-blue-900: #064E3B;
-  --color-blue-950: #022C22;
+  --color-blue-50: #f0fdf4;
+  --color-blue-100: #dcfce7;
+  --color-blue-200: #bbf7d0;
+  --color-blue-300: #86efac;
+  --color-blue-400: #4ade80;
+  --color-blue-50: #f0fdf4;
+  --color-blue-500: #10c469;
+  --color-blue-600: #10c469;
+  --color-blue-700: #0fa658;
+  --color-blue-800: #118447;
+  --color-blue-900: #106c3c;
+  --color-blue-950: #053d20;
 
-  /* Map all indigo colors to our energetic Orange palette */
-  --color-indigo-50: #FFF7ED;
-  --color-indigo-100: #FFEDD5;
-  --color-indigo-200: #FED7AA;
-  --color-indigo-300: #FDBA74;
-  --color-indigo-400: #FB923C;
-  --color-indigo-500: #F97316;
-  --color-indigo-600: #EA580C;
-  --color-indigo-700: #C2410C;
-  --color-indigo-800: #9A3412;
-  --color-indigo-900: #7C2D12;
-  --color-indigo-950: #431407;
+  /* Map all indigo colors to our energetic Gold/Bronze palette */
+  --color-indigo-50: #fefdf6;
+  --color-indigo-100: #fcf8e3;
+  --color-indigo-200: #f8efc2;
+  --color-indigo-300: #f2e194;
+  --color-indigo-400: #e6cb62;
+  --color-indigo-500: #c0973c;
+  --color-indigo-600: #c0973c;
+  --color-indigo-700: #9e7a2e;
+  --color-indigo-800: #7d5f22;
+  --color-indigo-900: #604918;
+  --color-indigo-950: #3c2d0c;
 
-  --color-emerald-500: #10B981;
-  --color-emerald-600: #059669;
+  --color-emerald-500: #10c469;
+  --color-emerald-600: #0fa658;
 }
 
 @layer base {

@@ -98,9 +98,9 @@ export const AdminSettings: React.FC = () => {
     publicHeroDescriptionBold: false,
     publicHeroDescriptionItalic: false,
     publicLogoUrl: '',
-    publicPrimaryColor: '#1E40AF',
-    publicSecondaryColor: '#10B981',
-    publicAccentColor: '#F59E0B',
+    publicPrimaryColor: '#10c469',
+    publicSecondaryColor: '#c0973c',
+    publicAccentColor: '#c0973c',
     portalAboutUs: '',
     portalGallery: [],
     sessionTimeoutSeconds: 300,
@@ -2177,15 +2177,15 @@ export const AdminSettings: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicPrimaryColor || '#1E40AF'}
+                      value={appSettings.publicPrimaryColor || '#10c469'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicPrimaryColor || '#1E40AF'}
+                      value={appSettings.publicPrimaryColor || '#10c469'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
-                      placeholder="#1E40AF"
+                      placeholder="#10c469"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>
@@ -2196,15 +2196,15 @@ export const AdminSettings: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicSecondaryColor || '#10B981'}
+                      value={appSettings.publicSecondaryColor || '#c0973c'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicSecondaryColor || '#10B981'}
+                      value={appSettings.publicSecondaryColor || '#c0973c'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
-                      placeholder="#10B981"
+                      placeholder="#c0973c"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>
@@ -2215,15 +2215,15 @@ export const AdminSettings: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicAccentColor || '#F59E0B'}
+                      value={appSettings.publicAccentColor || '#c0973c'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicAccentColor || '#F59E0B'}
+                      value={appSettings.publicAccentColor || '#c0973c'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
-                      placeholder="#F59E0B"
+                      placeholder="#c0973c"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>
