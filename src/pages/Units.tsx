@@ -19,6 +19,51 @@ export const Units: React.FC = () => {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isSeedingModalOpen, setIsSeedingModalOpen] = useState(false);
+  const [seedingClassId, setSeedingClassId] = useState('');
+  const [seedingCourseType, setSeedingCourseType] = useState<'ict' | 'cosmetology' | 'electrical'>('ict');
+
+  const curriculumOptions = {
+    ict: {
+      name: "ICT & Business Management",
+      units: [
+        "Introduction to ICT", 
+        "Principles of Management", 
+        "Financial Accounting", 
+        "Business Law", 
+        "Quantitative Methods", 
+        "Macroeconomics", 
+        "Microeconomics", 
+        "Business Communication", 
+        "Human Resource Management",
+        "Marketing Management", 
+        "Organizational Behavior", 
+        "Management Information Systems",
+        "Entrepreneurship"
+      ]
+    },
+    cosmetology: {
+      name: "Cosmetology, Hairdressing & Beauty Therapy",
+      units: [
+        "Beauty therapy theory",
+        "Beauty therapy practicle",
+        "Hairdressing theory",
+        "Hairdressing practicle",
+        "Enterprenurship",
+        "Communication skills"
+      ]
+    },
+    electrical: {
+      name: "Electrical Installation Systems",
+      units: [
+        "Circuit Analysis & Load Management",
+        "Conduit Systems & Surface Installations",
+        "Trunking Systems & Heavy Distribution Routing",
+        "PVC Sheathed Cable Assembly Installation",
+        "Electrical Safety & Fire Prevention Standard"
+      ]
+    }
+  };
 
   const addToast = (text: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -47,14 +92,18 @@ export const Units: React.FC = () => {
           : query(collection(db, 'classes'));
 
         const classesSnap = await getDocs(classesQ);
-        setClasses(classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
+        const loadedClasses = classesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
+        setClasses(loadedClasses);
+        if (loadedClasses.length > 0) {
+          setSeedingClassId(loadedClasses[0].id);
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'data');
       }
     };
 
     fetchUnitsAndClasses();
-  }, [user, isTeacher]);
+  }, [user, isTeacher, userData?.role]);
 
   const handleAddUnit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,14 +117,16 @@ export const Units: React.FC = () => {
           status: newUnitStatus,
           updatedAt: new Date().toISOString()
         });
+        setUnits(prev => prev.map(u => u.id === editingUnit.id ? { ...u, name: newUnitName, classId: selectedClassId, status: newUnitStatus } : u));
         addToast("Unit updated successfully!");
       } else {
-        await addDoc(collection(db, 'units'), {
+        const docRef = await addDoc(collection(db, 'units'), {
           name: newUnitName,
           classId: selectedClassId,
           status: 'active',
           createdAt: new Date().toISOString()
         });
+        setUnits(prev => [...prev, { id: docRef.id, name: newUnitName, classId: selectedClassId, status: 'active' }]);
         addToast("Unit added successfully!");
       }
       setNewUnitName('');
@@ -97,39 +148,36 @@ export const Units: React.FC = () => {
   };
 
   const handleBulkGenerate = async () => {
-    if (!selectedClassId && classes.length > 0) {
-      // Just pick the first class if none selected
-      setSelectedClassId(classes[0].id);
-    }
-    
-    const targetClassId = selectedClassId || (classes.length > 0 ? classes[0].id : null);
+    const targetClassId = seedingClassId || (classes.length > 0 ? classes[0].id : null);
     
     if (!targetClassId) {
-      addToast("Please create a class first", "error");
+      addToast("Please select a target class", "error");
       return;
     }
 
-    if (!confirm("This will add 13 typical academic units to the selected class. Continue?")) return;
+    const selectedCurriculum = curriculumOptions[seedingCourseType];
+    if (!confirm(`This will add ${selectedCurriculum.units.length} standard curriculum units for "${selectedCurriculum.name}" to the selected class. Continue?`)) return;
 
     setIsGenerating(true);
-    const typicalUnits = [
-      "Introduction to ICT", "Principles of Management", "Financial Accounting", 
-      "Business Law", "Quantitative Methods", "Macroeconomics", 
-      "Microeconomics", "Business Communication", "Human Resource Management",
-      "Marketing Management", "Organizational Behavior", "Management Information Systems",
-      "Entrepreneurship"
-    ];
-
     try {
-      for (const unitName of typicalUnits) {
-        await addDoc(collection(db, 'units'), {
+      const addedUnits: Unit[] = [];
+      for (const unitName of selectedCurriculum.units) {
+        const docRef = await addDoc(collection(db, 'units'), {
           name: unitName,
           classId: targetClassId,
           status: 'active',
           createdAt: new Date().toISOString()
         });
+        addedUnits.push({
+          id: docRef.id,
+          name: unitName,
+          classId: targetClassId,
+          status: 'active'
+        });
       }
-      addToast("Successfully added 13 academic units!");
+      setUnits(prev => [...prev, ...addedUnits]);
+      addToast(`Successfully added ${selectedCurriculum.units.length} ${selectedCurriculum.name} units!`);
+      setIsSeedingModalOpen(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'units');
       addToast("Failed to bulk add units", "error");
@@ -141,6 +189,7 @@ export const Units: React.FC = () => {
   const deleteUnit = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'units', id));
+      setUnits(prev => prev.filter(u => u.id !== id));
       addToast("Unit deleted successfully!");
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `units/${id}`);
@@ -157,13 +206,12 @@ export const Units: React.FC = () => {
         </div>
         {canManageUnits && (
           <div className="flex gap-3">
-             <button
-              onClick={handleBulkGenerate}
-              disabled={isGenerating}
-              className="flex items-center gap-2 bg-amber-500/10 text-amber-500 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-500/20 disabled:opacity-50"
+            <button
+              onClick={() => setIsSeedingModalOpen(true)}
+              className="flex items-center gap-2 bg-amber-500/10 text-amber-500 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-500/20"
             >
-              <Plus size={18} />
-              {isGenerating ? 'Adding...' : 'Seed 13 Units'}
+              <BookOpen size={18} />
+              Seed Curriculum
             </button>
             <button
               onClick={() => {
@@ -335,6 +383,93 @@ export const Units: React.FC = () => {
                   {editingUnit ? 'Update Unit' : 'Create Unit'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Seed Curriculum Modal */}
+      <AnimatePresence>
+        {isSeedingModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setIsSeedingModalOpen(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-bg-card border border-white/5 rounded-[40px] p-10 w-full max-w-lg shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl opacity-50" />
+              
+              <div className="flex justify-between items-center mb-8 relative z-10">
+                <h2 className="text-2xl font-bold text-text-primary tracking-tight uppercase flex items-center gap-2">
+                  <BookOpen size={24} className="text-amber-500" />
+                  Seed Curriculum
+                </h2>
+                <button 
+                  onClick={() => setIsSeedingModalOpen(false)} 
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="space-y-6 relative z-10">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-widest ml-1">Target Class</label>
+                  <select
+                    required
+                    value={seedingClassId}
+                    onChange={(e) => setSeedingClassId(e.target.value)}
+                    className="w-full bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 ring-1 ring-white/10 focus:ring-4 focus:ring-primary/20 transition-all outline-none appearance-none"
+                  >
+                    <option value="" className="bg-bg-card">Select Class</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id} className="bg-bg-card">{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-widest ml-1">Course Curriculum</label>
+                  <select
+                    required
+                    value={seedingCourseType}
+                    onChange={(e) => setSeedingCourseType(e.target.value as any)}
+                    className="w-full bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 ring-1 ring-white/10 focus:ring-4 focus:ring-primary/20 transition-all outline-none appearance-none"
+                  >
+                    <option value="ict" className="bg-bg-card">ICT & Business Management (13 Units)</option>
+                    <option value="cosmetology" className="bg-bg-card">Cosmetology, Hairdressing & Beauty Therapy (10 Units)</option>
+                    <option value="electrical" className="bg-bg-card">Electrical Installation Systems (5 Units)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-widest ml-1">Units Preview</label>
+                  <div className="max-h-48 overflow-y-auto bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-1.5">
+                    {curriculumOptions[seedingCourseType].units.map((unitName, index) => (
+                      <div key={index} className="flex items-center gap-2.5 text-xs text-gray-700 font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        {unitName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleBulkGenerate}
+                  disabled={isGenerating || !seedingClassId}
+                  className="w-full bg-amber-500 text-white font-bold py-5 rounded-2xl hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 uppercase text-xs tracking-widest active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? 'Generating Units...' : `Seed ${curriculumOptions[seedingCourseType].units.length} Units`}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

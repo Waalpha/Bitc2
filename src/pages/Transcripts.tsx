@@ -74,6 +74,7 @@ export const Transcripts: React.FC = () => {
   const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
   const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
   const [stampUrlOverride, setStampUrlOverride] = useState(localStorage.getItem('transcript_stampUrl') || '/stamp.png');
+  const [sealDateOverride, setSealDateOverride] = useState(localStorage.getItem('transcript_sealDate') || '2026-06-22');
   
   // Principal details overrides
   const [principalNameOverride, setPrincipalNameOverride] = useState(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
@@ -85,7 +86,7 @@ export const Transcripts: React.FC = () => {
   const [sidebarTab, setSidebarTab] = useState<'students' | 'editor'>('students');
   
   // Digital Certificate states
-  const previewDocType = 'transcript';
+  const [previewDocType, setPreviewDocType] = useState<'transcript' | 'certificate'>('transcript');
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [isSavingPdf, setIsSavingPdf] = useState(false);
 
@@ -519,7 +520,7 @@ export const Transcripts: React.FC = () => {
                 </td>
                 <td class="info-card">
                   <p class="info-label">Registry Seal Date</p>
-                  <p class="info-val">2026-06-22</p>
+                  <p class="info-val">${sealDateOverride}</p>
                 </td>
               </tr>
               <tr>
@@ -675,11 +676,12 @@ export const Transcripts: React.FC = () => {
   ];
 
   const defaultCosmetologyUnits = [
-    { code: "BTP-101", name: "Beauty Therapy Practicals", hours: 90 },
-    { code: "HD-102", name: "Hairdressing Masterclass & Practicals", hours: 90 },
-    { code: "SCS-201", name: "Skin Care, Diagnosis & Treatment", hours: 45 },
-    { code: "APH-202", name: "Anatomy & Physiology of Hair & Skin", hours: 45 },
-    { code: "SLM-301", name: "Salon Management & Customer Service Skills", hours: 30 }
+    { code: "COS-101", name: "Beauty therapy theory", hours: 45 },
+    { code: "COS-102", name: "Beauty therapy practicle", hours: 90 },
+    { code: "COS-103", name: "Hairdressing theory", hours: 45 },
+    { code: "COS-104", name: "Hairdressing practicle", hours: 90 },
+    { code: "COS-105", name: "Enterprenurship", hours: 45 },
+    { code: "COS-106", name: "Communication skills", hours: 45 }
   ];
 
   const defaultElectricalUnits = [
@@ -797,6 +799,7 @@ export const Transcripts: React.FC = () => {
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
     setStampUrlOverride(localStorage.getItem('transcript_stampUrl') || (settings && settings.stampUrl) || '/stamp.png');
+    setSealDateOverride(localStorage.getItem('transcript_sealDate') || '2026-06-22');
     setPrincipalNameOverride(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
     setPrincipalTitleOverride(localStorage.getItem('transcript_principalTitle') || 'COLLEGE PRINCIPAL');
     setPrincipalSignatureUrlOverride(localStorage.getItem('transcript_principalSignatureUrl') || '');
@@ -1115,6 +1118,9 @@ export const Transcripts: React.FC = () => {
     } else if (field === 'stampUrl') {
       setStampUrlOverride(value);
       localStorage.setItem('transcript_stampUrl', value);
+    } else if (field === 'sealDate') {
+      setSealDateOverride(value);
+      localStorage.setItem('transcript_sealDate', value);
     } else if (field === 'principalName') {
       setPrincipalNameOverride(value);
       localStorage.setItem('transcript_principalName', value);
@@ -1148,6 +1154,7 @@ export const Transcripts: React.FC = () => {
     setPrincipalNameOverride('OFFICE OF THE PRINCIPAL');
     setPrincipalTitleOverride('COLLEGE PRINCIPAL');
     setPrincipalSignatureUrlOverride('');
+    setSealDateOverride('2026-06-22');
     
     localStorage.removeItem('transcript_schoolName');
     localStorage.removeItem('transcript_logoUrl');
@@ -1158,6 +1165,7 @@ export const Transcripts: React.FC = () => {
     localStorage.removeItem('transcript_registrarTitle');
     localStorage.removeItem('transcript_signatureUrl');
     localStorage.removeItem('transcript_stampUrl');
+    localStorage.removeItem('transcript_sealDate');
     localStorage.removeItem('transcript_principalName');
     localStorage.removeItem('transcript_principalTitle');
     localStorage.removeItem('transcript_principalSignatureUrl');
@@ -1580,6 +1588,19 @@ export const Transcripts: React.FC = () => {
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Defaults to the uploaded college stamp. Clear to use the simulated seal.</span>
                       </div>
                       
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Registry Seal Date</label>
+                        <input
+                          id="registry-seal-date-input"
+                          type="text"
+                          value={sealDateOverride}
+                          onChange={(e) => handleSchoolDetailChange('sealDate', e.target.value)}
+                          placeholder="e.g. 2026-06-22"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Customize the seal/registration date printed on transcripts.</span>
+                      </div>
+                      
                       {/* Checkbox toggle for isSignoffPrinted */}
                       <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
                         <input
@@ -1592,6 +1613,68 @@ export const Transcripts: React.FC = () => {
                         <label htmlFor="is-signoff-printed-toggle" className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                           Display Signatures & Seal on Transcript
                         </label>
+                      </div>
+                    </div>
+                  </div>
+
+
+
+                  {/* Certificate Document Details */}
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h4 className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3">
+                      <span>Completion Certificate Customization</span>
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Certificate Number</label>
+                        <input
+                          id="cert-no-input"
+                          type="text"
+                          value={customCertificateNo}
+                          onChange={(e) => {
+                            setCustomCertificateNo(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_no_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          placeholder="e.g. BITC/CERT/2026/001"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Unique identifier printed on the completion certificate.</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Award Classification / Honors</label>
+                        <input
+                          id="cert-award-input"
+                          type="text"
+                          value={customAwardClass}
+                          onChange={(e) => {
+                            setCustomAwardClass(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_award_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          placeholder="e.g. Pass with Distinction"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Honors or merit tier (e.g. Pass with Credit, Distinction).</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Award Date</label>
+                        <input
+                          id="cert-date-input"
+                          type="text"
+                          value={customCertificateDate}
+                          onChange={(e) => {
+                            setCustomCertificateDate(e.target.value);
+                            if (selectedStudent) {
+                              localStorage.setItem(`cert_date_${selectedStudent.uid}`, e.target.value);
+                            }
+                          }}
+                          placeholder="e.g. June 22, 2026"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Formal presentation date listed on the certificate.</span>
                       </div>
                     </div>
                   </div>
@@ -1702,6 +1785,42 @@ export const Transcripts: React.FC = () => {
         {/* Right pane: Real transcript/certificate render card */}
         <div className={`${isAdminOrStaff ? 'lg:col-span-8' : 'lg:col-span-12'} text-left PrintNoBorder`}>
 
+          {/* Document Type Selector Switcher */}
+          {selectedStudent && (
+            <div className="flex bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1 rounded-2xl mb-6 max-w-md print:hidden">
+              <button
+                id="doc-tab-transcript"
+                onClick={() => {
+                  setPreviewDocType('transcript');
+                  setPrintOrientation('portrait');
+                }}
+                className={`flex-1 py-3 px-4 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  previewDocType === 'transcript'
+                    ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-white shadow-md font-black'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-bold'
+                }`}
+              >
+                <FileText size={14} />
+                Academic Transcript
+              </button>
+              <button
+                id="doc-tab-certificate"
+                onClick={() => {
+                  setPreviewDocType('certificate');
+                  setPrintOrientation('landscape');
+                }}
+                className={`flex-1 py-3 px-4 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  previewDocType === 'certificate'
+                    ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-white shadow-md font-black'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-bold'
+                }`}
+              >
+                <Award size={14} />
+                Completion Certificate
+              </button>
+            </div>
+          )}
+
           <AnimatePresence mode="wait">
             {loading ? (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
@@ -1711,14 +1830,15 @@ export const Transcripts: React.FC = () => {
                 </div>
               </div>
             ) : selectedStudent ? (
-              <motion.div
-                  id="transcript-view-element"
-                  key="transcript-view"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-6 sm:p-12 relative print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
-                >
+              previewDocType === 'transcript' ? (
+                <motion.div
+                    id="transcript-view-element"
+                    key="transcript-view"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-6 sm:p-12 relative print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
+                  >
                 
                 {/* Institutional Letterhead Header - ALWAYS VISIBLE (Preview & Print) */}
                 <div className="border-b border-sky-100 dark:border-slate-100 pb-6 mb-6">
@@ -1860,7 +1980,7 @@ export const Transcripts: React.FC = () => {
 
                     <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registry Seal Date</p>
-                      <p className="font-semibold text-slate-950 uppercase">2026-06-22</p>
+                      <p className="font-semibold text-slate-950 uppercase">{sealDateOverride}</p>
                     </div>
 
                     <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
@@ -2073,6 +2193,197 @@ export const Transcripts: React.FC = () => {
 
               </motion.div>
             ) : (
+              <motion.div
+                id="certificate-view-element"
+                key="certificate-view"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="bg-[#FFFDF6] text-slate-900 shadow-xl border-[16px] border-double border-amber-800 rounded-[40px] overflow-hidden p-8 sm:p-16 relative print:p-0 print:border-none print:shadow-none print:rounded-none flex flex-col justify-between min-h-[750px] selection:bg-amber-100"
+              >
+                {/* QR Code corner absolute item */}
+                <div className="absolute top-6 right-6 p-1.5 bg-white border border-amber-950/15 rounded-xl shadow-sm flex flex-col items-center gap-1 print:border-black/20 z-20">
+                  <QRCodeCanvas 
+                    value={`https://bitc.ac.ke/verify/cert/${selectedStudent.uid}`}
+                    size={44}
+                    level="H"
+                  />
+                  <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">VERIFY CERT</span>
+                </div>
+
+                {/* Elegant small watermark centered */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none z-0 flex items-center justify-center">
+                  {logoUrlOverride ? (
+                    <img 
+                      src={logoUrlOverride} 
+                      alt="" 
+                      className="w-48 h-48 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <GraduationCap size={180} className="stroke-[1.25] text-slate-400 select-none pointer-events-none" />
+                  )}
+                </div>
+
+                {/* Header */}
+                <div className="text-center space-y-3 z-10 relative">
+                  {/* Logo */}
+                  <div className="flex justify-center mb-1">
+                    {logoUrlOverride ? (
+                      <img 
+                        src={logoUrlOverride} 
+                        alt="School Logo" 
+                        className="h-16 w-auto object-contain max-w-[110px] mix-blend-multiply"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-sm inline-flex items-center justify-center">
+                        <GraduationCap className="text-white w-10 h-10" />
+                      </div>
+                    )}
+                  </div>
+
+                  <h2 className="cert-title-1 text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-amber-950 leading-none">
+                    {schoolNameOverride}
+                  </h2>
+                  <p className="cert-title-2 text-[10px] md:text-xs font-sans font-extrabold text-slate-500 uppercase tracking-[0.2em] leading-none">
+                    Ministry of Higher Education, Science & Technology & TVETA Registered
+                  </p>
+                  <p className="cert-title-3 text-[10px] font-serif italic text-amber-900 tracking-wider leading-none">
+                    Official Certificate of Registrar of Academic Affairs
+                  </p>
+                  
+                  {/* Decorative divider */}
+                  <div className="flex items-center justify-center gap-3 py-0.5">
+                    <div className="h-[1px] w-16 bg-gradient-to-r from-transparent to-amber-700" />
+                    <Award className="text-amber-700 w-4 h-4" />
+                    <div className="h-[1px] w-16 bg-gradient-to-l from-transparent to-amber-700" />
+                  </div>
+                </div>
+
+                {/* Content Body */}
+                <div className="text-center my-4 space-y-3 flex-grow flex flex-col justify-center z-10 relative">
+                  <p className="cert-award-title text-sm font-serif italic text-amber-900 tracking-wide leading-none">
+                    This is to certify that
+                  </p>
+                  
+                  <h1 className="cert-student-name text-3xl md:text-4xl font-serif font-black tracking-tight text-amber-950 border-b border-amber-950/20 pb-1.5 inline-block px-8 max-w-2xl mx-auto leading-none italic">
+                    {selectedStudent.name}
+                  </h1>
+                  
+                  <p className="cert-completion-sub text-[10px] text-slate-600 max-w-lg mx-auto font-sans font-bold uppercase tracking-wider leading-relaxed">
+                    having successfully fulfilled all academic requirements, coursework, and practical examinations has been awarded the qualification of:
+                  </p>
+                  
+                  <div className="cert-course-container bg-amber-50/50 border border-amber-100 py-2.5 px-5 rounded-2xl inline-block max-w-xl mx-auto my-1">
+                    <h2 className="cert-course-title text-lg md:text-xl font-serif font-black uppercase text-amber-950 tracking-tight leading-none">
+                      {selectedStudent.course || 'Certificate Program'}
+                    </h2>
+                  </div>
+
+                  {customAwardClass && (
+                    <div className="mt-0.5">
+                      <span className="cert-award-class bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full inline-block">
+                        {customAwardClass}
+                      </span>
+                    </div>
+                  )}
+
+                  <p className="cert-testimony text-[10px] md:text-xs font-serif italic text-amber-900 leading-relaxed max-w-2xl mx-auto">
+                    In witness whereof, we have hereunto set our hands and the official seal of the institution on this day of <span className="font-sans font-black uppercase not-italic text-amber-950">{customCertificateDate}</span>.
+                  </p>
+                </div>
+
+                {/* Footer and Signatures */}
+                <div className="cert-footer-grid border-t border-amber-950/10 pt-4 grid grid-cols-3 items-end gap-4 text-center mt-auto z-10 relative">
+                  {/* Left: Registrar Signature */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 flex items-center justify-center py-1 relative text-blue-800 w-full">
+                      {isSignoffPrinted && (
+                        signatureUrlOverride ? (
+                          <img 
+                            src={signatureUrlOverride} 
+                            alt="Registrar Signature" 
+                            className="h-10 w-auto object-contain max-h-10" 
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <svg className="h-10 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 30 Q40 5, 80 45 T140 15 T190 35" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M25 35 L175 35" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          </svg>
+                        )
+                      )}
+                    </div>
+                    <div className="border-t border-amber-950/20 pt-1 w-full">
+                      <p className="text-[9px] font-black text-amber-950 uppercase leading-none">{registrarNameOverride}</p>
+                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-none">{registrarTitleOverride || 'REGISTRAR'}</p>
+                    </div>
+                  </div>
+
+                  {/* Center: Stamp Seal & QR */}
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    {/* Stamp / Logo seal */}
+                    <div className="relative flex items-center justify-center h-20 w-20">
+                      {isSignoffPrinted && (
+                        stampUrlOverride && stampUrlOverride !== '/stamp.png' ? (
+                          <div className="relative stamp-seal-container w-20 h-20 flex items-center justify-center select-none rotate-[-5deg]">
+                            <img 
+                              src={stampUrlOverride} 
+                              alt="Official Stamp" 
+                              className="w-20 h-20 object-contain opacity-90 max-h-20" 
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative stamp-seal-container w-20 h-20 flex items-center justify-center border-4 border-double border-amber-900 rounded-full text-amber-950 font-black text-center text-[7px] tracking-tighter uppercase p-1.5 select-none opacity-85 rotate-[-10deg] print:border-black print:text-black">
+                            <div className="absolute inset-0 border border-amber-950/30 border-dashed rounded-full m-0.5 print:border-black" />
+                            <div>
+                              <p className="font-extrabold text-[6px] leading-none mb-0.5">REGISTRAR</p>
+                              <p className="font-black leading-none my-0.5">BITC</p>
+                              <p className="font-black text-[5px] leading-tight mt-0.5">OFFICIAL SEAL</p>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                    
+                    {/* Unique Certificate Verification Details */}
+                    <div className="text-center mt-1">
+                      <p className="text-[6px] font-black uppercase tracking-widest text-slate-400 leading-none">CERTIFICATE SERIAL</p>
+                      <p className="text-[9px] font-mono font-black text-amber-950 mt-0.5 leading-none">{customCertificateNo}</p>
+                    </div>
+                  </div>
+
+                  {/* Right: Principal Signature */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 flex items-center justify-center py-1 relative text-emerald-800 w-full">
+                      {isSignoffPrinted && (
+                        principalSignatureUrlOverride ? (
+                          <img 
+                            src={principalSignatureUrlOverride} 
+                            alt="Principal Signature" 
+                            className="h-10 w-auto object-contain max-h-10" 
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <svg className="h-10 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 45 C35 15, 55 55, 75 25 C95 5, 115 65, 135 35 C155 15, 140 45, 175 25" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M30 40 L170 30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                          </svg>
+                        )
+                      )}
+                    </div>
+                    <div className="border-t border-amber-950/20 pt-1 w-full">
+                      <p className="text-[9px] font-black text-amber-950 uppercase leading-none">{principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
+                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-none">{principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                    </div>
+                  </div>
+                </div>
+
+              </motion.div>
+            )
+          ) : (
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 rounded-3xl h-[600px] flex items-center justify-center">
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">No student selected</p>
               </div>
