@@ -3908,6 +3908,7 @@ export const Students: React.FC = () => {
         guardianPhone: editingStudent.guardianPhone || '',
         year: editingStudent.year || '1',
         course: editingStudent.course || '',
+        academicYear: editingStudent.academicYear || '',
         earlyCheckoutAllowed: editingStudent.earlyCheckoutAllowed || false,
         photoUrl: editingStudent.photoUrl || '',
         // Attachment & Rotation Details
@@ -4449,6 +4450,10 @@ export const Students: React.FC = () => {
                         <div>
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Study Year</p>
                           <p className="font-bold text-gray-900">Year {viewingStudent.year || '1'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Academic Year</p>
+                          <p className="font-bold text-gray-900">{viewingStudent.academicYear || 'Not Set'}</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Admission Date</p>
@@ -5021,6 +5026,32 @@ export const Students: React.FC = () => {
                       >
                         <option value="restricted">🚫 Locked (Pre-4PM restricted)</option>
                         <option value="allowed">✅ Allowed (Can early checkout)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Academic Year</label>
+                      <input
+                        type="text"
+                        value={editingStudent.academicYear || ''}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, academicYear: e.target.value })}
+                        placeholder="e.g. 2026/2027"
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Study Year</label>
+                      <select
+                        value={editingStudent.year || '1'}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, year: e.target.value })}
+                        className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900"
+                      >
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                        <option value="5">Year 5</option>
                       </select>
                     </div>
 

@@ -156,6 +156,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       title: 'ADMINISTRATION',
       items: [
         { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'system_settings' },
+        { name: 'HR Management', path: '/hr', icon: Users, permission: null, showForAdminOnly: true },
         { name: 'Classes', path: '/classes', icon: Users, permission: 'manage_classes' },
         { name: 'Units', path: '/units', icon: BookOpen, permission: 'manage_units' },
       ]

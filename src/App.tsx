@@ -29,6 +29,7 @@ import { PublicPortal } from './pages/PublicPortal';
 import { Transcripts } from './pages/Transcripts';
 import { StudentVerification } from './pages/StudentVerification';
 import { CertificateVerification } from './pages/CertificateVerification';
+import { HR } from './pages/HR';
 
 const ProtectedRoute = ({ 
   children, 
@@ -139,6 +140,7 @@ export default function App() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute><Timetable /></ProtectedRoute>} />
             <Route path="/transcripts" element={<ProtectedRoute requireAdminPortal={true}><Transcripts /></ProtectedRoute>} />
+            <Route path="/hr" element={<ProtectedRoute requireAdminPortal={true}><HR /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NavigateWrapper />} />
           </Routes>

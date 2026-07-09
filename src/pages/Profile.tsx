@@ -74,6 +74,7 @@ export const Profile: React.FC = () => {
     bloodGroup: 'O+',
     course: '', // Used as Department for teachers
     admissionNumber: '', // Used as Staff ID for teachers
+    academicYear: '',
     year: '1', // Used as Experience for teachers
     admissionDate: '',
     specialization: '',
@@ -112,6 +113,7 @@ export const Profile: React.FC = () => {
         bloodGroup: userData.bloodGroup || 'O+',
         course: userData.course || '',
         admissionNumber: userData.admissionNumber || '',
+        academicYear: userData.academicYear || '',
         year: userData.year || '1',
         admissionDate: userData.admissionDate || '',
         specialization: userData.specialization || '',
@@ -245,6 +247,7 @@ export const Profile: React.FC = () => {
       const dataToSave = { ...editForm };
       if (!isAdmin) {
         dataToSave.admissionDate = userData?.admissionDate || '';
+        dataToSave.academicYear = userData?.academicYear || '';
       }
       await updateDoc(doc(db, 'users', user.uid), {
         ...dataToSave,
@@ -579,6 +582,20 @@ export const Profile: React.FC = () => {
                 </p>
               </div>
             </div>
+
+            {isStudent && (
+              <div className="flex items-center gap-6 group">
+                <div className={`p-5 rounded-3xl transition-colors ${isStudent ? 'bg-white/5 text-gray-400 group-hover:text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600'}`}>
+                  <Calendar size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-widest text-text-muted mb-1">Academic Year</p>
+                  <p className={`font-black tracking-tight ${isStudent ? 'text-white' : 'text-gray-900'}`}>
+                    {userData?.academicYear || 'Not Set'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {!isStudent && userData?.specialization && (
               <div className="flex items-center gap-6 group">
@@ -1021,21 +1038,40 @@ export const Profile: React.FC = () => {
                     </div>
 
                     {isStudent && (
-                      <div className="group">
-                        <label className={`block text-xs font-bold uppercase tracking-[0.2em] mb-2 ml-1 ${isStudent ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Date of Admission {!isAdmin && <span className="text-[10px] text-gray-500 font-normal lowercase italic">(admin only)</span>}
-                        </label>
-                        <input
-                          type="date"
-                          value={editForm.admissionDate}
-                          onChange={(e) => setEditForm({ ...editForm, admissionDate: e.target.value })}
-                          disabled={!isAdmin}
-                          className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
-                            isStudent 
-                            ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
-                            : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
-                          } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="group">
+                          <label className={`block text-xs font-bold uppercase tracking-[0.2em] mb-2 ml-1 ${isStudent ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Date of Admission {!isAdmin && <span className="text-[10px] text-gray-500 font-normal lowercase italic">(admin only)</span>}
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.admissionDate}
+                            onChange={(e) => setEditForm({ ...editForm, admissionDate: e.target.value })}
+                            disabled={!isAdmin}
+                            className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
+                              isStudent 
+                              ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                              : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                            } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          />
+                        </div>
+                        <div className="group">
+                          <label className={`block text-xs font-bold uppercase tracking-[0.2em] mb-2 ml-1 ${isStudent ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Academic Year {!isAdmin && <span className="text-[10px] text-gray-500 font-normal lowercase italic">(admin only)</span>}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 2026/2027"
+                            value={editForm.academicYear}
+                            onChange={(e) => setEditForm({ ...editForm, academicYear: e.target.value })}
+                            disabled={!isAdmin}
+                            className={`w-full px-6 py-4 rounded-2xl border font-bold text-sm transition-all outline-none ${
+                              isStudent 
+                              ? 'bg-white/10 border-white/20 text-white focus:border-blue-500 focus:bg-white/20' 
+                              : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-500 focus:bg-white shadow-sm'
+                            } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          />
+                        </div>
                       </div>
                     )}
 
