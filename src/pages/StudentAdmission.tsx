@@ -42,7 +42,7 @@ import { uploadFile } from '../services/uploadService';
 
 const SYSTEM_COURSES = [
   "Diploma in Beauty Therapy, Skincare & Professional Makeup",
-  "Certificate in Hairdressing, Advanced Styling & Barbering",
+  "Certificate in Hairdressing & Beauty Therapy",
   "Diploma in Software Engineering & Web Development",
   "Certificate in Computer Packages & Digital Commerce Systems",
   "Certificate in Healthcare Support Services & Caregiver",

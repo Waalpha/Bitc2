@@ -78,7 +78,7 @@ const COURSES: Course[] = [
   },
   {
     id: 'cosm-2',
-    name: 'Certificate in Hairdressing, Advanced Styling & Barbering',
+    name: 'Certificate in Hairdressing & Beauty Therapy',
     category: 'cosmetology',
     duration: '6 Months',
     requirements: 'KCSE Open / Secondary or equivalent',
@@ -2072,7 +2072,7 @@ export function PublicPortal() {
                           <option value="">-- Please Select Course --</option>
                           <optgroup label="Cosmetology School">
                             <option value="Diploma in Beauty Therapy, Skincare & Professional Makeup">Diploma in Beauty & Makeup</option>
-                            <option value="Certificate in Hairdressing, Advanced Styling & Barbering">Certificate in Hairdressing & Styling</option>
+                            <option value="Certificate in Hairdressing & Beauty Therapy">Certificate in Hairdressing & Styling</option>
                           </optgroup>
                           <optgroup label="ICT Software School">
                             <option value="Diploma in Software Engineering & Web Development">Diploma in Software Engineering</option>
