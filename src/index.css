@@ -1,76 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&family=Poppins:wght@300;400;500;600;700;800;900&family=Montserrat:wght@305;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&family=Poppins:wght@300;400;500;600;700;800;900&family=Montserrat:wght@305;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Poppins", "Outfit", sans-serif;
   --font-alt: "Montserrat", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "Roboto", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Spec Provided Colors */
-  --color-deep-navy: #f2f5f7;
-  --color-dark-slate: #ffffff;
-  --color-charcoal-blue: #143449;
-  --color-royal-blue: #10c469; /* Vibrant primary green */
-  --color-soft-white: #2d2c2f;
-  --color-gray-muted: #64748b;
-  --color-emerald-green: #10c469;
-  --color-bright-cyan: #c0973c; /* Secondary gold */
+  --color-deep-navy: #f8fafc; /* Replaced with modern soft background */
+  --color-dark-slate: #ffffff; /* Card Surfaces */
+  --color-charcoal-blue: #1d4ed8; /* Primary Blue */
+  --color-royal-blue: #1d4ed8; /* Primary Blue */
+  --color-soft-white: #0f172a; /* Deep main text */
+  --color-gray-muted: #64748b; /* Slate-colored secondary text */
+  --color-emerald-green: #059669; /* Secondary Emerald */
+  --color-bright-cyan: #f59e0b; /* Accent Gold */
 
   /* Brand Colors - Mapping Spec to Functional Names */
-  --color-primary: #10c469; /* Primary green */
-  --color-primary-hover: #143449; /* Primary hover navy */
-  --color-highlight: #c0973c; /* Secondary gold */
+  --color-primary: #1d4ed8; /* Primary Blue */
+  --color-primary-hover: #1e40af; /* Primary Blue Hover */
+  --color-highlight: #f59e0b; /* Accent Gold */
 
   /* Accent Colors */
-  --color-success: #10c469;
-  --color-cyan-vibe: #c0973c;
+  --color-success: #059669; /* Secondary Emerald */
+  --color-cyan-vibe: #f59e0b; /* Accent Gold */
 
   /* Backgrounds */
   --color-bg-main: var(--color-deep-navy);
-  --color-bg-dark: var(--color-charcoal-blue);
+  --color-bg-dark: #1e3a8a;
   --color-bg-card: var(--color-dark-slate);
 
   /* Text Colors */
   --color-text-primary: var(--color-soft-white);
-  --color-text-secondary: #2d2c2fb5;
+  --color-text-secondary: #64748b;
   --color-text-muted: var(--color-gray-muted);
 
   /* Overriding base Tailwind colors for consistency across the app */
-  --color-slate-900: #2d2c2f;
-  --color-slate-800: #334155;
+  --color-slate-900: #0f172a;
+  --color-slate-800: #1e293b;
   --color-slate-50: #f8fafc;
   --color-white: #ffffff;
   
-  /* Map all blue colors to our vibrant Emerald Green palette */
-  --color-blue-50: #f0fdf4;
-  --color-blue-100: #dcfce7;
-  --color-blue-200: #bbf7d0;
-  --color-blue-300: #86efac;
-  --color-blue-400: #4ade80;
-  --color-blue-50: #f0fdf4;
-  --color-blue-500: #10c469;
-  --color-blue-600: #10c469;
-  --color-blue-700: #0fa658;
-  --color-blue-800: #118447;
-  --color-blue-900: #106c3c;
-  --color-blue-950: #053d20;
+  /* Map all blue colors to our brand Blue palette */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #1d4ed8;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
 
-  /* Map all indigo colors to our energetic Gold/Bronze palette */
-  --color-indigo-50: #fefdf6;
-  --color-indigo-100: #fcf8e3;
-  --color-indigo-200: #f8efc2;
-  --color-indigo-300: #f2e194;
-  --color-indigo-400: #e6cb62;
-  --color-indigo-500: #c0973c;
-  --color-indigo-600: #c0973c;
-  --color-indigo-700: #9e7a2e;
-  --color-indigo-800: #7d5f22;
-  --color-indigo-900: #604918;
-  --color-indigo-950: #3c2d0c;
+  /* Map all emerald colors to our brand Emerald palette */
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #059669;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-emerald-950: #022c22;
 
-  --color-emerald-500: #10c469;
-  --color-emerald-600: #0fa658;
+  /* Map indigo to gold/amber colors for accent gold */
+  --color-indigo-50: #fffbeb;
+  --color-indigo-100: #fef3c7;
+  --color-indigo-200: #fde68a;
+  --color-indigo-300: #fcd34d;
+  --color-indigo-400: #fbbf24;
+  --color-indigo-500: #f59e0b;
+  --color-indigo-600: #f59e0b;
+  --color-indigo-700: #b45309;
+  --color-indigo-800: #92400e;
+  --color-indigo-900: #78350f;
+  --color-indigo-950: #451a03;
 }
 
 @layer base {

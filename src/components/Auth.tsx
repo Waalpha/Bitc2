@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db, isFirebaseReady } from '../firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, deleteDoc, limit } from 'firebase/firestore';
-import { LogOut, Loader2, ShieldCheck, GraduationCap, Briefcase } from 'lucide-react';
+import { LogOut, Loader2, ShieldCheck, GraduationCap, Briefcase, ChevronDown } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { motion } from 'motion/react';
@@ -401,19 +401,19 @@ export const Auth: React.FC = () => {
           </motion.div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="text-center">
             <p className="text-slate-500 text-sm font-medium leading-relaxed">
               To proceed securely, authenticate through Google SSO using your registered domain email role as <strong className={theme.colorClass}>{theme.label}</strong>.
             </p>
           </div>
 
-          {/* Large SSO Action Button */}
+          {/* Large SSO Action Button - Modernized Premium Blue */}
           <button
             type="button"
             disabled={loading}
             onClick={() => handleGoogleLogin(activeTab)}
-            className={`w-full flex items-center justify-center gap-3 text-white font-extrabold py-4 px-6 rounded-2xl transition-all active:scale-[0.98] text-xs uppercase tracking-widest cursor-pointer ${theme.btnPrimary} ${loading ? 'opacity-80 cursor-wait' : ''}`}
+            className={`w-full flex items-center justify-center gap-3 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-extrabold py-4 px-6 rounded-2xl transition-all active:scale-[0.98] text-xs uppercase tracking-widest cursor-pointer shadow-lg shadow-blue-500/10 ${loading ? 'opacity-80 cursor-wait' : ''}`}
           >
             {loading ? (
               <Loader2 className="animate-spin text-white" size={18} />
@@ -425,10 +425,37 @@ export const Auth: React.FC = () => {
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
             )}
-            <span>Sign In with Google</span>
+            <span>Connect with Google</span>
           </button>
 
-
+          {/* Collapsible Email Details Accordion - Increased Form Spacing */}
+          <div className="pt-6 border-t border-slate-100 mt-6">
+            <details className="group border border-slate-100 rounded-2xl bg-slate-50/50">
+              <summary className="flex items-center justify-between p-4 font-heading font-bold text-xs uppercase tracking-wider text-[#64748B] hover:text-[#0F172A] cursor-pointer list-none select-none">
+                <span>View Registered Email Details</span>
+                <ChevronDown size={14} className="text-[#64748B] group-open:rotate-180 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4 pt-1 space-y-3 border-t border-slate-100/50">
+                <p className="text-[10px] text-slate-500 font-semibold mt-2">
+                  Select a profile below to automatically authenticate with their registered credentials for this role:
+                </p>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {getDemoAccountsToRender().map((acc: any) => (
+                    <button
+                      key={acc.uid}
+                      type="button"
+                      onClick={() => handleDemoLogin(acc.uid, acc)}
+                      className="w-full text-left p-3 rounded-xl bg-white border border-slate-200/80 hover:border-[#1D4ED8] hover:bg-blue-50/20 transition-all flex flex-col gap-0.5 cursor-pointer"
+                    >
+                      <span className="text-xs font-bold text-[#0F172A]">{acc.name}</span>
+                      <span className="text-[10px] text-[#64748B] font-mono">{acc.email}</span>
+                      {acc.course && <span className="text-[9px] text-[#1D4ED8] font-bold mt-0.5">{acc.course}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </motion.div>
     </div>

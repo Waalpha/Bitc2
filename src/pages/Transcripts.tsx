@@ -30,6 +30,14 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { withOklabOklchPatch } from '../utils/canvasPatch';
 
+const getTodayISODate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const Transcripts: React.FC = () => {
   const { user, userData, settings, studentContext } = useAuth();
 
@@ -74,11 +82,11 @@ export const Transcripts: React.FC = () => {
   const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
   const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
   const [stampUrlOverride, setStampUrlOverride] = useState(localStorage.getItem('transcript_stampUrl') || '/stamp.png');
-  const [sealDateOverride, setSealDateOverride] = useState(localStorage.getItem('transcript_sealDate') || '2026-06-22');
+  const [sealDateOverride, setSealDateOverride] = useState(localStorage.getItem('transcript_sealDate') || getTodayISODate());
   
-  // Principal details overrides
-  const [principalNameOverride, setPrincipalNameOverride] = useState(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
-  const [principalTitleOverride, setPrincipalTitleOverride] = useState(localStorage.getItem('transcript_principalTitle') || 'COLLEGE PRINCIPAL');
+  // Tutor / Teacher details overrides
+  const [principalNameOverride, setPrincipalNameOverride] = useState(localStorage.getItem('transcript_principalName') || 'COURSE TUTOR');
+  const [principalTitleOverride, setPrincipalTitleOverride] = useState(localStorage.getItem('transcript_principalTitle') || 'TUTOR / TEACHER');
   const [principalSignatureUrlOverride, setPrincipalSignatureUrlOverride] = useState(localStorage.getItem('transcript_principalSignatureUrl') || '');
 
   // Custom grades override state
@@ -519,7 +527,7 @@ export const Transcripts: React.FC = () => {
                   <p class="info-val" style="font-family:Courier,monospace;">${selectedStudent.idNumber || 'Not Classified'}</p>
                 </td>
                 <td class="info-card">
-                  <p class="info-label">Registry Seal Date</p>
+                  <p class="info-label">Date of Issue</p>
                   <p class="info-val">${sealDateOverride}</p>
                 </td>
               </tr>
@@ -615,15 +623,15 @@ export const Transcripts: React.FC = () => {
                   </div>
                 </td>
                 <td class="sign-cell" style="text-align:right;">
-                  <p class="sign-title" style="text-align:right;">${principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                  <p class="sign-title" style="text-align:right;">${principalTitleOverride || 'TUTOR / TEACHER'}</p>
                   <div style="height:45px; vertical-align:bottom; text-align:right; padding-bottom:5px;">
                     ${principalSignatureUrlOverride 
-                      ? `<img src="${principalSignatureUrlOverride}" alt="Principal Signature" style="max-height: 45px; width: auto;" />`
-                      : `<span style="font-family:'Brush Script MT', 'Lucida Handwriting', cursive; font-size:20pt; color:#047857; font-weight:bold;">Principal Signature</span>`
+                      ? `<img src="${principalSignatureUrlOverride}" alt="Tutor / Teacher Signature" style="max-height: 45px; width: auto;" />`
+                      : `<span style="font-family:'Brush Script MT', 'Lucida Handwriting', cursive; font-size:20pt; color:#047857; font-weight:bold;">Tutor Signature</span>`
                     }
                   </div>
                   <div class="sign-line" style="text-align:right;">
-                    <p class="sign-name" style="text-align:right;">${principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
+                    <p class="sign-name" style="text-align:right;">${principalNameOverride || 'COURSE TUTOR'}</p>
                     <p class="sign-title" style="text-align:right;">APPROVED & VERIFIED</p>
                   </div>
                 </td>
@@ -799,9 +807,9 @@ export const Transcripts: React.FC = () => {
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
     setStampUrlOverride(localStorage.getItem('transcript_stampUrl') || (settings && settings.stampUrl) || '/stamp.png');
-    setSealDateOverride(localStorage.getItem('transcript_sealDate') || '2026-06-22');
-    setPrincipalNameOverride(localStorage.getItem('transcript_principalName') || 'OFFICE OF THE PRINCIPAL');
-    setPrincipalTitleOverride(localStorage.getItem('transcript_principalTitle') || 'COLLEGE PRINCIPAL');
+    setSealDateOverride(localStorage.getItem('transcript_sealDate') || getTodayISODate());
+    setPrincipalNameOverride(localStorage.getItem('transcript_principalName') || 'COURSE TUTOR');
+    setPrincipalTitleOverride(localStorage.getItem('transcript_principalTitle') || 'TUTOR / TEACHER');
     setPrincipalSignatureUrlOverride(localStorage.getItem('transcript_principalSignatureUrl') || '');
   }, [settings]);
 
@@ -1151,10 +1159,10 @@ export const Transcripts: React.FC = () => {
     setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride('');
     setStampUrlOverride('/stamp.png');
-    setPrincipalNameOverride('OFFICE OF THE PRINCIPAL');
-    setPrincipalTitleOverride('COLLEGE PRINCIPAL');
+    setPrincipalNameOverride('COURSE TUTOR');
+    setPrincipalTitleOverride('TUTOR / TEACHER');
     setPrincipalSignatureUrlOverride('');
-    setSealDateOverride('2026-06-22');
+    setSealDateOverride(getTodayISODate());
     
     localStorage.removeItem('transcript_schoolName');
     localStorage.removeItem('transcript_logoUrl');
@@ -1539,12 +1547,12 @@ export const Transcripts: React.FC = () => {
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated registrar signature.</span>
                       </div>
 
-                      {/* Principal Signature overrides */}
+                      {/* Tutor / Teacher Signature overrides */}
                       <div className="pt-2 border-t border-slate-100 dark:border-slate-850 mt-2">
-                        <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">College Principal Settings</p>
+                        <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Tutor / Teacher Settings</p>
                       </div>
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Principal Name / Signatory</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Tutor / Teacher Name / Signatory</label>
                         <input
                           id="principal-name-input"
                           type="text"
@@ -1554,7 +1562,7 @@ export const Transcripts: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Principal Title / Office</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Tutor / Teacher Title / Office</label>
                         <input
                           id="principal-title-input"
                           type="text"
@@ -1564,7 +1572,7 @@ export const Transcripts: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Principal Signature Image URL (Optional)</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Custom Tutor/Teacher Signature Image URL (Optional)</label>
                         <input
                           id="principal-signature-url-input"
                           type="text"
@@ -1573,7 +1581,7 @@ export const Transcripts: React.FC = () => {
                           placeholder="Paste PNG/JPG/SVG signature URL"
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
-                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated principal signature.</span>
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Leave blank to use the realistic simulated signature.</span>
                       </div>
                       <div>
                         <label className="text-[10px] uppercase font-bold text-slate-400">Official Stamp Image URL</label>
@@ -1589,7 +1597,7 @@ export const Transcripts: React.FC = () => {
                       </div>
                       
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Registry Seal Date</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Date of Issue (Transcript)</label>
                         <input
                           id="registry-seal-date-input"
                           type="text"
@@ -1598,7 +1606,7 @@ export const Transcripts: React.FC = () => {
                           placeholder="e.g. 2026-06-22"
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
-                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Customize the seal/registration date printed on transcripts.</span>
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Customize the date of issue printed on transcripts.</span>
                       </div>
                       
                       {/* Checkbox toggle for isSignoffPrinted */}
@@ -1660,7 +1668,7 @@ export const Transcripts: React.FC = () => {
                         <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Honors or merit tier (e.g. Pass with Credit, Distinction).</span>
                       </div>
                       <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Award Date</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400">Date of Issue (Certificate)</label>
                         <input
                           id="cert-date-input"
                           type="text"
@@ -1674,7 +1682,7 @@ export const Transcripts: React.FC = () => {
                           placeholder="e.g. June 22, 2026"
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
-                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Formal presentation date listed on the certificate.</span>
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Formal date of issue listed on the certificate.</span>
                       </div>
                     </div>
                   </div>
@@ -1979,7 +1987,7 @@ export const Transcripts: React.FC = () => {
                     </div>
 
                     <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registry Seal Date</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Date of Issue</p>
                       <p className="font-semibold text-slate-950 uppercase">{sealDateOverride}</p>
                     </div>
 
@@ -2162,20 +2170,20 @@ export const Transcripts: React.FC = () => {
                     )}
                   </div>
 
-                  {/* College Principal Signature */}
+                  {/* Tutor / Teacher Signature */}
                   <div className="md:w-[38%] text-right flex flex-col items-end">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">{principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
                     <div className="h-14 flex items-center justify-end py-2 relative text-emerald-800">
                       {isSignoffPrinted && (
                         principalSignatureUrlOverride ? (
                           <img 
                             src={principalSignatureUrlOverride} 
-                            alt="Principal Signature" 
+                            alt="Tutor / Teacher Signature" 
                             className="h-12 w-auto object-contain max-h-12" 
                             referrerPolicy="no-referrer" 
                           />
                         ) : (
-                          /* Realistic Principal Autograph SVG */
+                          /* Realistic Tutor Autograph SVG */
                           <svg className="h-12 w-auto opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15 45 C35 15, 55 55, 75 25 C95 5, 115 65, 135 35 C155 15, 140 45, 175 25" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                             <path d="M30 40 L170 30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
@@ -2184,7 +2192,7 @@ export const Transcripts: React.FC = () => {
                       )}
                     </div>
                     <div className="border-t border-slate-200 pt-2.5 w-full max-w-[240px] text-right print:border-black">
-                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
+                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{principalNameOverride || 'COURSE TUTOR'}</p>
                       <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1 print:text-black">APPROVED & VERIFIED</p>
                     </div>
                   </div>
@@ -2355,14 +2363,14 @@ export const Transcripts: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right: Principal Signature */}
+                  {/* Right: Tutor / Teacher Signature */}
                   <div className="flex flex-col items-center">
                     <div className="h-12 flex items-center justify-center py-1 relative text-emerald-800 w-full">
                       {isSignoffPrinted && (
                         principalSignatureUrlOverride ? (
                           <img 
                             src={principalSignatureUrlOverride} 
-                            alt="Principal Signature" 
+                            alt="Tutor / Teacher Signature" 
                             className="h-10 w-auto object-contain max-h-10" 
                             referrerPolicy="no-referrer"
                           />
@@ -2375,8 +2383,8 @@ export const Transcripts: React.FC = () => {
                       )}
                     </div>
                     <div className="border-t border-amber-950/20 pt-1 w-full">
-                      <p className="text-[9px] font-black text-amber-950 uppercase leading-none">{principalNameOverride || 'OFFICE OF THE PRINCIPAL'}</p>
-                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-none">{principalTitleOverride || 'COLLEGE PRINCIPAL'}</p>
+                      <p className="text-[9px] font-black text-amber-950 uppercase leading-none">{principalNameOverride || 'COURSE TUTOR'}</p>
+                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-none">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
                     </div>
                   </div>
                 </div>

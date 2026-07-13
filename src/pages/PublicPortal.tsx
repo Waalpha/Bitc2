@@ -1080,7 +1080,7 @@ export function PublicPortal() {
  
             {/* Right Column Visual Image (With Glassmorphism Overlay Cards) */}
             <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-              <div className="relative mx-auto max-w-md w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-emerald-400/20 bg-emerald-800">
+              <div className="relative mx-auto max-w-md w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-emerald-400/20 bg-gradient-to-br from-[#1D4ED8] to-[#059669]">
                 <img
                   src={heroImage}
                   alt="BITC Students Practice"
@@ -1088,8 +1088,8 @@ export function PublicPortal() {
                   referrerPolicy="no-referrer"
                 />
                 
-                {/* Gradient shade overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+                {/* Gradient shade overlays - up to 85% opacity at bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent"></div>
  
                 {/* Glassmorphism Dynamic Overlay Card 1: Experience */}
                 <div className="absolute bottom-6 left-6 right-6 backdrop-blur-md bg-emerald-950/80 py-4 px-5 rounded-2xl border border-white/10 flex items-center gap-4 shadow-xl">

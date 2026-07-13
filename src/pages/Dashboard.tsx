@@ -1505,6 +1505,45 @@ export const Dashboard: React.FC = () => {
     { name: 'Revenue', value: `Ksh ${totalFinancialStats.income.toLocaleString()}`, label: 'Yearly Income', icon: Wallet, color: 'bg-gradient-to-br from-emerald-600 to-emerald-800' },
   ], [stats, totalFinancialStats.income]);
 
+  const scanCards = React.useMemo(() => [
+    { 
+      name: 'Revenue 💰', 
+      value: `Ksh ${totalFinancialStats.income.toLocaleString()}`, 
+      label: 'Yearly Income', 
+      icon: Wallet, 
+      indicatorColor: 'bg-[#10B981]', 
+      to: '/fees',
+      emoji: '💰'
+    },
+    { 
+      name: 'Students 👥', 
+      value: `${stats.students} Enrolled`, 
+      label: 'Enrollments & Users', 
+      icon: GraduationCap, 
+      indicatorColor: 'bg-[#2563EB]', 
+      to: '/students',
+      emoji: '👥'
+    },
+    { 
+      name: 'Metrics 📈', 
+      value: `${stats.units} Units / ${stats.exams} Exams`, 
+      label: 'Academic Performance', 
+      icon: BookOpen, 
+      indicatorColor: 'bg-[#F59E0B]', 
+      to: '/dashboard',
+      emoji: '📈'
+    },
+    { 
+      name: 'Schedule 📅', 
+      value: `${todayLessons.length} Classes Today`, 
+      label: 'Timetable & Lessons', 
+      icon: Calendar, 
+      indicatorColor: 'bg-[#8B5CF6]', 
+      to: '/dashboard',
+      emoji: '📅'
+    },
+  ], [stats, totalFinancialStats.income, todayLessons.length]);
+
   // Mock financial data for the "LOOK"
   const incomeData = [
     { month: 'Jan', income: 450000, expense: 320000 },
@@ -2753,22 +2792,33 @@ export const Dashboard: React.FC = () => {
           </div>
         </motion.div>
 
-      <div id="dashboard-quick-stats" className="bg-bg-card/40 backdrop-blur-md p-6 rounded-[32px] border border-white/5 scroll-mt-20">
-        <h2 className="text-primary font-bold mb-6 uppercase tracking-widest text-[10px]">Overview</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {statCards.map((stat, idx) => (
+      <div id="dashboard-quick-stats" className="bg-white p-6 sm:p-8 rounded-[32px] border border-[#E2E8F0] shadow-sm scroll-mt-20">
+        <h2 className="text-[#0F172A] font-heading font-bold mb-6 uppercase tracking-widest text-[10px] flex items-center gap-2">
+          <span>Overview Summary</span>
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {scanCards.map((stat, idx) => (
             <Link
-              to={stat.name === 'Attendance' ? '/attendance' : stat.name === 'Total' ? '/students' : stat.name === 'Student' ? '/students' : '/dashboard'}
+              to={stat.to}
               key={`${stat.name}_${idx}`}
-              className={`${stat.color} p-4 rounded-2xl text-white shadow-lg shadow-gray-200/50 flex flex-col justify-between min-h-[110px] transition-transform hover:scale-[1.05] cursor-pointer`}
+              className="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[140px] group cursor-pointer hover:-translate-y-1"
             >
-              <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-1">
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-tight break-words text-white/70">{stat.name}</span>
-                <span className="text-lg sm:text-xl font-bold break-all leading-tight">{stat.value}</span>
+              {/* Colored Indicator Line */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stat.indicatorColor}`} />
+              
+              <div className="space-y-3 pl-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">{stat.name}</span>
+                  <span className="text-lg">{stat.emoji}</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold font-mono text-[#0F172A] tracking-tight">
+                  {stat.value}
+                </h3>
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs font-bold opacity-80 uppercase tracking-widest leading-none">{stat.label}</p>
-                <stat.icon size={16} className="opacity-40" />
+              
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50 pl-2">
+                <p className="text-xs font-medium text-[#64748B]">{stat.label}</p>
+                <stat.icon size={16} className="text-[#64748B] group-hover:text-primary transition-colors" />
               </div>
             </Link>
           ))}
