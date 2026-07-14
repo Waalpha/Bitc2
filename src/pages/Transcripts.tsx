@@ -625,10 +625,7 @@ export const Transcripts: React.FC = () => {
                 <td class="sign-cell" style="text-align:right;">
                   <p class="sign-title" style="text-align:right;">${principalTitleOverride || 'TUTOR / TEACHER'}</p>
                   <div style="height:45px; vertical-align:bottom; text-align:right; padding-bottom:5px;">
-                    ${principalSignatureUrlOverride 
-                      ? `<img src="${principalSignatureUrlOverride}" alt="Tutor / Teacher Signature" style="max-height: 45px; width: auto;" />`
-                      : `<span style="font-family:'Brush Script MT', 'Lucida Handwriting', cursive; font-size:20pt; color:#047857; font-weight:bold;">Tutor Signature</span>`
-                    }
+                    <!-- Removed digital signature for physical signature of Tutor -->
                   </div>
                   <div class="sign-line" style="text-align:right;">
                     <p class="sign-name" style="text-align:right;">${principalNameOverride || 'COURSE TUTOR'}</p>
@@ -2173,23 +2170,8 @@ export const Transcripts: React.FC = () => {
                   {/* Tutor / Teacher Signature */}
                   <div className="md:w-[38%] text-right flex flex-col items-end">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
-                    <div className="h-14 flex items-center justify-end py-2 relative text-emerald-800">
-                      {isSignoffPrinted && (
-                        principalSignatureUrlOverride ? (
-                          <img 
-                            src={principalSignatureUrlOverride} 
-                            alt="Tutor / Teacher Signature" 
-                            className="h-12 w-auto object-contain max-h-12" 
-                            referrerPolicy="no-referrer" 
-                          />
-                        ) : (
-                          /* Realistic Tutor Autograph SVG */
-                          <svg className="h-12 w-auto opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 45 C35 15, 55 55, 75 25 C95 5, 115 65, 135 35 C155 15, 140 45, 175 25" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                            <path d="M30 40 L170 30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                          </svg>
-                        )
-                      )}
+                    <div className="h-14 flex items-center justify-end py-2 relative">
+                      {/* Removed digital signature for physical signature of Tutor */}
                     </div>
                     <div className="border-t border-slate-200 pt-2.5 w-full max-w-[240px] text-right print:border-black">
                       <p className="text-xs font-black text-slate-900 uppercase print:text-black">{principalNameOverride || 'COURSE TUTOR'}</p>
