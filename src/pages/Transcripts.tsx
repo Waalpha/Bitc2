@@ -2347,22 +2347,8 @@ export const Transcripts: React.FC = () => {
 
                   {/* Right: Tutor / Teacher Signature */}
                   <div className="flex flex-col items-center">
-                    <div className="h-12 flex items-center justify-center py-1 relative text-emerald-800 w-full">
-                      {isSignoffPrinted && (
-                        principalSignatureUrlOverride ? (
-                          <img 
-                            src={principalSignatureUrlOverride} 
-                            alt="Tutor / Teacher Signature" 
-                            className="h-10 w-auto object-contain max-h-10" 
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <svg className="h-10 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 45 C35 15, 55 55, 75 25 C95 5, 115 65, 135 35 C155 15, 140 45, 175 25" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                            <path d="M30 40 L170 30" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                          </svg>
-                        )
-                      )}
+                    <div className="h-12 flex items-center justify-center py-1 relative w-full">
+                      {/* Removed digital signature for physical signature of Tutor */}
                     </div>
                     <div className="border-t border-amber-950/20 pt-1 w-full">
                       <p className="text-[9px] font-black text-amber-950 uppercase leading-none">{principalNameOverride || 'COURSE TUTOR'}</p>
