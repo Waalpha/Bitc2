@@ -267,10 +267,42 @@ export function PublicPortal() {
   const portalTitle = settings?.publicHeroTitle || "Shaping Tomorrow's Professionals Today.";
   const portalDescription = settings?.publicHeroDescription || "Breakthrough International Training College offers world-class professional training accredited by NITA, KNEC, and TVET CDACC. Acquire highly practical, jobs-ready skillsets in ICT, Cosmetology, Healthcare Caregiver Studies, and Hospitality.";
   
+  // Default 4 photos for the hero slides
+  const DEFAULT_HERO_SLIDES = [
+    {
+      url: '/hero_lab_study.jpg',
+      title: "Health Sciences Lab & Medical Library",
+      subtitle: "80% Practical Hands-On Healthcare & Caregiver Training",
+      tag: "Practical Education",
+      icon: "🔬"
+    },
+    {
+      url: '/hero_campus_walk.jpg',
+      title: "Faculty of Nursing & Modern Campus",
+      subtitle: "State-of-the-Art Academic Facilities & Modern Learning Spaces",
+      tag: "World-Class Campus",
+      icon: "🏛️"
+    },
+    {
+      url: '/hero_graduation.jpg',
+      title: "Graduation & Pinning Ceremony",
+      subtitle: "Accredited TVET CDACC, NITA & KNEC Professional Certifications",
+      tag: "Career Success",
+      icon: "🎓"
+    },
+    {
+      url: '/hero_research_hall.jpg',
+      title: "Academic & Research Hall",
+      subtitle: "Empowering Tomorrow's Healthcare & Technology Leaders",
+      tag: "Excellence in Training",
+      icon: "🌟"
+    }
+  ];
+
   // Dynamic Hero Slideshow based on photos in system (publicHeroImages or publicHeroImageUrl)
   const heroImages = settings?.publicHeroImages && settings.publicHeroImages.length > 0
     ? settings.publicHeroImages
-    : [settings?.publicHeroImageUrl || "https://images.unsplash.com/photo-1523050853064-85216775870f?q=80&w=2070&auto=format&fit=crop"];
+    : DEFAULT_HERO_SLIDES.map(s => s.url);
 
   const [heroIndex, setHeroIndex] = useState(0);
 
@@ -282,7 +314,21 @@ export function PublicPortal() {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  const heroImage = heroImages[heroIndex];
+  const currentSlideMeta = DEFAULT_HERO_SLIDES[heroIndex % DEFAULT_HERO_SLIDES.length] || {
+    url: heroImages[heroIndex],
+    title: "Breakthrough College Campus",
+    subtitle: "Acquire Practical, Job-Ready Skillsets",
+    tag: "Excellence in Training",
+    icon: "💎"
+  };
+
+  const handleNextSlide = () => {
+    setHeroIndex(prev => (prev + 1) % heroImages.length);
+  };
+
+  const handlePrevSlide = () => {
+    setHeroIndex(prev => (prev - 1 + heroImages.length) % heroImages.length);
+  };
 
   // Dynamic public gallery based on photos in system (portalGallery)
   const activeGalleryImgs = settings?.portalGallery && settings.portalGallery.length > 0
@@ -322,6 +368,10 @@ export function PublicPortal() {
   const titleItalicClass = settings?.publicHeroTitleItalic ? 'italic' : 'not-italic';
   const descWeightClass = settings?.publicHeroDescriptionBold ? 'font-bold' : 'font-medium';
   const descItalicClass = settings?.publicHeroDescriptionItalic ? 'italic' : 'not-italic';
+
+  // Photo Transparency / Opacity Setting
+  const heroPhotoOpacityPercent = settings?.publicHeroPhotoOpacity ?? 90;
+  const heroPhotoOpacityDecimal = heroPhotoOpacityPercent / 100;
 
   // Custom branding colors
   const primaryColor = settings?.publicPrimaryColor || '#10B981';
@@ -1020,100 +1070,199 @@ export function PublicPortal() {
       {/* ─────────────────────────────────────────────────────────────────
           2. HERO SECTION (HIGH CONVERTING GRID ACCENTED WITH BG CAROUSEL)
           ───────────────────────────────────────────────────────────────── */}
-      <section id="hero" className="relative py-16 lg:py-24 overflow-hidden border-b border-emerald-700 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white">
+      <section id="hero" className="relative min-h-[calc(100vh-80px)] lg:min-h-screen flex flex-col justify-between overflow-hidden border-b border-emerald-800 bg-slate-950 text-white">
         
-        {/* Background Decorative Blur Orbs */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
- 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Full-bleed Background Hero Photo Carousel with Smooth Crossfade */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={heroIndex}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 z-0"
+          >
+            <img
+              src={heroImages[heroIndex]}
+              alt={currentSlideMeta.title}
+              className="w-full h-full object-cover object-center brightness-90 saturate-[1.05]"
+              style={{ opacity: heroPhotoOpacityDecimal }}
+              referrerPolicy="no-referrer"
+            />
+            {/* Multi-layered Soft Vignette Overlay for Clear Viewability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/50 to-slate-950/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/30"></div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Ambient Decorative Blur Orbs */}
+        <div className="absolute top-20 left-10 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none z-10"></div>
+        <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-orange-500/15 rounded-full blur-3xl pointer-events-none z-10"></div>
+
+        {/* Main Hero Grid Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full my-auto py-12 lg:py-16">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
-            {/* Left Column Content */}
+            {/* Left Column Text Content */}
             <div className={`lg:col-span-7 flex flex-col gap-6 ${alignClass}`}>
               
-              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white font-alt`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-455 animate-ping"></span>
+              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-4 py-2 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-emerald-300 font-alt backdrop-blur-md shadow-lg`}>
+                <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping"></span>
                 <span>Admissions Ongoing - September 2026 Intake</span>
               </div>
- 
-              <h1 className={`${titleFontFamily} ${titleWeightClass} ${titleItalicClass} ${titleSizeClass} ${titleAlignClass} text-white leading-[1.1] tracking-tight`}>
+
+              <h1 className={`${titleFontFamily} ${titleWeightClass} ${titleItalicClass} ${titleSizeClass} ${titleAlignClass} text-white leading-[1.08] tracking-tight drop-shadow-md`}>
                 {portalTitle}
               </h1>
- 
-              <p className={`${descFontFamily} ${descWeightClass} ${descItalicClass} ${descSizeClass} ${descAlignClass} leading-relaxed text-emerald-50 max-w-xl font-medium`}>
+
+              <p className={`${descFontFamily} ${descWeightClass} ${descItalicClass} ${descSizeClass} ${descAlignClass} leading-relaxed text-slate-200 max-w-xl font-medium drop-shadow-sm`}>
                 {portalDescription}
               </p>
- 
+
               <div className={`flex flex-col sm:flex-row items-center gap-4 pt-2 ${buttonsAlignClass}`}>
                 <a
                   href="#contact"
                   onClick={() => setFormType('apply')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-655 hover:to-orange-755 text-white font-black font-alt text-xs uppercase tracking-wider shadow-lg shadow-orange-500/30 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black font-alt text-xs uppercase tracking-wider shadow-xl shadow-orange-500/25 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                 >
-                  <FileCheck2 size={16} />
+                  <FileCheck2 size={18} />
                   <span>Apply Online Now</span>
                 </a>
                 
                 <a
                   href="#programs"
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold font-alt text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white font-bold font-alt text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5"
                 >
                   <span>Explore Courses</span>
-                  <ArrowRight size={15} className="text-orange-400 animate-pulse" />
+                  <ArrowRight size={16} className="text-orange-400 animate-pulse" />
                 </a>
               </div>
- 
+
               {/* Accreditations Row */}
               <div className="pt-6 border-t border-white/10 w-full">
-                <p className={`text-[10px] font-black uppercase text-emerald-200 font-alt tracking-widest ${titleAlignClass} mb-3`}>
+                <p className={`text-[10px] font-black uppercase text-emerald-300 font-alt tracking-widest ${titleAlignClass} mb-3`}>
                   Our Training & Exam Boards Accreditations
                 </p>
-                <div className={`flex flex-wrap gap-3 ${settings?.publicHeroAlign === 'center' ? 'justify-center' : settings?.publicHeroAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
-                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">NITA Accredited</span>
-                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">KNEC Registered</span>
-                  <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-extrabold text-white border border-white/10 shadow-sm">TVET CDACC Certified</span>
+                <div className={`flex flex-wrap gap-2.5 ${settings?.publicHeroAlign === 'center' ? 'justify-center' : settings?.publicHeroAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
+                  <span className="px-3.5 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-extrabold text-white border border-white/15 shadow-sm">NITA Accredited</span>
+                  <span className="px-3.5 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-extrabold text-white border border-white/15 shadow-sm">KNEC Registered</span>
+                  <span className="px-3.5 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-extrabold text-white border border-white/15 shadow-sm">TVET CDACC Certified</span>
                 </div>
               </div>
- 
+
             </div>
- 
-            {/* Right Column Visual Image (With Glassmorphism Overlay Cards) */}
-            <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-              <div className="relative mx-auto max-w-md w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-emerald-400/20 bg-gradient-to-br from-[#1D4ED8] to-[#059669]">
-                <img
-                  src={heroImage}
-                  alt="BITC Students Practice"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+
+            {/* Right Column: Interactive Hero Photo Slide Display Box */}
+            <div className="lg:col-span-5 relative">
+              <div className="relative mx-auto max-w-md lg:max-w-none w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 bg-slate-900 group">
                 
-                {/* Gradient shade overlays - up to 85% opacity at bottom */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent"></div>
- 
-                {/* Glassmorphism Dynamic Overlay Card 1: Experience */}
-                <div className="absolute bottom-6 left-6 right-6 backdrop-blur-md bg-emerald-950/80 py-4 px-5 rounded-2xl border border-white/10 flex items-center gap-4 shadow-xl">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-orange-500 text-white flex items-center justify-center text-lg shadow-lg">
-                    💎
+                {/* Active Slide Image */}
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={heroIndex}
+                    src={heroImages[heroIndex]}
+                    alt={currentSlideMeta.title}
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </AnimatePresence>
+                
+                {/* Bottom Card Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
+
+                {/* Top Badge: Intake Status */}
+                <div className="absolute top-4 right-4 backdrop-blur-md bg-orange-500 text-white px-3.5 py-2 rounded-2xl border border-orange-400/30 flex items-center gap-2 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                  <span className="text-[10px] font-black uppercase tracking-wider font-alt">SEPT 2026 INTAKE ONGOING</span>
+                </div>
+
+                {/* Top Left Badge: Slide Counter */}
+                <div className="absolute top-4 left-4 backdrop-blur-md bg-slate-950/70 text-white px-3 py-1.5 rounded-xl border border-white/10 text-[11px] font-mono font-bold tracking-widest">
+                  0{heroIndex + 1} / 0{heroImages.length}
+                </div>
+
+                {/* Bottom Info Overlay */}
+                <div className="absolute bottom-4 left-4 right-4 backdrop-blur-md bg-slate-900/85 p-4 rounded-2xl border border-white/15 shadow-xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-lg shadow-md">
+                      {currentSlideMeta.icon}
+                    </div>
+                    <div className="truncate">
+                      <p className="text-[10px] font-extrabold text-orange-400 uppercase tracking-widest font-alt truncate">{currentSlideMeta.tag}</p>
+                      <p className="text-xs font-bold text-white leading-tight mt-0.5 truncate">{currentSlideMeta.title}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-extrabold text-orange-400 uppercase tracking-widest font-alt">Practical Education</p>
-                    <p className="text-xs font-bold text-white leading-tight mt-0.5">80% Hands-On Practical Training</p>
+
+                  {/* Manual Prev / Next Arrows */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={handlePrevSlide}
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all active:scale-90 cursor-pointer"
+                      title="Previous Photo"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={handleNextSlide}
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all active:scale-90 cursor-pointer"
+                      title="Next Photo"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
- 
-                {/* Glassmorphism Dynamic Overlay Card 2: Intake */}
-                <div className="absolute top-6 right-6 backdrop-blur-md bg-orange-500 text-white px-4 py-3 rounded-2xl border border-orange-400/20 flex flex-col items-center gap-0.5 shadow-lg">
-                  <span className="text-[9px] font-black uppercase tracking-widest font-alt text-orange-100">APPLY FOR</span>
-                  <span className="text-sm font-black tracking-tight leading-none uppercase font-heading">SEPT 2026</span>
-                  <span className="text-[9px] font-semibold text-emerald-200 leading-none mt-0.5 font-alt">INTAKE ONGOING</span>
-                </div>
- 
+
               </div>
             </div>
- 
+
           </div>
         </div>
+
+        {/* Bottom Full-Width Hero Slide Carousel Selector Bar */}
+        <div className="w-full relative z-20 bg-slate-950/80 backdrop-blur-md border-t border-white/10 py-4 px-4 sm:px-8">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400 font-alt">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Campus Life & Facilities Slideshow ({heroImages.length} Photos)</span>
+            </div>
+
+            {/* Thumbnail Navigation Row */}
+            <div className="flex items-center gap-3 overflow-x-auto max-w-full pb-1 sm:pb-0 scrollbar-none">
+              {heroImages.map((imgUrl, idx) => {
+                const isSelected = idx === heroIndex;
+                const meta = DEFAULT_HERO_SLIDES[idx % DEFAULT_HERO_SLIDES.length];
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setHeroIndex(idx)}
+                    className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                      isSelected
+                        ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-lg shadow-emerald-500/20'
+                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Slide ${idx + 1}`}
+                      className="w-8 h-8 rounded-lg object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
+                      0{idx + 1}. {meta?.tag || `Slide ${idx + 1}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+          </div>
+        </div>
+
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────

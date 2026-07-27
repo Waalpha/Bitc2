@@ -97,6 +97,7 @@ export const AdminSettings: React.FC = () => {
     publicHeroTitleItalic: false,
     publicHeroDescriptionBold: false,
     publicHeroDescriptionItalic: false,
+    publicHeroPhotoOpacity: 90,
     publicLogoUrl: '',
     publicPrimaryColor: '#10c469',
     publicSecondaryColor: '#c0973c',
@@ -2167,6 +2168,56 @@ export const AdminSettings: React.FC = () => {
                     />
                     <span>Italicize subtitle description</span>
                   </label>
+                </div>
+
+                {/* Hero Photo Transparency / Opacity Setting */}
+                <div className="bg-purple-50/60 p-3.5 rounded-xl border border-purple-100 flex flex-col justify-between gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Hero Photo Transparency / Opacity</span>
+                    </label>
+                    <span className="text-xs font-black text-purple-700 bg-white px-2.5 py-0.5 rounded-md border border-purple-200 shadow-sm font-mono">
+                      {appSettings.publicHeroPhotoOpacity ?? 90}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-purple-400">10% (Transparent)</span>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={appSettings.publicHeroPhotoOpacity ?? 90}
+                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroPhotoOpacity: Number(e.target.value) })}
+                      className="flex-1 accent-purple-600 h-2 bg-purple-200 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-[10px] font-bold text-purple-700">100% (Full Crystal)</span>
+                  </div>
+
+                  {/* Preset Quick Buttons */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-gray-500 font-medium mr-1">Presets:</span>
+                    {[
+                      { label: '30% Soft', val: 30 },
+                      { label: '60% Balanced', val: 60 },
+                      { label: '85% Clear', val: 85 },
+                      { label: '100% Full', val: 100 }
+                    ].map((preset) => (
+                      <button
+                        key={preset.val}
+                        type="button"
+                        onClick={() => setAppSettings({ ...appSettings, publicHeroPhotoOpacity: preset.val })}
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md transition-all border cursor-pointer ${
+                          (appSettings.publicHeroPhotoOpacity ?? 90) === preset.val
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                            : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

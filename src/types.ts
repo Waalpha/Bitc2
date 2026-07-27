@@ -326,6 +326,7 @@ export interface AppSettings {
   publicHeroTitleItalic?: boolean;
   publicHeroDescriptionBold?: boolean;
   publicHeroDescriptionItalic?: boolean;
+  publicHeroPhotoOpacity?: number;
   publicLogoUrl?: string;
   publicPrimaryColor?: string;
   publicSecondaryColor?: string;
