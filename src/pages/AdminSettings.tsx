@@ -99,9 +99,9 @@ export const AdminSettings: React.FC = () => {
     publicHeroDescriptionItalic: false,
     publicHeroPhotoOpacity: 90,
     publicLogoUrl: '',
-    publicPrimaryColor: '#10c469',
-    publicSecondaryColor: '#c0973c',
-    publicAccentColor: '#c0973c',
+    publicPrimaryColor: '#1E46C8',
+    publicSecondaryColor: '#0B255F',
+    publicAccentColor: '#FFC928',
     portalAboutUs: '',
     portalGallery: [],
     sessionTimeoutSeconds: 300,
@@ -2224,57 +2224,57 @@ export const AdminSettings: React.FC = () => {
               {/* Color Customizers */}
               <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Primary Branding Color</label>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Primary Blue (#1E46C8)</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicPrimaryColor || '#10c469'}
+                      value={appSettings.publicPrimaryColor || '#1E46C8'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicPrimaryColor || '#10c469'}
+                      value={appSettings.publicPrimaryColor || '#1E46C8'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
-                      placeholder="#10c469"
+                      placeholder="#1E46C8"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Secondary Branding Color</label>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Dark Navy Headings (#0B255F)</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicSecondaryColor || '#c0973c'}
+                      value={appSettings.publicSecondaryColor || '#0B255F'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicSecondaryColor || '#c0973c'}
+                      value={appSettings.publicSecondaryColor || '#0B255F'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
-                      placeholder="#c0973c"
+                      placeholder="#0B255F"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Accent Color</label>
+                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Yellow CTA Button (#FFC928)</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={appSettings.publicAccentColor || '#c0973c'}
+                      value={appSettings.publicAccentColor || '#FFC928'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
                       className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
                     />
                     <input
                       type="text"
-                      value={appSettings.publicAccentColor || '#c0973c'}
+                      value={appSettings.publicAccentColor || '#FFC928'}
                       onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
-                      placeholder="#c0973c"
+                      placeholder="#FFC928"
                       className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
                     />
                   </div>

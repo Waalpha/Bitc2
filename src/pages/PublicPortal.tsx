@@ -373,10 +373,10 @@ export function PublicPortal() {
   const heroPhotoOpacityPercent = settings?.publicHeroPhotoOpacity ?? 90;
   const heroPhotoOpacityDecimal = heroPhotoOpacityPercent / 100;
 
-  // Custom branding colors
-  const primaryColor = settings?.publicPrimaryColor || '#10B981';
-  const secondaryColor = settings?.publicSecondaryColor || '#F97316';
-  const accentColor = settings?.publicAccentColor || '#F97316';
+  // Custom branding colors based on spec
+  const primaryColor = settings?.publicPrimaryColor || '#1E46C8';
+  const secondaryColor = settings?.publicSecondaryColor || '#0B255F';
+  const accentColor = settings?.publicAccentColor || '#FFC928';
 
   // About Section customizable data
   const aboutHeadline = settings?.aboutTitle || "A Breakthrough in Professional Education";
@@ -1106,8 +1106,8 @@ export function PublicPortal() {
             {/* Left Column Text Content */}
             <div className={`lg:col-span-7 flex flex-col gap-6 ${alignClass}`}>
               
-              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-4 py-2 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-emerald-300 font-alt backdrop-blur-md shadow-lg`}>
-                <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping"></span>
+              <div className={`inline-flex ${selfAlignClass} items-center gap-2 px-4 py-2 rounded-full bg-[#0B255F]/90 border border-[#F05A28]/40 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#FFC928] font-alt backdrop-blur-md shadow-lg`}>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#F05A28] animate-ping"></span>
                 <span>Admissions Ongoing - September 2026 Intake</span>
               </div>
 
@@ -1123,7 +1123,7 @@ export function PublicPortal() {
                 <a
                   href="#contact"
                   onClick={() => setFormType('apply')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black font-alt text-xs uppercase tracking-wider shadow-xl shadow-orange-500/25 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FFC928] hover:bg-[#e6b420] text-[#0B255F] font-black font-alt text-xs uppercase tracking-wider shadow-xl shadow-[#FFC928]/30 active:scale-95 hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                 >
                   <FileCheck2 size={18} />
                   <span>Apply Online Now</span>
@@ -1134,7 +1134,7 @@ export function PublicPortal() {
                   className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white font-bold font-alt text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5"
                 >
                   <span>Explore Courses</span>
-                  <ArrowRight size={16} className="text-orange-400 animate-pulse" />
+                  <ArrowRight size={16} className="text-[#FFC928] animate-pulse" />
                 </a>
               </div>
 
