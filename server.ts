@@ -1495,6 +1495,245 @@ async function startServer() {
     }
   });
 
+  // =========================================================================
+  // ERPNext REST API Integration Proxy Endpoints
+  // =========================================================================
+
+  // 1. Test Connection
+  apiRouter.post("/erpnext/test-connection", async (req, res) => {
+    try {
+      const { hostUrl, apiKey, apiSecret } = req.body;
+      if (!hostUrl || !apiKey || !apiSecret) {
+        return res.status(400).json({ success: false, error: "ERPNext Host URL, API Key, and API Secret are required" });
+      }
+
+      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const targetUrl = `${baseUrl}/api/method/frappe.auth.get_logged_user`;
+
+      const response = await fetch(targetUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `token ${apiKey}:${apiSecret}`,
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        return res.status(response.status).json({
+          success: false,
+          error: `ERPNext returned HTTP status ${response.status}: ${response.statusText}`,
+          details: errText.slice(0, 300)
+        });
+      }
+
+      const data = await response.json();
+      return res.json({
+        success: true,
+        user: data.message || "Connected ERPNext User",
+        hostUrl: baseUrl
+      });
+    } catch (err: any) {
+      console.error("[ERPNEXT_TEST_ERROR]", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to reach ERPNext instance" });
+    }
+  });
+
+  // 2. Sync Students to ERPNext
+  apiRouter.post("/erpnext/sync-students", async (req, res) => {
+    try {
+      const { hostUrl, apiKey, apiSecret, company, students } = req.body;
+      if (!hostUrl || !apiKey || !apiSecret) {
+        return res.status(400).json({ success: false, error: "Missing ERPNext host or API credentials" });
+      }
+
+      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const studentList = Array.isArray(students) ? students : [];
+      let syncedCount = 0;
+      const errors: string[] = [];
+
+      for (const student of studentList) {
+        try {
+          const fullName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Student';
+          const payload = {
+            first_name: student.firstName || fullName.split(' ')[0] || fullName,
+            last_name: student.lastName || fullName.split(' ').slice(1).join(' ') || '',
+            student_email_id: student.email || '',
+            mobile_number: student.phone || student.parentPhone || '',
+            student_applicant: student.admissionNo || student.regNo || student.id,
+            joining_date: student.createdAt ? String(student.createdAt).split('T')[0] : new Date().toISOString().split('T')[0],
+            company: company || 'Breakthrough International Training College'
+          };
+
+          const resp = await fetch(`${baseUrl}/api/resource/Student`, {
+            method: "POST",
+            headers: {
+              "Authorization": `token ${apiKey}:${apiSecret}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (resp.ok || resp.status === 409) {
+            syncedCount++;
+          } else {
+            const txt = await resp.text();
+            errors.push(`Student "${fullName}": ${txt.slice(0, 150)}`);
+          }
+        } catch (e: any) {
+          errors.push(`Student ID ${student.id}: ${e.message}`);
+        }
+      }
+
+      return res.json({
+        success: true,
+        syncedCount,
+        total: studentList.length,
+        errors: errors.slice(0, 10),
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error("[ERPNEXT_SYNC_STUDENTS_ERROR]", err);
+      return res.status(500).json({ success: false, error: err.message || "Student sync failed" });
+    }
+  });
+
+  // 3. Sync Fees to ERPNext
+  apiRouter.post("/erpnext/sync-fees", async (req, res) => {
+    try {
+      const { hostUrl, apiKey, apiSecret, company, feeRecords } = req.body;
+      if (!hostUrl || !apiKey || !apiSecret) {
+        return res.status(400).json({ success: false, error: "Missing ERPNext credentials" });
+      }
+
+      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const records = Array.isArray(feeRecords) ? feeRecords : [];
+      let syncedCount = 0;
+      const errors: string[] = [];
+
+      for (const record of records) {
+        try {
+          const payload = {
+            student: record.studentId || record.studentName,
+            student_name: record.studentName || 'Student',
+            posting_date: record.lastUpdated ? String(record.lastUpdated).split('T')[0] : new Date().toISOString().split('T')[0],
+            company: company || 'Breakthrough International Training College',
+            paid_amount: Number(record.paidAmount || 0),
+            grand_total: Number(record.totalAmount || 0),
+            outstanding_amount: Number(record.balance || 0),
+            docstatus: 1
+          };
+
+          const resp = await fetch(`${baseUrl}/api/resource/Fees`, {
+            method: "POST",
+            headers: {
+              "Authorization": `token ${apiKey}:${apiSecret}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (resp.ok || resp.status === 409) {
+            syncedCount++;
+          } else {
+            const txt = await resp.text();
+            errors.push(`Fee record ${record.id || record.studentId}: ${txt.slice(0, 150)}`);
+          }
+        } catch (e: any) {
+          errors.push(`Fee record ${record.id}: ${e.message}`);
+        }
+      }
+
+      return res.json({
+        success: true,
+        syncedCount,
+        total: records.length,
+        errors: errors.slice(0, 10),
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error("[ERPNEXT_SYNC_FEES_ERROR]", err);
+      return res.status(500).json({ success: false, error: err.message || "Fee sync failed" });
+    }
+  });
+
+  // 4. Sync Attendance to ERPNext
+  apiRouter.post("/erpnext/sync-attendance", async (req, res) => {
+    try {
+      const { hostUrl, apiKey, apiSecret, company, logs } = req.body;
+      if (!hostUrl || !apiKey || !apiSecret) {
+        return res.status(400).json({ success: false, error: "Missing ERPNext credentials" });
+      }
+
+      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const attendanceLogs = Array.isArray(logs) ? logs : [];
+      let syncedCount = 0;
+      const errors: string[] = [];
+
+      for (const log of attendanceLogs) {
+        try {
+          const payload = {
+            student: log.studentId || log.admissionNo,
+            student_name: log.studentName || 'Student',
+            date: log.date || new Date().toISOString().split('T')[0],
+            status: log.status === 'present' ? 'Present' : log.status === 'absent' ? 'Absent' : 'Late',
+            company: company || 'Breakthrough International Training College'
+          };
+
+          const resp = await fetch(`${baseUrl}/api/resource/Student Attendance`, {
+            method: "POST",
+            headers: {
+              "Authorization": `token ${apiKey}:${apiSecret}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (resp.ok || resp.status === 409) {
+            syncedCount++;
+          } else {
+            const txt = await resp.text();
+            errors.push(`Attendance ${log.id || log.studentId}: ${txt.slice(0, 150)}`);
+          }
+        } catch (e: any) {
+          errors.push(`Attendance ${log.id}: ${e.message}`);
+        }
+      }
+
+      return res.json({
+        success: true,
+        syncedCount,
+        total: attendanceLogs.length,
+        errors: errors.slice(0, 10),
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error("[ERPNEXT_SYNC_ATTENDANCE_ERROR]", err);
+      return res.status(500).json({ success: false, error: err.message || "Attendance sync failed" });
+    }
+  });
+
+  // 5. ERPNext Webhook Receiver
+  apiRouter.post("/erpnext/webhook", async (req, res) => {
+    try {
+      console.log("[ERPNEXT_WEBHOOK] Received payload:", req.body);
+      const webhookEvent = {
+        timestamp: new Date().toISOString(),
+        doctype: req.body?.doctype || req.body?.doc?.doctype || "Unknown",
+        event: req.body?.event || "update",
+        data: req.body
+      };
+      return res.json({ success: true, message: "Webhook received successfully", event: webhookEvent });
+    } catch (err: any) {
+      console.error("[ERPNEXT_WEBHOOK_ERROR]", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // Mount the router after defining all routes
   app.use("/api", apiRouter);
 

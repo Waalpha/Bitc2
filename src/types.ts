@@ -366,6 +366,27 @@ export interface AppSettings {
   isPenaltyEnabled?: boolean;
   penaltyDay?: number;
   penaltyAmount?: number;
+  // ERPNext Integration Settings
+  erpnextEnabled?: boolean;
+  erpnextUrl?: string;
+  erpnextApiKey?: string;
+  erpnextApiSecret?: string;
+  erpnextCompany?: string;
+  erpnextAutoSync?: boolean;
+  erpnextSyncStudents?: boolean;
+  erpnextSyncFees?: boolean;
+  erpnextSyncAttendance?: boolean;
+  erpnextLastSync?: string;
+}
+
+export interface ErpNextSyncLog {
+  id: string;
+  timestamp: string;
+  type: 'students' | 'fees' | 'attendance' | 'test' | 'webhook';
+  status: 'success' | 'failed' | 'warning';
+  message: string;
+  recordsProcessed?: number;
+  details?: any;
 }
 
 export interface StyledText {

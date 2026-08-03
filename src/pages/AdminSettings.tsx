@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
-import { User, Class, Unit, AppSettings, Expense } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare } from 'lucide-react';
+import { User, Class, Unit, AppSettings, Expense, ErpNextSyncLog } from '../types';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare, Link, Server, Zap, Copy, ExternalLink, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -14,9 +14,25 @@ import { uploadFile, getCloudinaryConfig } from '../services/uploadService';
 
 export const AdminSettings: React.FC = () => {
   const { userData, settings: globalSettings, schools, activeSchoolId, setActiveSchoolId } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance' | 'portal' | 'schools'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'classes' | 'system' | 'roles' | 'finance' | 'maintenance' | 'portal' | 'schools' | 'erpnext'>('users');
   const [isAddingSchool, setIsAddingSchool] = useState(false);
   const [schoolForm, setSchoolForm] = useState({ id: '', name: '', appTitle: '', logoUrl: '' });
+
+  // ERPNext Integration State
+  const [isTestingErpNext, setIsTestingErpNext] = useState(false);
+  const [erpNextTestStatus, setErpNextTestStatus] = useState<{ success?: boolean; message?: string; user?: string } | null>(null);
+  const [isSyncingStudents, setIsSyncingStudents] = useState(false);
+  const [isSyncingFees, setIsSyncingFees] = useState(false);
+  const [isSyncingAttendance, setIsSyncingAttendance] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<ErpNextSyncLog[]>([
+    {
+      id: 'init-1',
+      timestamp: new Date().toLocaleString(),
+      type: 'test',
+      status: 'success',
+      message: 'ERPNext integration module initialized.'
+    }
+  ]);
   const [users, setUsers] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -514,6 +530,171 @@ export const AdminSettings: React.FC = () => {
     }
   };
 
+  // ERPNext Integration Action Handlers
+  const handleTestErpNextConnection = async () => {
+    if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
+      addToast("Please enter ERPNext Host URL, API Key, and API Secret first.", "error");
+      return;
+    }
+    setIsTestingErpNext(true);
+    setErpNextTestStatus(null);
+    try {
+      const res = await fetch('/api/erpnext/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostUrl: appSettings.erpnextUrl,
+          apiKey: appSettings.erpnextApiKey,
+          apiSecret: appSettings.erpnextApiSecret
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setErpNextTestStatus({ success: true, message: `Connected! Logged in as: ${data.user}`, user: data.user });
+        addToast(`ERPNext Connection Successful! Logged in as: ${data.user}`, "success");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'test',
+          status: 'success',
+          message: `Connected successfully (${data.user})`
+        }, ...prev]);
+      } else {
+        setErpNextTestStatus({ success: false, message: data.error || "Connection refused" });
+        addToast(data.error || "ERPNext Connection Failed", "error");
+      }
+    } catch (err: any) {
+      setErpNextTestStatus({ success: false, message: err.message || "Network error" });
+      addToast("Failed to connect to ERPNext instance", "error");
+    } finally {
+      setIsTestingErpNext(false);
+    }
+  };
+
+  const handleSyncStudentsToErpNext = async () => {
+    if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
+      addToast("Please configure ERPNext credentials first", "error");
+      return;
+    }
+    setIsSyncingStudents(true);
+    try {
+      const studentsToSync = users.filter(u => u.role === 'student');
+      const res = await fetch('/api/erpnext/sync-students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostUrl: appSettings.erpnextUrl,
+          apiKey: appSettings.erpnextApiKey,
+          apiSecret: appSettings.erpnextApiSecret,
+          company: appSettings.erpnextCompany || 'Breakthrough International Training College',
+          students: studentsToSync
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast(`Synced ${data.syncedCount}/${data.total} students to ERPNext!`, "success");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'students',
+          status: 'success',
+          message: `Pushed ${data.syncedCount}/${data.total} student profiles to ERPNext Student DocType`,
+          recordsProcessed: data.syncedCount
+        }, ...prev]);
+      } else {
+        addToast(`Student sync error: ${data.error}`, "error");
+      }
+    } catch (err: any) {
+      addToast("Student sync to ERPNext failed", "error");
+    } finally {
+      setIsSyncingStudents(false);
+    }
+  };
+
+  const handleSyncFeesToErpNext = async () => {
+    if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
+      addToast("Please configure ERPNext credentials first", "error");
+      return;
+    }
+    setIsSyncingFees(true);
+    try {
+      const feesSnap = await getDocs(collection(db, 'fees'));
+      const feeRecords = feesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const res = await fetch('/api/erpnext/sync-fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostUrl: appSettings.erpnextUrl,
+          apiKey: appSettings.erpnextApiKey,
+          apiSecret: appSettings.erpnextApiSecret,
+          company: appSettings.erpnextCompany || 'Breakthrough International Training College',
+          feeRecords
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast(`Synced ${data.syncedCount}/${data.total} fee records to ERPNext!`, "success");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'fees',
+          status: 'success',
+          message: `Pushed ${data.syncedCount}/${data.total} fee invoices to ERPNext Fees DocType`,
+          recordsProcessed: data.syncedCount
+        }, ...prev]);
+      } else {
+        addToast(`Fee sync error: ${data.error}`, "error");
+      }
+    } catch (err: any) {
+      addToast("Fee sync to ERPNext failed", "error");
+    } finally {
+      setIsSyncingFees(false);
+    }
+  };
+
+  const handleSyncAttendanceToErpNext = async () => {
+    if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
+      addToast("Please configure ERPNext credentials first", "error");
+      return;
+    }
+    setIsSyncingAttendance(true);
+    try {
+      const attSnap = await getDocs(collection(db, 'attendance'));
+      const logs = attSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const res = await fetch('/api/erpnext/sync-attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hostUrl: appSettings.erpnextUrl,
+          apiKey: appSettings.erpnextApiKey,
+          apiSecret: appSettings.erpnextApiSecret,
+          company: appSettings.erpnextCompany || 'Breakthrough International Training College',
+          logs
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast(`Synced ${data.syncedCount}/${data.total} attendance logs to ERPNext!`, "success");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'attendance',
+          status: 'success',
+          message: `Pushed ${data.syncedCount}/${data.total} attendance entries to ERPNext Student Attendance DocType`,
+          recordsProcessed: data.syncedCount
+        }, ...prev]);
+      } else {
+        addToast(`Attendance sync error: ${data.error}`, "error");
+      }
+    } catch (err: any) {
+      addToast("Attendance sync to ERPNext failed", "error");
+    } finally {
+      setIsSyncingAttendance(false);
+    }
+  };
+
   const handleHeroImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleMultiImageUpload(e, 'publicHeroImages');
   };
@@ -945,6 +1126,16 @@ export const AdminSettings: React.FC = () => {
           }`}
         >
           🏫 Schools Management
+        </button>
+        <button
+          onClick={() => setActiveTab('erpnext')}
+          className={`flex-none px-6 py-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+            activeTab === 'erpnext' ? 'border-purple-600 text-purple-600 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Server size={16} className="text-blue-600" />
+          <span>ERPNext Integration</span>
+          <span className={`w-2 h-2 rounded-full ${appSettings.erpnextEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
         </button>
       </div>
 
@@ -3036,6 +3227,314 @@ export const AdminSettings: React.FC = () => {
               {isSaving ? 'Saving' : 'Persist Public Portal Settings'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* ERPNext Integration Tab */}
+      {activeTab === 'erpnext' && (
+        <div className="space-y-8">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl border border-blue-900/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[11px] font-bold tracking-wider uppercase">
+                  <Server size={14} className="text-blue-400" />
+                  <span>Frappe & ERPNext REST Integration</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">ERPNext ERP Connection</h2>
+                <p className="text-xs sm:text-sm text-blue-200/80 leading-relaxed font-sans">
+                  Connect Breakthrough International Training College to your ERPNext instance for seamless bidirectional sync of Students, Fee Statements, Attendance Registers, and Academic Docs.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex-shrink-0">
+                <div className={`w-3.5 h-3.5 rounded-full ${appSettings.erpnextEnabled ? 'bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50' : 'bg-gray-400'}`}></div>
+                <div>
+                  <p className="text-xs text-blue-200 font-semibold uppercase tracking-wider">Status</p>
+                  <p className="text-sm font-black text-white">
+                    {appSettings.erpnextEnabled ? 'Integration Active' : 'Integration Disabled'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Credentials & Configuration Card */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100">
+                  <Key size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">ERPNext API Credentials</h3>
+                  <p className="text-xs text-gray-500">Enter API Key and Secret generated from your Frappe user profile in ERPNext</p>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!appSettings.erpnextEnabled}
+                  onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextEnabled: e.target.checked }))}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-xs font-bold text-gray-700">Enable ERPNext Sync</span>
+              </label>
+            </div>
+
+            <form onSubmit={handleSaveSettings} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Globe size={14} className="text-blue-600" />
+                    ERPNext Host URL
+                  </label>
+                  <input
+                    type="url"
+                    value={appSettings.erpnextUrl || ''}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextUrl: e.target.value }))}
+                    placeholder="e.g. https://erp.breakthrough.ac.ke"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 bg-gray-50/50"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Include scheme (http:// or https://) without trailing slash</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Database size={14} className="text-blue-600" />
+                    ERPNext Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={appSettings.erpnextCompany || 'Breakthrough International Training College'}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextCompany: e.target.value }))}
+                    placeholder="Breakthrough International Training College"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 bg-gray-50/50"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Exact company name registered in your Frappe instance</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Key size={14} className="text-blue-600" />
+                    API Key
+                  </label>
+                  <input
+                    type="text"
+                    value={appSettings.erpnextApiKey || ''}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiKey: e.target.value }))}
+                    placeholder="e.g. 3a8d90f1e2b4c5"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-mono bg-gray-50/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Lock size={14} className="text-blue-600" />
+                    API Secret
+                  </label>
+                  <input
+                    type="password"
+                    value={appSettings.erpnextApiSecret || ''}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiSecret: e.target.value }))}
+                    placeholder="••••••••••••••••"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-mono bg-gray-50/50"
+                  />
+                </div>
+              </div>
+
+              {/* Connection Status & Buttons */}
+              {erpNextTestStatus && (
+                <div className={`p-4 rounded-2xl border text-xs flex items-center gap-3 ${
+                  erpNextTestStatus.success ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'
+                }`}>
+                  {erpNextTestStatus.success ? <CheckCircle size={18} className="text-emerald-600 flex-shrink-0" /> : <AlertTriangle size={18} className="text-rose-600 flex-shrink-0" />}
+                  <div className="flex-1 font-medium">{erpNextTestStatus.message}</div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestErpNextConnection}
+                  disabled={isTestingErpNext}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isTestingErpNext ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} className="text-yellow-400" />}
+                  <span>Test Connection</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-200"
+                >
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  <span>Save ERPNext Credentials</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Manual On-Demand Data Synchronization Panel */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+            <div className="border-b border-gray-100 pb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <RefreshCw size={20} className="text-blue-600" />
+                Data Synchronization Engine
+              </h3>
+              <p className="text-xs text-gray-500">Trigger direct push sync from BITC database to ERPNext DocTypes</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Students Sync */}
+              <div className="p-6 rounded-2xl border border-gray-100 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                    <GraduationCap size={22} />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-base">Sync Student Records</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Pushes all enrolled student profiles, admission numbers, emails, and parent contacts to ERPNext <code className="bg-white px-1 py-0.5 rounded text-blue-700 font-mono">Student</code> DocType.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSyncStudentsToErpNext}
+                  disabled={isSyncingStudents || !appSettings.erpnextUrl}
+                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-200"
+                >
+                  {isSyncingStudents ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
+                  <span>Sync {users.filter(u => u.role === 'student').length} Students</span>
+                </button>
+              </div>
+
+              {/* Fees Sync */}
+              <div className="p-6 rounded-2xl border border-gray-100 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                    <Receipt size={22} />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-base">Sync Fee Invoices</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Pushes fee balances, payment receipts, and fee structures to ERPNext <code className="bg-white px-1 py-0.5 rounded text-emerald-700 font-mono">Fees</code> DocType.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSyncFeesToErpNext}
+                  disabled={isSyncingFees || !appSettings.erpnextUrl}
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-md shadow-emerald-200"
+                >
+                  {isSyncingFees ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+                  <span>Sync Fee Statements</span>
+                </button>
+              </div>
+
+              {/* Attendance Sync */}
+              <div className="p-6 rounded-2xl border border-gray-100 bg-gradient-to-br from-purple-50/50 to-pink-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
+                    <Clock size={22} />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-base">Sync Attendance Logs</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Pushes daily biometric & gate attendance logs to ERPNext <code className="bg-white px-1 py-0.5 rounded text-purple-700 font-mono">Student Attendance</code> DocType.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSyncAttendanceToErpNext}
+                  disabled={isSyncingAttendance || !appSettings.erpnextUrl}
+                  className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-md shadow-purple-200"
+                >
+                  {isSyncingAttendance ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                  <span>Sync Attendance</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Webhooks & Automated Triggers */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+            <div className="border-b border-gray-100 pb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Link size={20} className="text-blue-600" />
+                Webhook Receiver & Inbound Sync
+              </h3>
+              <p className="text-xs text-gray-500">Receive real-time payment updates or student status updates directly from ERPNext</p>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Your BITC Webhook Target URL</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/api/erpnext/webhook`}
+                  className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs text-slate-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/api/erpnext/webhook`);
+                    addToast("Webhook URL copied to clipboard!", "success");
+                  }}
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Copy size={14} />
+                  <span>Copy</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                In your ERPNext instance, navigate to <strong className="text-slate-700">Integrations &gt; Webhook</strong>, add a new Webhook, set Request URL to the link above, and select <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Fees</code> or <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Student</code> DocType events.
+              </p>
+            </div>
+          </div>
+
+          {/* Sync History Logs Table */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Clock size={18} className="text-blue-600" />
+                Integration Activity & Sync Logs
+              </h3>
+              <span className="text-xs text-gray-400 font-medium">{syncLogs.length} total events</span>
+            </div>
+
+            <div className="overflow-x-auto border border-gray-100 rounded-2xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500 font-bold border-b border-gray-100">
+                    <th className="py-3 px-4">Timestamp</th>
+                    <th className="py-3 px-4">Sync Module</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {syncLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50/50">
+                      <td className="py-3 px-4 font-mono text-gray-500 text-[11px] whitespace-nowrap">{log.timestamp}</td>
+                      <td className="py-3 px-4 font-bold text-gray-900 uppercase text-[11px]">{log.type}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          log.status === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}>
+                          {log.status === 'success' ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}
+                          {log.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">{log.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
