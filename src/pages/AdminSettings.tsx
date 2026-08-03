@@ -573,7 +573,7 @@ export const AdminSettings: React.FC = () => {
 
   const handleSyncStudentsToErpNext = async () => {
     if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
-      addToast("Please configure ERPNext credentials first", "error");
+      addToast("Please configure ERPNext Host URL, API Key, and API Secret first.", "error");
       return;
     }
     setIsSyncingStudents(true);
@@ -591,21 +591,29 @@ export const AdminSettings: React.FC = () => {
         })
       });
       const data = await res.json();
-      if (data.success) {
-        addToast(`Synced ${data.syncedCount}/${data.total} students to ERPNext!`, "success");
+      if (data.success && data.syncedCount > 0) {
+        addToast(`Successfully synced ${data.syncedCount}/${data.total} students to ERPNext!`, "success");
         setSyncLogs(prev => [{
           id: Date.now().toString(),
           timestamp: new Date().toLocaleString(),
           type: 'students',
           status: 'success',
-          message: `Pushed ${data.syncedCount}/${data.total} student profiles to ERPNext Student DocType`,
+          message: data.message || `Pushed ${data.syncedCount}/${data.total} student profiles to ERPNext Student DocType`,
           recordsProcessed: data.syncedCount
         }, ...prev]);
       } else {
-        addToast(`Student sync error: ${data.error}`, "error");
+        const errMsg = data.error || (data.errors && data.errors[0]) || "0 students synced. Verify ERPNext API credentials and Student DocType permissions.";
+        addToast(`Student Sync Failed: ${errMsg}`, "error");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'students',
+          status: 'failed',
+          message: `Sync failed (0/${data.total || studentsToSync.length}): ${errMsg}`
+        }, ...prev]);
       }
     } catch (err: any) {
-      addToast("Student sync to ERPNext failed", "error");
+      addToast(`Student sync failed: ${err.message || 'Network Error'}`, "error");
     } finally {
       setIsSyncingStudents(false);
     }
@@ -613,7 +621,7 @@ export const AdminSettings: React.FC = () => {
 
   const handleSyncFeesToErpNext = async () => {
     if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
-      addToast("Please configure ERPNext credentials first", "error");
+      addToast("Please configure ERPNext Host URL, API Key, and API Secret first.", "error");
       return;
     }
     setIsSyncingFees(true);
@@ -633,21 +641,29 @@ export const AdminSettings: React.FC = () => {
         })
       });
       const data = await res.json();
-      if (data.success) {
-        addToast(`Synced ${data.syncedCount}/${data.total} fee records to ERPNext!`, "success");
+      if (data.success && data.syncedCount > 0) {
+        addToast(`Successfully synced ${data.syncedCount}/${data.total} fee records to ERPNext!`, "success");
         setSyncLogs(prev => [{
           id: Date.now().toString(),
           timestamp: new Date().toLocaleString(),
           type: 'fees',
           status: 'success',
-          message: `Pushed ${data.syncedCount}/${data.total} fee invoices to ERPNext Fees DocType`,
+          message: data.message || `Pushed ${data.syncedCount}/${data.total} fee invoices to ERPNext Fees DocType`,
           recordsProcessed: data.syncedCount
         }, ...prev]);
       } else {
-        addToast(`Fee sync error: ${data.error}`, "error");
+        const errMsg = data.error || (data.errors && data.errors[0]) || "0 fee records synced. Verify ERPNext API credentials and Fees DocType configuration.";
+        addToast(`Fee Sync Failed: ${errMsg}`, "error");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'fees',
+          status: 'failed',
+          message: `Sync failed (0/${data.total || feeRecords.length}): ${errMsg}`
+        }, ...prev]);
       }
     } catch (err: any) {
-      addToast("Fee sync to ERPNext failed", "error");
+      addToast(`Fee sync failed: ${err.message || 'Network Error'}`, "error");
     } finally {
       setIsSyncingFees(false);
     }
@@ -655,7 +671,7 @@ export const AdminSettings: React.FC = () => {
 
   const handleSyncAttendanceToErpNext = async () => {
     if (!appSettings.erpnextUrl || !appSettings.erpnextApiKey || !appSettings.erpnextApiSecret) {
-      addToast("Please configure ERPNext credentials first", "error");
+      addToast("Please configure ERPNext Host URL, API Key, and API Secret first.", "error");
       return;
     }
     setIsSyncingAttendance(true);
@@ -675,21 +691,29 @@ export const AdminSettings: React.FC = () => {
         })
       });
       const data = await res.json();
-      if (data.success) {
-        addToast(`Synced ${data.syncedCount}/${data.total} attendance logs to ERPNext!`, "success");
+      if (data.success && data.syncedCount > 0) {
+        addToast(`Successfully synced ${data.syncedCount}/${data.total} attendance logs to ERPNext!`, "success");
         setSyncLogs(prev => [{
           id: Date.now().toString(),
           timestamp: new Date().toLocaleString(),
           type: 'attendance',
           status: 'success',
-          message: `Pushed ${data.syncedCount}/${data.total} attendance entries to ERPNext Student Attendance DocType`,
+          message: data.message || `Pushed ${data.syncedCount}/${data.total} attendance entries to ERPNext Student Attendance DocType`,
           recordsProcessed: data.syncedCount
         }, ...prev]);
       } else {
-        addToast(`Attendance sync error: ${data.error}`, "error");
+        const errMsg = data.error || (data.errors && data.errors[0]) || "0 attendance logs synced. Verify ERPNext API credentials and Student Attendance DocType permissions.";
+        addToast(`Attendance Sync Failed: ${errMsg}`, "error");
+        setSyncLogs(prev => [{
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleString(),
+          type: 'attendance',
+          status: 'failed',
+          message: `Sync failed (0/${data.total || logs.length}): ${errMsg}`
+        }, ...prev]);
       }
     } catch (err: any) {
-      addToast("Attendance sync to ERPNext failed", "error");
+      addToast(`Attendance sync failed: ${err.message || 'Network Error'}`, "error");
     } finally {
       setIsSyncingAttendance(false);
     }
@@ -3286,6 +3310,30 @@ export const AdminSettings: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveSettings} className="space-y-6">
+              <div className="flex items-center justify-between bg-blue-50/70 p-3.5 rounded-2xl border border-blue-100">
+                <div className="flex items-center gap-2 text-xs font-semibold text-blue-900">
+                  <ShieldCheck size={16} className="text-blue-600 flex-shrink-0" />
+                  <span>Connecting to ERPNext? Enter your live Frappe/ERPNext URL & API keys, or try Sandbox mode:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppSettings(prev => ({
+                      ...prev,
+                      erpnextEnabled: true,
+                      erpnextUrl: 'https://demo.erpnext.com',
+                      erpnextApiKey: 'demo',
+                      erpnextApiSecret: 'demo_secret',
+                      erpnextCompany: 'Breakthrough International Training College'
+                    }));
+                    addToast("Demo Sandbox credentials filled!", "success");
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer shadow-sm"
+                >
+                  Fill Demo Credentials
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
