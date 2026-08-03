@@ -3373,10 +3373,11 @@ export const AdminSettings: React.FC = () => {
                   <input
                     type="text"
                     value={appSettings.erpnextApiKey || ''}
-                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiKey: e.target.value }))}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiKey: e.target.value.trim() }))}
                     placeholder="e.g. 3a8d90f1e2b4c5"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-mono bg-gray-50/50"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">Found in ERPNext under <strong className="text-gray-600">My Settings &gt; API Access</strong></p>
                 </div>
 
                 <div>
@@ -3387,10 +3388,11 @@ export const AdminSettings: React.FC = () => {
                   <input
                     type="password"
                     value={appSettings.erpnextApiSecret || ''}
-                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiSecret: e.target.value }))}
+                    onChange={(e) => setAppSettings(prev => ({ ...prev, erpnextApiSecret: e.target.value.trim() }))}
                     placeholder="••••••••••••••••"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-mono bg-gray-50/50"
                   />
+                  <p className="text-[11px] text-gray-400 mt-1">Generated when creating key in Frappe user profile</p>
                 </div>
               </div>
 

@@ -1499,6 +1499,34 @@ async function startServer() {
   // ERPNext REST API Integration Proxy Endpoints
   // =========================================================================
 
+  // Helper to construct exact Frappe token auth headers
+  function getErpNextHeaders(apiKeyRaw: string, apiSecretRaw: string) {
+    let key = (apiKeyRaw || '').trim();
+    let secret = (apiSecretRaw || '').trim();
+
+    // Strip "token " prefix if accidentally included
+    if (key.toLowerCase().startsWith('token ')) {
+      key = key.substring(6).trim();
+    }
+
+    // Handle case where user pasted full "key:secret" into apiKey field
+    if (key.includes(':') && !secret) {
+      const parts = key.split(':');
+      key = parts[0].trim();
+      secret = parts.slice(1).join(':').trim();
+    }
+
+    // Strip surrounding quotes or whitespace
+    key = key.replace(/^["']|["']$/g, '').trim();
+    secret = secret.replace(/^["']|["']$/g, '').trim();
+
+    return {
+      "Authorization": `token ${key}:${secret}`,
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    };
+  }
+
   // 1. Test Connection
   apiRouter.post("/erpnext/test-connection", async (req, res) => {
     try {
@@ -1507,7 +1535,7 @@ async function startServer() {
         return res.status(400).json({ success: false, error: "ERPNext Host URL, API Key, and API Secret are required" });
       }
 
-      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const baseUrl = hostUrl.trim().replace(/\/+$/, "");
 
       // Handle Sandbox / Demo / Test URLs gracefully
       if (baseUrl.includes("demo.erpnext.com") || apiKey === "demo" || apiKey === "test_key") {
@@ -1520,14 +1548,11 @@ async function startServer() {
       }
 
       const targetUrl = `${baseUrl}/api/method/frappe.auth.get_logged_user`;
+      const headers = getErpNextHeaders(apiKey, apiSecret);
 
       const response = await fetch(targetUrl, {
         method: "GET",
-        headers: {
-          "Authorization": `token ${apiKey}:${apiSecret}`,
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -1559,8 +1584,9 @@ async function startServer() {
         return res.status(400).json({ success: false, error: "Missing ERPNext host or API credentials" });
       }
 
-      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const baseUrl = hostUrl.trim().replace(/\/+$/, "");
       const studentList = Array.isArray(students) ? students : [];
+      const headers = getErpNextHeaders(apiKey, apiSecret);
       
       // Sandbox / Demo mode
       if (baseUrl.includes("demo.erpnext.com") || apiKey === "demo" || apiKey === "test_key") {
@@ -1590,11 +1616,7 @@ async function startServer() {
 
           const resp = await fetch(`${baseUrl}/api/resource/Student`, {
             method: "POST",
-            headers: {
-              "Authorization": `token ${apiKey}:${apiSecret}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
+            headers,
             body: JSON.stringify(payload)
           });
 
@@ -1641,8 +1663,9 @@ async function startServer() {
         return res.status(400).json({ success: false, error: "Missing ERPNext credentials" });
       }
 
-      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const baseUrl = hostUrl.trim().replace(/\/+$/, "");
       const records = Array.isArray(feeRecords) ? feeRecords : [];
+      const headers = getErpNextHeaders(apiKey, apiSecret);
 
       // Sandbox / Demo mode
       if (baseUrl.includes("demo.erpnext.com") || apiKey === "demo" || apiKey === "test_key") {
@@ -1673,11 +1696,7 @@ async function startServer() {
 
           const resp = await fetch(`${baseUrl}/api/resource/Fees`, {
             method: "POST",
-            headers: {
-              "Authorization": `token ${apiKey}:${apiSecret}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
+            headers,
             body: JSON.stringify(payload)
           });
 
@@ -1724,8 +1743,9 @@ async function startServer() {
         return res.status(400).json({ success: false, error: "Missing ERPNext credentials" });
       }
 
-      const baseUrl = hostUrl.replace(/\/+$/, "");
+      const baseUrl = hostUrl.trim().replace(/\/+$/, "");
       const attendanceLogs = Array.isArray(logs) ? logs : [];
+      const headers = getErpNextHeaders(apiKey, apiSecret);
 
       // Sandbox / Demo mode
       if (baseUrl.includes("demo.erpnext.com") || apiKey === "demo" || apiKey === "test_key") {
@@ -1753,11 +1773,7 @@ async function startServer() {
 
           const resp = await fetch(`${baseUrl}/api/resource/Student Attendance`, {
             method: "POST",
-            headers: {
-              "Authorization": `token ${apiKey}:${apiSecret}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
+            headers,
             body: JSON.stringify(payload)
           });
 
