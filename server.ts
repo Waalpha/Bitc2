@@ -11,6 +11,8 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 
 import os from "os";
+import http from "http";
+import https from "https";
 
 dotenv.config();
 
@@ -1527,6 +1529,77 @@ async function startServer() {
     };
   }
 
+  // Custom fetch function that bypasses SSL verification issues & provides clear diagnostics for self-hosted ERPNext/Frappe
+  function erpNextFetch(targetUrl: string, options: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) {
+    return new Promise<{ ok: boolean; status: number; statusText: string; text: () => Promise<string>; json: () => Promise<any> }>((resolve, reject) => {
+      try {
+        let formattedUrl = targetUrl.trim();
+        if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+          formattedUrl = `https://${formattedUrl}`;
+        }
+        const parsedUrl = new URL(formattedUrl);
+        const isHttps = parsedUrl.protocol === 'https:';
+        const client = isHttps ? https : http;
+
+        const reqOptions: https.RequestOptions = {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port ? Number(parsedUrl.port) : (isHttps ? 443 : 80),
+          path: `${parsedUrl.pathname}${parsedUrl.search}`,
+          method: options.method || 'GET',
+          headers: options.headers || {},
+          rejectUnauthorized: false, // Bypass SSL cert validation issues on self-hosted Frappe/ERPNext
+          timeout: options.timeoutMs || 15000
+        };
+
+        const req = client.request(reqOptions, (res) => {
+          let data = '';
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          res.on('end', () => {
+            const status = res.statusCode || 500;
+            const statusText = res.statusMessage || '';
+            const ok = status >= 200 && status < 300;
+
+            resolve({
+              ok,
+              status,
+              statusText,
+              text: async () => data,
+              json: async () => {
+                try {
+                  return JSON.parse(data);
+                } catch (e) {
+                  return { raw: data };
+                }
+              }
+            });
+          });
+        });
+
+        req.on('error', (err: any) => {
+          let msg = err.message || 'Network request failed';
+          if (err.code === 'ENOTFOUND') msg = `Host "${parsedUrl.hostname}" not found (Check URL address)`;
+          if (err.code === 'ECONNREFUSED') msg = `Connection refused by ${parsedUrl.hostname}:${reqOptions.port}`;
+          if (err.code === 'ETIMEDOUT') msg = `Connection timed out to ${parsedUrl.hostname}`;
+          reject(new Error(msg));
+        });
+
+        req.on('timeout', () => {
+          req.destroy();
+          reject(new Error(`Timeout: ERPNext server at ${parsedUrl.hostname} did not respond within 15s`));
+        });
+
+        if (options.body) {
+          req.write(options.body);
+        }
+        req.end();
+      } catch (err: any) {
+        reject(new Error(`Invalid ERPNext URL "${targetUrl}": ${err.message}`));
+      }
+    });
+  }
+
   // 1. Test Connection
   apiRouter.post("/erpnext/test-connection", async (req, res) => {
     try {
@@ -1550,7 +1623,7 @@ async function startServer() {
       const targetUrl = `${baseUrl}/api/method/frappe.auth.get_logged_user`;
       const headers = getErpNextHeaders(apiKey, apiSecret);
 
-      const response = await fetch(targetUrl, {
+      const response = await erpNextFetch(targetUrl, {
         method: "GET",
         headers
       });
@@ -1604,8 +1677,9 @@ async function startServer() {
       const errors: string[] = [];
 
       for (const student of studentList) {
+        const fullName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.email || 'Student';
+        const sId = student.id || student.uid || student.admissionNo || fullName;
         try {
-          const fullName = student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Student';
           const payload = {
             first_name: student.firstName || fullName.split(' ')[0] || fullName,
             last_name: student.lastName || fullName.split(' ').slice(1).join(' ') || '',
@@ -1614,7 +1688,7 @@ async function startServer() {
             joining_date: student.createdAt ? String(student.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]
           };
 
-          const resp = await fetch(`${baseUrl}/api/resource/Student`, {
+          const resp = await erpNextFetch(`${baseUrl}/api/resource/Student`, {
             method: "POST",
             headers,
             body: JSON.stringify(payload)
@@ -1627,7 +1701,7 @@ async function startServer() {
             errors.push(`Student "${fullName}": ${txt.slice(0, 150)}`);
           }
         } catch (e: any) {
-          errors.push(`Student ID ${student.id}: ${e.message}`);
+          errors.push(`Student "${fullName}" (${sId}): ${e.message}`);
         }
       }
 
@@ -1683,9 +1757,10 @@ async function startServer() {
       const errors: string[] = [];
 
       for (const record of records) {
+        const recId = record.id || record.studentId || record.studentName || 'Record';
         try {
           const payload = {
-            student: record.studentId || record.studentName,
+            student: record.studentId || record.admissionNo || record.studentName || 'Student',
             student_name: record.studentName || 'Student',
             posting_date: record.lastUpdated ? String(record.lastUpdated).split('T')[0] : new Date().toISOString().split('T')[0],
             company: company || 'Breakthrough International Training College',
@@ -1694,7 +1769,7 @@ async function startServer() {
             outstanding_amount: Number(record.balance || 0)
           };
 
-          const resp = await fetch(`${baseUrl}/api/resource/Fees`, {
+          const resp = await erpNextFetch(`${baseUrl}/api/resource/Fees`, {
             method: "POST",
             headers,
             body: JSON.stringify(payload)
@@ -1704,10 +1779,10 @@ async function startServer() {
             syncedCount++;
           } else {
             const txt = await resp.text();
-            errors.push(`Fee record ${record.id || record.studentId}: ${txt.slice(0, 150)}`);
+            errors.push(`Fee record ${recId}: ${txt.slice(0, 150)}`);
           }
         } catch (e: any) {
-          errors.push(`Fee record ${record.id}: ${e.message}`);
+          errors.push(`Fee record ${recId}: ${e.message}`);
         }
       }
 
@@ -1763,15 +1838,16 @@ async function startServer() {
       const errors: string[] = [];
 
       for (const log of attendanceLogs) {
+        const logId = log.id || log.studentId || 'AttendanceLog';
         try {
           const payload = {
-            student: log.studentId || log.admissionNo,
+            student: log.studentId || log.admissionNo || log.studentName || 'Student',
             student_name: log.studentName || 'Student',
             date: log.date || new Date().toISOString().split('T')[0],
             status: log.status === 'present' ? 'Present' : log.status === 'absent' ? 'Absent' : 'Present'
           };
 
-          const resp = await fetch(`${baseUrl}/api/resource/Student Attendance`, {
+          const resp = await erpNextFetch(`${baseUrl}/api/resource/Student Attendance`, {
             method: "POST",
             headers,
             body: JSON.stringify(payload)
@@ -1781,10 +1857,10 @@ async function startServer() {
             syncedCount++;
           } else {
             const txt = await resp.text();
-            errors.push(`Attendance ${log.id || log.studentId}: ${txt.slice(0, 150)}`);
+            errors.push(`Attendance ${logId}: ${txt.slice(0, 150)}`);
           }
         } catch (e: any) {
-          errors.push(`Attendance ${log.id}: ${e.message}`);
+          errors.push(`Attendance ${logId}: ${e.message}`);
         }
       }
 
