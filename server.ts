@@ -59,6 +59,9 @@ import {
 } from "./server/localDb";
 import { seedDatabase } from "./server/seeder";
 import { runBackup } from "./server/backupService";
+import { migrateSchoolData } from "./server/migrations/migrateSchoolData";
+import { decoupleStudentsAndParents } from "./server/migrations/decoupleStudentsAndParents";
+import { setUserClaims, getUserClaims } from "./server/authService";
 
 // Local Firestore Adapter to route Express backend operations (IoT, reports, fee automations) offline
 class LocalCollectionReference {
@@ -324,6 +327,9 @@ try {
         .then(() => {
           return reactivateAllAccounts(remoteDb);
         })
+        .then(() => {
+          return migrateSchoolData(remoteDb, "bitc");
+        })
         .catch(err => {
           console.log("Migration task info status:", err?.message || err);
         });
@@ -383,6 +389,40 @@ async function startServer() {
       env: process.env.NODE_ENV || 'development',
       cloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
     });
+  });
+
+  // Admin Multi-Tenant Migration & Claims Endpoints
+  apiRouter.post("/admin/migrate-school-data", async (req, res) => {
+    try {
+      const defaultSchoolId = req.body?.schoolId || "bitc";
+      const results = await migrateSchoolData(admin.apps.length ? admin.firestore() : undefined, defaultSchoolId);
+      res.json({ success: true, message: "Migration executed", results });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message || err });
+    }
+  });
+
+  apiRouter.post("/admin/decouple-students-parents", async (req, res) => {
+    try {
+      const defaultSchoolId = req.body?.schoolId || "bitc";
+      const results = await decoupleStudentsAndParents(admin.apps.length ? admin.firestore() : undefined, defaultSchoolId);
+      res.json({ success: true, message: "Decoupling executed", results });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message || err });
+    }
+  });
+
+  apiRouter.post("/admin/set-user-claims", async (req, res) => {
+    try {
+      const { uid, role, schoolId } = req.body || {};
+      if (!uid || !role || !schoolId) {
+        return res.status(400).json({ success: false, error: "Missing uid, role, or schoolId" });
+      }
+      const success = await setUserClaims(uid, role, schoolId);
+      res.json({ success, uid, role, schoolId });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message || err });
+    }
   });
 
   // Local Offline DB Proxy Endpoints

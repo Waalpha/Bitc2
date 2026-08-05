@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 0. Global Safety Net
+    // 0. Global Safety Net - Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
@@ -25,35 +25,80 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function isUserVerified() {
-      // Mandating email verification for standard writes
-      return isAuthenticated() && request.auth.token.email_verified == true;
-    }
-
-    // Role Checks
-    // We check the 'users' collection for roles. 
-    // We also hardcode the admin emails for bootstrap safety.
+    // User Profile & Custom Claims Lookup
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isAdmin() {
+    function getRole() {
+      return request.auth.token.role != null 
+        ? request.auth.token.role 
+        : (exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? getUserData().role : 'student');
+    }
+
+    function getSchoolId() {
+      return request.auth.token.schoolId != null 
+        ? request.auth.token.schoolId 
+        : (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 'schoolId' in getUserData() ? getUserData().schoolId : 'bitc');
+    }
+
+    // Multi-tenant Access Guards
+    function isSuperAdmin() {
       return isAuthenticated() && (
-        request.auth.token.email in ["davmuchiri48@gmail.com", "daudimuchiri4@gmail.com"] ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin')
+        getRole() == 'super_admin' || 
+        request.auth.token.email in ["davmuchiri48@gmail.com", "daudimuchiri4@gmail.com"]
+      );
+    }
+
+    function isSchoolAdmin() {
+      return isAuthenticated() && (
+        isSuperAdmin() || 
+        getRole() == 'school_admin' || 
+        getRole() == 'admin'
+      );
+    }
+
+    function isPrincipal() {
+      return isAuthenticated() && (
+        isSchoolAdmin() || 
+        getRole() == 'principal'
+      );
+    }
+
+    function isAccountant() {
+      return isAuthenticated() && (
+        isSchoolAdmin() || 
+        getRole() == 'accountant' || 
+        getRole() == 'staff'
       );
     }
 
     function isTeacher() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'teacher';
+      return isAuthenticated() && (
+        isSchoolAdmin() || 
+        isPrincipal() || 
+        getRole() == 'teacher'
+      );
     }
 
-    function isStaff() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'staff';
+    function isStudent() {
+      return isAuthenticated() && getRole() == 'student';
+    }
+
+    function isParent() {
+      return isAuthenticated() && getRole() == 'parent';
+    }
+
+    function isSameSchool(dataSchoolId) {
+      return isSuperAdmin() || (dataSchoolId == getSchoolId());
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function schoolIdUnchanged() {
+      return !('schoolId' in existing()) || !('schoolId' in incoming()) || incoming().schoolId == existing().schoolId;
     }
 
     // --- Entity Validations ---
@@ -61,36 +106,14 @@ service cloud.firestore {
     function isValidUser(data) {
       return data.keys().hasAll(['name', 'email', 'role']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
-             data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
-             data.role in ['student', 'teacher', 'admin', 'staff'] &&
+             data.email is string &&
+             (!('schoolId' in data) || (data.schoolId is string && data.schoolId.size() <= 64)) &&
              (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 40)) &&
              (!('phone' in data) || (data.phone is string && data.phone.size() <= 40)) &&
-             (!('residence' in data) || (data.residence is string && data.residence.size() <= 500)) &&
              (!('address' in data) || (data.address is string && data.address.size() <= 500)) &&
-             (!('bloodGroup' in data) || (data.bloodGroup is string && data.bloodGroup.size() <= 10)) &&
-             (!('course' in data) || (data.course is string && data.course.size() <= 200)) &&
-             (!('specialization' in data) || (data.specialization is string && data.specialization.size() <= 200)) &&
-             (!('admissionNumber' in data) || (data.admissionNumber is string && data.admissionNumber.size() <= 100)) &&
-             (!('year' in data) || (data.year is string && data.year.size() <= 20)) &&
              (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 2000)) &&
-             (!('firstName' in data) || (data.firstName is string)) &&
-             (!('lastName' in data) || (data.lastName is string)) &&
-             (!('gender' in data) || (data.gender is string)) &&
-             (!('dateOfBirth' in data) || (data.dateOfBirth is string)) &&
-             (!('academicYear' in data) || (data.academicYear is string)) &&
-             (!('admissionDate' in data) || (data.admissionDate is string)) &&
-             (!('religion' in data) || (data.religion is string)) &&
-             (!('caste' in data) || (data.caste is string)) &&
-             (!('fatherName' in data) || (data.fatherName is string)) &&
-             (!('motherName' in data) || (data.motherName is string)) &&
-             (!('guardianName' in data) || (data.guardianName is string)) &&
-             (!('guardianPhone' in data) || (data.guardianPhone is string)) &&
-             (!('group' in data) || (data.group is string)) &&
-             (!('category' in data) || (data.category is string)) &&
-             (!('roll' in data) || (data.roll is string)) &&
              (!('classIds' in data) || (data.classIds is list)) &&
-             (!('createdAt' in data) || (data.createdAt is string)) &&
-             (!('updatedAt' in data) || (data.updatedAt is string));
+             (!('createdAt' in data) || (data.createdAt is string));
     }
 
     function isValidSettings(data, settingId) {
@@ -99,133 +122,203 @@ service cloud.firestore {
              (data.appTitle is string && data.appTitle.size() <= 100)));
     }
 
-    function isValidFeeBalance(data) {
-      return data.studentId is string && isValidId(data.studentId) &&
-             data.totalAmount is number && data.totalAmount >= 0 &&
-             data.paidAmount is number && data.paidAmount >= 0 &&
-             data.balance is number &&
-             data.lastUpdated is string && // Usually we'd use timestamp, but blueprint says string format date-time
-             data.history is list;
+    // --- Multi-Tenant Collection Rules ---
+
+    // Schools Collection
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || (isSchoolAdmin() && schoolId == getSchoolId());
+
+      // Nested Sub-collection Support for Tenant-scoped queries
+      match /{subcollection}/{docId} {
+        allow read, write: if isSuperAdmin() || schoolId == getSchoolId();
+      }
     }
 
-    // --- Rules ---
-
+    // Users Collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (isSuperAdmin() || resource.data.schoolId == getSchoolId() || isOwner(userId));
       allow create: if isAuthenticated() && (
-        (isOwner(userId) && incoming().role == 'student') || 
-        isAdmin() || 
+        isOwner(userId) || 
+        isSchoolAdmin() || 
         isTeacher()
       ) && isValidUser(incoming());
       allow update: if isAuthenticated() && (
-        isAdmin() || 
+        isSchoolAdmin() || 
         isTeacher() ||
         (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
           'name', 'phoneNumber', 'phone', 'fcmTokens', 'course', 'photoUrl', 
           'residence', 'bloodGroup', 'admissionNumber', 'year', 'updatedAt',
-          'specialization'
+          'specialization', 'schoolId'
         ]))
-      ) && isValidUser(incoming());
-      allow delete: if isAdmin();
+      ) && isValidUser(incoming()) && schoolIdUnchanged();
+      allow delete: if isSchoolAdmin();
     }
 
-    match /settings/{settingId} {
+    // Separate Student Records
+    match /students/{studentId} {
+      allow read: if isAuthenticated() && (
+        isSameSchool(resource.data.schoolId) || 
+        resource.data.userId == request.auth.uid ||
+        resource.data.guardianId == request.auth.uid
+      );
+      allow write: if (isSchoolAdmin() || isPrincipal() || isTeacher()) && schoolIdUnchanged();
+    }
+
+    // Parent Records
+    match /parents/{parentId} {
+      allow read: if isAuthenticated() && (
+        isSameSchool(resource.data.schoolId) || 
+        request.auth.uid == parentId ||
+        (request.auth.uid in resource.data.studentIds)
+      );
+      allow write: if isSchoolAdmin() && schoolIdUnchanged();
+    }
+
+    // Classes & Units
+    match /classes/{classId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || !('schoolId' in resource.data));
+      allow write: if isSchoolAdmin() && isValidId(classId) && schoolIdUnchanged();
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || !('schoolId' in resource.data));
+      allow write: if (isSchoolAdmin() || isTeacher()) && isValidId(unitId) && schoolIdUnchanged();
+    }
+
+    // Exams & Submissions
+    match /exams/{examId} {
+      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || !('schoolId' in resource.data));
+      allow write: if (isSchoolAdmin() || isTeacher()) && isValidId(examId) && schoolIdUnchanged();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAuthenticated() && (isTeacher() || isOwner(resource.data.studentId) || isSameSchool(resource.data.schoolId));
+      allow create: if isAuthenticated() && isOwner(incoming().studentId) && isValidId(submissionId);
+      allow update: if (isSchoolAdmin() || isTeacher()) && schoolIdUnchanged();
+    }
+
+    // Attendance
+    match /attendance/{attendanceId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() && isValidSettings(incoming(), settingId);
+      allow write: if isAuthenticated() && isValidId(attendanceId) && schoolIdUnchanged();
     }
 
     match /exam_attendance/{attendanceId} {
       allow read: if isAuthenticated();
-      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(attendanceId);
+      allow write: if (isSchoolAdmin() || isTeacher()) && isValidId(attendanceId) && schoolIdUnchanged();
     }
 
-    match /classes/{classId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() && isValidId(classId);
-    }
-
-    match /units/{unitId} {
-      allow read: if isAuthenticated();
-      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(unitId);
-    }
-
-    match /exams/{examId} {
-      allow read: if isAuthenticated();
-      allow write: if (isAdmin() || isTeacher() || isStaff()) && isValidId(examId);
-    }
-
-    match /submissions/{submissionId} {
-      allow read: if isAuthenticated() && (isAdmin() || isTeacher() || isStaff() || isOwner(resource.data.studentId));
-      allow create: if isAuthenticated() && isOwner(incoming().studentId) && isValidId(submissionId);
-      allow update: if (isAdmin() || isTeacher() || isStaff());
-    }
-
-    match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidId(attendanceId);
-    }
-
+    // Notifications
     match /notifications/{notifId} {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || 
         resource.data.senderId == request.auth.uid || 
-        (resource.data.userId == 'SYSTEM_ANNOUNCEMENT_ARCHIVE' && (isAdmin() || isTeacher() || isStaff()))
+        (resource.data.userId == 'SYSTEM_ANNOUNCEMENT_ARCHIVE' && isSchoolAdmin())
       );
-      allow create: if isAdmin() || isTeacher() || isStaff();
+      allow create: if isSchoolAdmin() || isTeacher();
       allow update: if isOwner(resource.data.userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read']);
-      allow delete: if isOwner(resource.data.userId) || isAdmin() || isTeacher() || isStaff();
+      allow delete: if isOwner(resource.data.userId) || isSchoolAdmin();
     }
 
+    // Fees, Payments & Expenses
     match /fees/{feeId} {
-      // Secured list queries: evaluate auth.uid against resource.data.studentId
-      allow list: if isAuthenticated() && (isAdmin() || resource.data.studentId == request.auth.uid);
-      allow get: if isAuthenticated() && (isAdmin() || resource.data.studentId == request.auth.uid);
-      allow create: if isAdmin() && isValidFeeBalance(incoming());
-      allow update: if isAdmin();
+      allow list: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow get: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow create: if isAccountant();
+      allow update: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
     }
 
     match /feeConfigs/{feeId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAccountant() && schoolIdUnchanged();
     }
 
     match /feeTypes/{typeId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAccountant() && schoolIdUnchanged();
     }
 
     match /feeGroups/{groupId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAccountant() && schoolIdUnchanged();
     }
 
     match /expenses/{expenseId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read: if isAccountant();
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /budgets/{budgetId} {
+      allow read: if isAccountant();
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /creditDebitNotes/{noteId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /scholarships/{scholarshipId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /installmentPlans/{planId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    match /studentAccounts/{accountId} {
+      allow read: if isAuthenticated() && (isAccountant() || resource.data.studentId == request.auth.uid);
+      allow write: if isAccountant() && schoolIdUnchanged();
+    }
+
+    // Audit Logs - Immutable log table
+    match /auditLogs/{logId} {
+      allow read: if isSchoolAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Audit logs must be append-only
+    }
+
+    // System Settings & Calendar
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isSchoolAdmin() && isValidSettings(incoming(), settingId);
     }
 
     match /school_calendar/{dateId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSchoolAdmin();
     }
     
     match /roles/{roleId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /grades/{gradeId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSchoolAdmin();
     }
 
     match /admissions/{admissionId} {
-      allow read: if isAdmin() || isTeacher() || isStaff();
+      allow read: if isSchoolAdmin() || isTeacher();
       allow create: if true; // Public Online Admission
-      allow update, delete: if isAdmin() || isTeacher() || isStaff();
+      allow update, delete: if isSchoolAdmin() || isTeacher();
     }
 
-    // --- Chat Rules ---
+    // Chat Rules
     match /chat_rooms/{roomId} {
       allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants);
       allow create: if isAuthenticated() && (request.auth.uid in request.resource.data.participants);

@@ -67,8 +67,8 @@ export const CertificateVerification: React.FC = () => {
             courseName = "Diploma in Caregiver & Healthcare Service Support";
           } else if (certNo.toLowerCase().includes("cos") || certNo.toLowerCase().includes("beauty")) {
             courseName = "Diploma in Cosmetology & Salon Management";
-          } else if (certNo.toLowerCase().includes("elect")) {
-            courseName = "Grade I Certificate in Electrical Installation Systems";
+          } else if (certNo.toLowerCase().includes("elect") || certNo.toLowerCase().includes("eet") || certNo.toLowerCase().includes("pv") || certNo.toLowerCase().includes("wire") || certNo.toLowerCase().includes("ee")) {
+            courseName = "Certificate in Electrical and Electronics Technology";
           } else if (certNo.toLowerCase().includes("bible") || certNo.toLowerCase().includes("div")) {
             courseName = "Diploma in Biblical Studies & Practical Theology";
           }

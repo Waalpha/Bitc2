@@ -690,11 +690,22 @@ export const Transcripts: React.FC = () => {
   ];
 
   const defaultElectricalUnits = [
-    { code: "CA-101", name: "Circuit Analysis & Load Management", hours: 60 },
-    { code: "CON-102", name: "Conduit Systems & Surface Installations", hours: 90 },
-    { code: "TS-201", name: "Trunking Systems & Heavy Distribution Routing", hours: 90 },
-    { code: "PVC-202", name: "PVC Sheathed Cable Assembly Installation", hours: 90 },
-    { code: "EES-301", name: "Electrical Safety & Fire Prevention Standard", hours: 45 }
+    { code: "EET 101", name: "Introduction to Electrical and Electronics Engineering", hours: 30 },
+    { code: "EET 102", name: "Engineering Mathematics", hours: 45 },
+    { code: "EET 103", name: "Engineering Science", hours: 30 },
+    { code: "EET 104", name: "Electrical Safety and First Aid", hours: 30 },
+    { code: "EET 105", name: "Electrical Workshop Practice I", hours: 90 },
+    { code: "EET 106", name: "Basic Electrical Installation", hours: 60 },
+    { code: "EET 107", name: "Electrical Measurements and Instruments", hours: 45 },
+    { code: "EET 108", name: "Computer Applications", hours: 30 },
+    { code: "EET 201", name: "Basic Electronics", hours: 60 },
+    { code: "EET 202", name: "Electronic Components and Circuits", hours: 60 },
+    { code: "EET 203", name: "Electrical Machines", hours: 45 },
+    { code: "EET 204", name: "Motor Control and Protection", hours: 45 },
+    { code: "EET 205", name: "Solar Photovoltaic Systems", hours: 45 },
+    { code: "EET 206", name: "Electrical Testing and Fault Diagnosis", hours: 45 },
+    { code: "EET 207", name: "Entrepreneurship Education", hours: 30 },
+    { code: "EET 208", name: "Industrial Attachment / Final Practical Project", hours: 150 }
   ];
 
   // Grade mapping
@@ -850,7 +861,7 @@ export const Transcripts: React.FC = () => {
     } else if (courseName.includes('cookery') || courseName.includes('baking') || courseName.includes('catering') || courseName.includes('food')) {
       deptCode = '15';
       courseCode = '22';
-    } else if (courseName.includes('solar') || courseName.includes('electrical') || courseName.includes('wiring')) {
+    } else if (courseName.includes('solar') || courseName.includes('electrical') || courseName.includes('electronics') || courseName.includes('eet') || courseName.includes('wiring')) {
       deptCode = '19';
       courseCode = '55';
     } else if (courseName.includes('theology') || courseName.includes('biblical') || courseName.includes('ministry')) {
@@ -1004,7 +1015,7 @@ export const Transcripts: React.FC = () => {
         template = defaultIctUnits;
       } else if (studentCourse.includes('cosmetology') || studentCourse.includes('beauty') || studentCourse.includes('hair')) {
         template = defaultCosmetologyUnits;
-      } else if (studentCourse.includes('electrical') || studentCourse.includes('conduit') || studentCourse.includes('trunking')) {
+      } else if (studentCourse.includes('electrical') || studentCourse.includes('electronics') || studentCourse.includes('eet') || studentCourse.includes('solar') || studentCourse.includes('wiring')) {
         template = defaultElectricalUnits;
       }
 

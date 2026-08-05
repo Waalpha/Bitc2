@@ -95,7 +95,9 @@ export const StudentVerification: React.FC = () => {
               email: "davmuchiri48@gmail.com",
               role: "student",
               admissionNumber: queryId === "4567" ? "ADM-2026-4567" : "20260045",
-              course: "Diploma in Information Communication Technology",
+              course: queryId.toLowerCase().includes("elect") || queryId.toLowerCase().includes("eet") || queryId.toLowerCase().includes("pv") || queryId.toLowerCase().includes("wire") 
+                ? "Certificate in Electrical and Electronics Technology"
+                : "Diploma in Information Communication Technology",
               phone: "+254 711 223 344",
               photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
               validUntil: "December 2028",

@@ -155,24 +155,13 @@ const COURSES: Course[] = [
   },
   {
     id: 'eng-1',
-    name: 'Certificate in Solar PV Technology & Electrical Wiring',
+    name: 'Certificate in Electrical and Electronics Technology',
     category: 'engineering',
-    duration: '6 Months',
-    requirements: 'Open / KCSE D Plain recommendation',
-    exams: 'NITA Grade Certification',
-    skills: ['Solar Array System Setup', 'Domestic Conduit Piping', 'Circuit Fault Diagnostics', 'Electrical Safety Regs'],
-    description: 'A fast-paced program designed to meet the explosive African clean energy transition and construction industry.',
-    featured: false
-  },
-  {
-    id: 'eng-2',
-    name: 'Diploma in Domestic & Industrial Electrical Engineering',
-    category: 'engineering',
-    duration: '1.5 Years',
-    requirements: 'KCSE D+ and above',
-    exams: 'KNEC Diploma Series',
-    skills: ['Three-Phase System Wiring', 'Electrical Instrumentation', 'Generator Synchronization', 'Industrial Automation Tech'],
-    description: 'Advance to advanced manufacturing plants installer, commercial contractor, and power grid maintenance supervisor.',
+    duration: '6 Months (24 Weeks)',
+    requirements: 'KCSE Mean Grade D (Plain) or equivalent, or relevant artisan qualification',
+    exams: 'NITA / KNEC / Internal Practical Exams',
+    skills: ['Electrical Safety & Regs', 'Domestic Electrical Installations', 'Basic Electronics & Circuits', 'Motor Control & Protection', 'Solar PV Systems', 'Electrical Fault Diagnosis'],
+    description: 'A 6-month intensive course providing hands-on training in electrical safety, domestic installations, electronics, solar PV setup, motor control, and entrepreneurship.',
     featured: true
   },
   {
@@ -2236,8 +2225,7 @@ export function PublicPortal() {
                             <option value="Diploma in Catering & Hospitality Management">Diploma in Hospitality Management</option>
                           </optgroup>
                           <optgroup label="Electrical Technology School">
-                            <option value="Certificate in Solar PV Technology & Electrical Wiring">Certificate in Solar PV Setup</option>
-                            <option value="Diploma in Domestic & Industrial Electrical Engineering">Diploma in Electrical Engineering</option>
+                            <option value="Certificate in Electrical and Electronics Technology">Certificate in Electrical & Electronics Tech</option>
                           </optgroup>
                           <optgroup label="School of Theological Studies">
                             <option value="Certificate in Theology & Biblical Studies">Certificate in Theology & Biblical Studies</option>

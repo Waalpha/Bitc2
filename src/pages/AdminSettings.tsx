@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense, ErpNextSyncLog } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare, Link, Server, Zap, Copy, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare, Link, Server, Zap, Copy, ExternalLink, ShieldCheck, School } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -1060,6 +1060,65 @@ export const AdminSettings: React.FC = () => {
       addToast(err.message || "Network error preparing school clone", "error");
     } finally {
       setIsCloning(false);
+    }
+  };
+
+  const handleAddSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schoolForm.id || !schoolForm.name) {
+      addToast("School ID and Name are required", "error");
+      return;
+    }
+    
+    const cleanId = schoolForm.id.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-');
+    
+    try {
+      setIsSaving(true);
+      await setDoc(doc(db, 'schools', cleanId), {
+        id: cleanId,
+        name: schoolForm.name,
+        appTitle: schoolForm.appTitle || schoolForm.name,
+        logoUrl: schoolForm.logoUrl || '',
+        createdAt: new Date().toISOString()
+      });
+
+      await setDoc(doc(db, 'settings', cleanId), {
+        appTitle: schoolForm.appTitle || schoolForm.name,
+        fontFamily: 'Inter',
+        fontSize: '16px',
+        textAlign: 'left',
+        activeSession: '2024/2025 Semester 1',
+        publicEmail: `info@${cleanId}.ac.ke`,
+        publicPhone: '+254 700 000 000'
+      }, { merge: true });
+
+      addToast(`Institution "${schoolForm.name}" provisioned successfully as tenant ID: ${cleanId}`, "success");
+      setSchoolForm({ id: '', name: '', appTitle: '', logoUrl: '' });
+      setIsAddingSchool(false);
+    } catch (err: any) {
+      console.error("Error provisioning school:", err);
+      addToast(err.message || "Failed to create school tenant", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleMigrateSchoolData = async (targetSchoolId: string) => {
+    try {
+      addToast(`Initiating multi-tenant scope migration to target: ${targetSchoolId}...`, "success");
+      const res = await fetch('/api/migrate-school-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetSchoolId })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        addToast(`Tenant migration complete! Migrated ${data.migratedUsers || 0} user records to ${targetSchoolId}`, "success");
+      } else {
+        addToast(data.error || "Data migration failed", "error");
+      }
+    } catch (err: any) {
+      addToast(err.message || "Network error during tenant data migration", "error");
     }
   };
 
@@ -3251,6 +3310,258 @@ export const AdminSettings: React.FC = () => {
               {isSaving ? 'Saving' : 'Persist Public Portal Settings'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Multi-Tenant Schools Management Tab */}
+      {activeTab === 'schools' && (
+        <div className="space-y-8">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl border border-purple-800/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 text-[11px] font-bold tracking-wider uppercase">
+                  <ShieldCheck size={14} className="text-purple-300" />
+                  <span>Multi-Tenant Architecture</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Schools & Institutions Manager</h2>
+                <p className="text-xs sm:text-sm text-purple-200/80 leading-relaxed font-sans">
+                  Provision new school tenants, customize white-label institution branding, manage tenant isolation scopes (`schoolId`), and switch active operating contexts.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex-shrink-0">
+                <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div>
+                <div>
+                  <p className="text-xs text-purple-200 font-semibold uppercase tracking-wider">Active Tenant Context</p>
+                  <p className="text-sm font-black text-white capitalize">
+                    {schools.find(s => s.id === activeSchoolId)?.name || activeSchoolId}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Provision & Control Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Provisioned Tenants ({schools.length})</h3>
+              <p className="text-xs text-gray-500">Each institution functions within a fully isolated data partition in Firestore.</p>
+            </div>
+            <button
+              onClick={() => setIsAddingSchool(true)}
+              className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-purple-600/20"
+            >
+              <Plus size={18} />
+              Provision New School Tenant
+            </button>
+          </div>
+
+          {/* Provision Modal / Form inline */}
+          {isAddingSchool && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-purple-200 shadow-lg space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+                    <School size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Provision New Institution Tenant</h3>
+                    <p className="text-xs text-gray-500">Configure institution metadata and unique tenant identifier</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingSchool(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddSchool} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      School Slug / Unique Tenant ID *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. kiganjo-tech, st-marys"
+                      value={schoolForm.id}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, id: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm font-mono text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1">Unique alphanumeric identifier used for data partition scoping (`schoolId`).</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      Full Institution Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. St. Mary's International Academy"
+                      value={schoolForm.name}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      Portal Display Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. St. Mary's Portal"
+                      value={schoolForm.appTitle}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, appTitle: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      Logo URL (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/logo.png"
+                      value={schoolForm.logoUrl}
+                      onChange={(e) => setSchoolForm({ ...schoolForm, logoUrl: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingSchool(false)}
+                    className="px-5 py-2.5 text-xs font-bold text-gray-600 uppercase tracking-wider hover:bg-gray-100 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                  >
+                    {isSaving ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                    {isSaving ? 'Provisioning...' : 'Provision Tenant'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+
+          {/* Tenants List Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {schools.map((school) => {
+              const isActive = school.id === activeSchoolId;
+              const associatedUserCount = users.filter(u => u.schoolId === school.id || (!u.schoolId && school.id === 'bitc')).length;
+              const associatedClassCount = classes.filter(c => c.schoolId === school.id || (!c.schoolId && school.id === 'bitc')).length;
+
+              return (
+                <div
+                  key={school.id}
+                  className={`p-6 sm:p-7 rounded-3xl border transition-all space-y-5 bg-white shadow-sm ${
+                    isActive ? 'border-purple-300 ring-2 ring-purple-500/20' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      {school.logoUrl ? (
+                        <img src={school.logoUrl} alt={school.name} className="w-12 h-12 rounded-2xl object-cover border border-gray-200" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center font-black text-lg">
+                          {school.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-base text-gray-900">{school.name}</h4>
+                          {isActive && (
+                            <span className="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                              Current Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {school.id}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs">
+                    <div>
+                      <p className="text-gray-400 font-medium">Associated Users</p>
+                      <p className="font-bold text-gray-800 text-sm mt-0.5">{associatedUserCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 font-medium">Classes Configured</p>
+                      <p className="font-bold text-gray-800 text-sm mt-0.5">{associatedClassCount}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setActiveSchoolId(school.id);
+                        addToast(`Switched active tenant context to ${school.name}`, "success");
+                      }}
+                      disabled={isActive}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                        isActive 
+                        ? 'bg-gray-100 text-gray-400 cursor-default' 
+                        : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200'
+                      }`}
+                    >
+                      <Globe size={14} />
+                      {isActive ? 'Active Tenant' : 'Switch Context'}
+                    </button>
+
+                    <button
+                      onClick={() => handleMigrateSchoolData(school.id)}
+                      className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-purple-600 bg-gray-50 hover:bg-gray-100 px-3.5 py-2.5 rounded-xl border border-gray-200 transition-all"
+                      title="Migrate legacy un-scoped data into this school tenant"
+                    >
+                      <Database size={14} />
+                      Migrate Scope Data
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Technical Tenant Isolation Verification Box */}
+          <div className="bg-slate-900 p-6 sm:p-8 rounded-3xl text-white space-y-4 border border-slate-800">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="text-emerald-400" size={24} />
+              <div>
+                <h3 className="text-base font-bold text-white">Firestore Rules & Custom Claims Enforcement</h3>
+                <p className="text-xs text-slate-400">Strict multi-tenant security guarantees</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed font-mono bg-slate-950 p-4 rounded-2xl border border-slate-800">
+              rule isSameSchool(dataSchoolId) &#123;<br/>
+              &nbsp;&nbsp;return isSuperAdmin() || getSchoolId() == dataSchoolId || request.auth.token.schoolId == dataSchoolId;<br/>
+              &#125;
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-2">
+              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> User Claims Scoped</span>
+              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> Automatic Firestore Query Filtering</span>
+              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> Multi-Tenant REST Migration Endpoints</span>
+            </div>
+          </div>
         </div>
       )}
 

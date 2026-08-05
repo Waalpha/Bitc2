@@ -56,8 +56,7 @@ const SYSTEM_COURSES = [
   "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
   "Certificate in Professional Cookery, General Baking & Cake Decoration",
   "Diploma in Catering & Hospitality Management",
-  "Certificate in Solar PV Technology & Electrical Wiring",
-  "Diploma in Domestic & Industrial Electrical Engineering",
+  "Certificate in Electrical and Electronics Technology",
   "Certificate in Theology & Biblical Studies",
   "Diploma in Theology & Christian Ministry"
 ];

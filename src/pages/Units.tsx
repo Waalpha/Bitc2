@@ -14,7 +14,7 @@ export const Units: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [newUnitName, setNewUnitName] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [newUnitStatus, setNewUnitStatus] = useState<'active' | 'completed'>('active');
+  const [newUnitStatus, setNewUnitStatus] = useState<'active' | 'completed' | 'archived'>('active');
   const [isAdding, setIsAdding] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -54,13 +54,24 @@ export const Units: React.FC = () => {
       ]
     },
     electrical: {
-      name: "Electrical Installation Systems",
+      name: "Certificate in Electrical and Electronics Technology",
       units: [
-        "Circuit Analysis & Load Management",
-        "Conduit Systems & Surface Installations",
-        "Trunking Systems & Heavy Distribution Routing",
-        "PVC Sheathed Cable Assembly Installation",
-        "Electrical Safety & Fire Prevention Standard"
+        "EET 101: Introduction to Electrical and Electronics Engineering",
+        "EET 102: Engineering Mathematics",
+        "EET 103: Engineering Science",
+        "EET 104: Electrical Safety and First Aid",
+        "EET 105: Electrical Workshop Practice I",
+        "EET 106: Basic Electrical Installation",
+        "EET 107: Electrical Measurements and Instruments",
+        "EET 108: Computer Applications",
+        "EET 201: Basic Electronics",
+        "EET 202: Electronic Components and Circuits",
+        "EET 203: Electrical Machines",
+        "EET 204: Motor Control and Protection",
+        "EET 205: Solar Photovoltaic Systems",
+        "EET 206: Electrical Testing and Fault Diagnosis",
+        "EET 207: Entrepreneurship Education",
+        "EET 208: Industrial Attachment / Final Practical Project"
       ]
     }
   };
@@ -446,7 +457,7 @@ export const Units: React.FC = () => {
                   >
                     <option value="ict" className="bg-bg-card">ICT & Business Management (13 Units)</option>
                     <option value="cosmetology" className="bg-bg-card">Cosmetology, Hairdressing & Beauty Therapy (10 Units)</option>
-                    <option value="electrical" className="bg-bg-card">Electrical Installation Systems (5 Units)</option>
+                    <option value="electrical" className="bg-bg-card">Certificate in Electrical and Electronics Technology (16 Units)</option>
                   </select>
                 </div>
 

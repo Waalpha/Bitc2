@@ -134,45 +134,45 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {
       title: 'DASHBOARD',
       items: [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: null },
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
         { name: 'Profile', path: '/profile', icon: User, permission: null, showForStudentOnly: true },
       ]
     },
     {
       title: 'COMMUNICATION',
       items: [
-        { name: 'WhatsApp Group', path: '/whatsapp', icon: MessageSquare, permission: null },
+        { name: 'WhatsApp Group', path: '/whatsapp', icon: MessageSquare, permission: 'chat.view' },
       ]
     },
     {
       title: 'ACADEMIC',
       items: [
-        { name: 'Timetable', path: '/timetable', icon: Calendar, permission: null },
-        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: null, showForStudentOnly: true },
-        { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: null, showForAdminOnly: true },
+        { name: 'Timetable', path: '/timetable', icon: Calendar, permission: 'classes.view' },
+        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: 'units.view', showForStudentOnly: true },
+        { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: 'reports.view', showForAdminOnly: true },
       ]
     },
     {
       title: 'ADMINISTRATION',
       items: [
-        { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'system_settings' },
-        { name: 'HR Management', path: '/hr', icon: Users, permission: null, showForAdminOnly: true },
-        { name: 'Classes', path: '/classes', icon: Users, permission: 'manage_classes' },
-        { name: 'Units', path: '/units', icon: BookOpen, permission: 'manage_units' },
+        { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'settings.manage' },
+        { name: 'HR Management', path: '/hr', icon: Users, permission: 'hr.manage' },
+        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.manage' },
+        { name: 'Units', path: '/units', icon: BookOpen, permission: 'units.manage' },
       ]
     },
     {
       title: 'STUDENT INFO',
       items: [
-        { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'view_students' },
-        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'student_admission' },
-        { name: 'Student List', path: '/students', icon: Users, permission: 'view_students' },
-        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: null },
-        { name: 'Exams', path: '/exams', icon: FileText, permission: 'manage_exams' },
-        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'manage_exams' },
-        { name: 'Marks', path: '/marks', icon: Award, permission: 'manage_exams' },
-        { name: 'Results', path: '/results', icon: TrendingUp, permission: null },
-        { name: 'Fees', path: '/fees', icon: Wallet, permission: null },
+        { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'students.view' },
+        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'students.create' },
+        { name: 'Student List', path: '/students', icon: Users, permission: 'students.view' },
+        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view' },
+        { name: 'Exams', path: '/exams', icon: FileText, permission: 'exams.view' },
+        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'exams.view' },
+        { name: 'Marks', path: '/marks', icon: Award, permission: 'exams.grade' },
+        { name: 'Results', path: '/results', icon: TrendingUp, permission: 'results.view' },
+        { name: 'Fees', path: '/fees', icon: Wallet, permission: 'fees.view' },
       ]
     }
   ];

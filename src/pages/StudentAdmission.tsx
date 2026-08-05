@@ -49,8 +49,7 @@ const SYSTEM_COURSES = [
   "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
   "Certificate in Professional Cookery, General Baking & Cake Decoration",
   "Diploma in Catering & Hospitality Management",
-  "Certificate in Solar PV Technology & Electrical Wiring",
-  "Diploma in Domestic & Industrial Electrical Engineering",
+  "Certificate in Electrical and Electronics Technology",
   "Certificate in Theology & Biblical Studies",
   "Diploma in Theology & Christian Ministry"
 ];
@@ -471,8 +470,7 @@ export const StudentAdmission: React.FC = () => {
     if (lower.includes('nursing') || lower.includes('aide')) return 'DNA';
     if (lower.includes('cookery') || lower.includes('baking') || lower.includes('cake')) return 'CPC';
     if (lower.includes('catering') || lower.includes('hospitality')) return 'DCH';
-    if (lower.includes('solar')) return 'CSPV';
-    if (lower.includes('electrical')) return 'DEE';
+    if (lower.includes('electrical') || lower.includes('electronics') || lower.includes('eet') || lower.includes('solar')) return 'CEET';
     if (lower.includes('theological') || lower.includes('theology') || lower.includes('divinity') || lower.includes('biblical')) return 'THS';
     
     // Fallback: 3 letter uppercase abbreviation from the word initials

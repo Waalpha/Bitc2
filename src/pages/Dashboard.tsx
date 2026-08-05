@@ -85,53 +85,51 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-      <div className="bg-gradient-to-br from-[#1A1F2E] to-[#0B1221] p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-        
+      <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm relative overflow-hidden group">
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
               <Share2 size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white tracking-tight">Share App</h3>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Invite others to the portal</p>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Share App</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Invite others to the portal</p>
             </div>
           </div>
 
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mb-6 flex items-center justify-between gap-4">
-            <code className="text-xs font-mono text-blue-400 truncate flex-1">{shareUrl}</code>
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6 flex items-center justify-between gap-4">
+            <code className="text-xs font-mono text-blue-600 truncate flex-1">{shareUrl}</code>
             <button 
               onClick={handleCopyLink}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+              className="p-2 hover:bg-slate-200/60 rounded-lg transition-colors text-slate-500 hover:text-slate-800"
             >
-              {copied ? <Check size={18} className="text-success" /> : <Copy size={18} />}
+              {copied ? <Check size={18} className="text-emerald-600" /> : <Copy size={18} />}
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={handleShare}
-              className="bg-primary text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-hover transition-all active:scale-95"
+              className="bg-blue-600 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:bg-blue-700 transition-all active:scale-95"
             >
               <Send size={16} /> Share Link
             </button>
             <button 
               onClick={() => setShowQR(true)}
-              className="bg-white/5 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-white/5 hover:bg-white/10 transition-all active:scale-95"
+              className="bg-slate-100 text-slate-800 font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-200 transition-all active:scale-95"
             >
               <QrCode size={16} /> View QR
             </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-white/5">
+          <div className="mt-8 pt-6 border-t border-slate-100">
             <div className="flex items-start gap-3">
-              <div className="bg-amber-500/10 p-2 rounded-lg text-amber-500 shrink-0">
+              <div className="bg-amber-50 p-2 rounded-lg text-amber-600 shrink-0">
                 <Download size={14} />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">How to Install</p>
-                <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
+                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">How to Install</p>
+                <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
                   Open this link in your mobile browser, tap <b>Share</b> or <b>Menu</b>, and select <b>"Add to Home Screen"</b> to install as an app.
                 </p>
               </div>
@@ -1778,12 +1776,12 @@ export const Dashboard: React.FC = () => {
         {/* Notice Board Section for Students */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
-              <span className="w-1.5 h-6 bg-primary rounded-full" />
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
               Notice Board
             </h3>
             {notifications.filter(n => !n.read).length > 0 && (
-              <span className="bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg shadow-rose-500/20">
+              <span className="bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
                 {notifications.filter(n => !n.read).length} NEW
               </span>
             )}
@@ -1797,39 +1795,39 @@ export const Dashboard: React.FC = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className={`p-6 rounded-[32px] border transition-all relative overflow-hidden group ${
+                  className={`p-6 rounded-[28px] border transition-all relative overflow-hidden group shadow-sm ${
                     !notif.read 
-                    ? 'bg-[#1A1F2E] border-primary/20' 
-                    : 'bg-[#1A1F2E]/40 border-white/5 opacity-80'
+                    ? 'bg-white border-blue-200 ring-2 ring-blue-500/10' 
+                    : 'bg-white border-slate-200'
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-2xl shrink-0 ${
-                      notif.type === 'fee' ? 'bg-amber-500/10 text-amber-500' :
-                      notif.type === 'exam' ? 'bg-primary/10 text-primary' :
-                      'bg-success/10 text-success'
+                    <div className={`p-3.5 rounded-2xl shrink-0 ${
+                      notif.type === 'fee' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      notif.type === 'exam' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     }`}>
-                      {notif.type === 'fee' ? <Wallet size={18} /> :
-                       notif.type === 'exam' ? <FileText size={18} /> :
-                       <Bell size={18} />}
+                      {notif.type === 'fee' ? <Wallet size={20} /> :
+                       notif.type === 'exam' ? <FileText size={20} /> :
+                       <Bell size={20} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <h4 className="font-bold text-base text-white tracking-tight break-words">{notif.title}</h4>
-                        <span className="text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">
-                          {format(new Date(notif.createdAt), 'MMM dd')}
+                        <h4 className="font-bold text-base text-slate-900 tracking-tight break-words">{notif.title}</h4>
+                        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-wide whitespace-nowrap">
+                          {format(new Date(notif.createdAt), 'MMM dd, HH:mm')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap">{notif.message}</p>
+                      <p className="text-sm text-slate-700 leading-relaxed font-medium break-words whitespace-pre-wrap">{notif.message}</p>
                       
                       {notif.attachmentUrl && (
                         <a
                           href={notif.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(notif.attachmentUrl)}&filename=${encodeURIComponent(notif.attachmentName || 'attachment')}` : notif.attachmentUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-4 inline-flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5"
+                          className="mt-4 inline-flex items-center gap-2 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-600 uppercase tracking-widest transition-all border border-slate-200"
                         >
-                          <Paperclip size={12} /> View Attachment
+                          <Paperclip size={14} /> View Attachment
                         </a>
                       )}
                     </div>
@@ -1837,31 +1835,31 @@ export const Dashboard: React.FC = () => {
                 </motion.div>
               ))
             ) : (
-              <div className="bg-[#1A1F2E] p-10 rounded-[32px] border border-white/5 text-center">
-                <Bell className="mx-auto text-gray-800 mb-3 opacity-20" size={32} />
-                <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px]">No recent announcements</p>
+              <div className="bg-white p-10 rounded-[28px] border border-slate-200 text-center shadow-sm">
+                <Bell className="mx-auto text-slate-400 mb-3 opacity-60" size={32} />
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No recent announcements</p>
               </div>
             )}
             {notifications.length > 5 && (
-              <Link to="/messages" className="block text-center text-[10px] font-bold text-primary uppercase tracking-widest hover:underline py-2">
+              <Link to="/messages" className="block text-center text-xs font-bold text-blue-600 uppercase tracking-widest hover:underline py-2">
                 View All Messages
               </Link>
             )}
 
             {/* Global Archive for Students */}
             {sentAnnouncements.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
-                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest px-2">Global System Broadcasts</p>
+              <div className="mt-8 pt-6 border-t border-slate-200 space-y-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-2">Global System Broadcasts</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {sentAnnouncements.slice(0, 4).map((notif, idx) => (
-                    <div key={`${notif.id}_student_announcement_${idx}`} className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                    <div key={`${notif.id}_student_announcement_${idx}`} className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-blue-300 transition-colors shadow-sm">
                       <div className="flex justify-between items-start mb-2">
-                        <p className="text-[9px] font-bold text-primary uppercase tracking-widest">
-                          {format(new Date(notif.createdAt), 'MMM dd')}
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                          {format(new Date(notif.createdAt), 'MMM dd, yyyy')}
                         </p>
-                        <Megaphone size={12} className="text-primary opacity-40" />
+                        <Megaphone size={14} className="text-blue-600 opacity-60" />
                       </div>
-                      <h4 className="text-xs font-bold text-white line-clamp-1 truncate uppercase">{notif.title}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 line-clamp-1 truncate uppercase">{notif.title}</h4>
                     </div>
                   ))}
                 </div>
@@ -2440,16 +2438,16 @@ export const Dashboard: React.FC = () => {
 
         {/* Highlights Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-[40px] shadow-2xl shadow-blue-600/20 text-white relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-700">
+          <div className="bg-white p-8 rounded-[32px] border border-[#E2E8F0] shadow-sm text-[#0F172A] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform duration-700 text-blue-600">
               <BookOpen size={100} />
             </div>
             <div className="relative z-10 flex flex-col justify-between h-full">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60 mb-2">My Units</p>
-                <h3 className="text-4xl font-bold">{stats.units}</h3>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#64748B] mb-2">My Units</p>
+                <h3 className="text-4xl font-bold text-[#0F172A]">{stats.units}</h3>
               </div>
-              <Link to="/my-units" className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest hover:underline">
+              <Link to="/my-units" className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700 transition-colors">
                 View All <ArrowRight size={14} />
               </Link>
             </div>
@@ -2775,17 +2773,14 @@ export const Dashboard: React.FC = () => {
           id="dashboard-welcome-banner"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-blue-900 p-8 sm:p-12 rounded-[40px] text-white shadow-2xl shadow-blue-900/20"
+          className="relative overflow-hidden bg-white border border-[#E2E8F0] p-8 sm:p-10 rounded-[32px] text-[#0F172A] shadow-sm"
         >
-          <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-60 h-60 bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none" />
-          
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
-              <h1 id="welcome-title" className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+              <h1 id="welcome-title" className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-[#0F172A]">
                 Hello, {userData?.name?.split(' ')[0]}! 👋
               </h1>
-              <p id="welcome-subtitle" className="text-blue-100/80 text-sm sm:text-base font-medium max-w-lg leading-relaxed">
+              <p id="welcome-subtitle" className="text-[#64748B] text-sm sm:text-base font-medium max-w-lg leading-relaxed">
                 Welcome back to {settings?.appTitle || 'BITC'}. Everything is looking session-ready.
               </p>
             </div>
@@ -2999,10 +2994,10 @@ export const Dashboard: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.05 }}
                   whileHover={{ y: -2 }}
-                  className={`p-6 rounded-[32px] border transition-all relative overflow-hidden group ${
+                  className={`p-6 rounded-[28px] border transition-all relative overflow-hidden group shadow-sm ${
                     !notif.read 
-                    ? 'bg-bg-card border-primary/20 shadow-xl shadow-primary/5' 
-                    : 'bg-bg-card/40 border-white/5 opacity-80'
+                    ? 'bg-white border-blue-200 ring-2 ring-blue-500/10' 
+                    : 'bg-white border-slate-200'
                   }`}
                 >
                   {!notif.read && (
@@ -3012,7 +3007,7 @@ export const Dashboard: React.FC = () => {
                           e.stopPropagation();
                           await updateDoc(doc(db, 'notifications', notif.id), { read: true });
                         }}
-                        className="text-xs font-bold text-primary uppercase tracking-widest hover:underline"
+                        className="text-xs font-bold text-blue-600 uppercase tracking-widest hover:underline"
                       >
                         Mark as Read
                       </button>
@@ -3020,10 +3015,10 @@ export const Dashboard: React.FC = () => {
                   )}
                   <div className="flex items-start gap-5">
                     <div className={`p-4 rounded-[20px] shrink-0 shadow-sm ${
-                      notif.type === 'fee' ? 'bg-amber-500/10 text-amber-500' :
-                      notif.type === 'exam' ? 'bg-primary/10 text-primary' :
-                      notif.type === 'grade' ? 'bg-indigo-500/10 text-indigo-500' :
-                      'bg-success/10 text-success'
+                      notif.type === 'fee' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      notif.type === 'exam' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                      notif.type === 'grade' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     }`}>
                       {notif.type === 'fee' ? <Wallet size={20} /> :
                        notif.type === 'exam' ? <FileText size={20} /> :
@@ -3032,12 +3027,12 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
-                        <h4 className={`font-bold text-sm tracking-tight break-words ${!notif.read ? 'text-text-primary' : 'text-text-secondary'}`}>{notif.title}</h4>
-                        <span className="text-xs font-bold text-text-muted uppercase tracking-widest bg-white/5 px-2 py-1 rounded-lg">
+                        <h4 className="font-bold text-base tracking-tight break-words text-slate-900">{notif.title}</h4>
+                        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-wide whitespace-nowrap">
                           {format(new Date(notif.createdAt), 'MMM dd, HH:mm')}
                         </span>
                       </div>
-                      <p className={`text-xs leading-relaxed mb-4 break-words font-medium line-clamp-3 md:line-clamp-none ${!notif.read ? 'text-text-secondary' : 'text-text-muted'}`}>{notif.message}</p>
+                      <p className="text-sm leading-relaxed mb-4 break-words font-medium text-slate-700">{notif.message}</p>
                       
                       <div className="flex flex-wrap gap-3">
                         {notif.attachmentUrl && (
@@ -3045,13 +3040,13 @@ export const Dashboard: React.FC = () => {
                             href={notif.attachmentUrl.startsWith('http') ? `/api/download?url=${encodeURIComponent(notif.attachmentUrl)}&filename=${encodeURIComponent(notif.attachmentName || 'attachment')}` : notif.attachmentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 rounded-2xl transition-all group/btn"
+                            className="inline-flex items-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-xl transition-all group/btn"
                           >
-                            {notif.attachmentType === 'image' ? <ImageIcon size={16} className="text-primary" /> : <FileIcon size={16} className="text-rose-500" />}
-                            <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                            {notif.attachmentType === 'image' ? <ImageIcon size={16} className="text-blue-600" /> : <FileIcon size={16} className="text-rose-500" />}
+                            <span className="text-xs font-bold text-slate-800 uppercase tracking-widest">
                               {notif.attachmentName || 'View Attachment'}
                             </span>
-                            <Download size={14} className="text-text-muted group-hover/btn:translate-y-1 transition-transform" />
+                            <Download size={14} className="text-slate-500 group-hover/btn:translate-y-1 transition-transform" />
                           </a>
                         )}
                         {notif.link && (
@@ -3060,7 +3055,7 @@ export const Dashboard: React.FC = () => {
                             onClick={async () => {
                               if (!notif.read) await updateDoc(doc(db, 'notifications', notif.id), { read: true });
                             }}
-                            className="inline-flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest hover:underline"
+                            className="inline-flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline"
                           >
                             View Details <ArrowRight size={14} />
                           </Link>
@@ -3071,11 +3066,11 @@ export const Dashboard: React.FC = () => {
                 </motion.div>
               ))
             ) : (
-              <div className="bg-bg-card p-12 rounded-[40px] border border-white/5 text-center space-y-4 shadow-xl">
-                <div className="bg-white/5 w-20 h-20 rounded-[32px] flex items-center justify-center mx-auto text-text-muted opacity-20">
-                  <Bell size={36} />
+              <div className="bg-white p-12 rounded-[32px] border border-slate-200 text-center space-y-4 shadow-sm">
+                <div className="bg-slate-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                  <Bell size={28} />
                 </div>
-                <p className="text-text-muted font-bold text-xs uppercase tracking-widest">Inbox is clear</p>
+                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Inbox is clear</p>
               </div>
             )}
           </div>
@@ -3084,8 +3079,8 @@ export const Dashboard: React.FC = () => {
           {sentAnnouncements.length > 0 && (
             <div className="mt-12 space-y-6">
               <div className="flex items-center justify-between px-2">
-                <h2 className="text-primary font-bold uppercase tracking-[0.2em] text-xs flex items-center gap-2">
-                  <Megaphone size={14} /> System Broadcast Archive
+                <h2 className="text-slate-900 font-bold uppercase tracking-[0.2em] text-xs flex items-center gap-2">
+                  <Megaphone size={14} className="text-blue-600" /> System Broadcast Archive
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3095,20 +3090,20 @@ export const Dashboard: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-5 rounded-[24px] bg-bg-card/40 border border-white/5 hover:border-primary/20 transition-all group"
+                    className="p-5 rounded-[24px] bg-white border border-slate-200 shadow-sm hover:border-blue-300 transition-all group"
                   >
                     <div className="flex justify-between items-start mb-3">
-                      <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
                         {format(new Date(notif.createdAt), 'MMM dd, yyyy')}
                       </span>
-                      <span className="text-[10px] font-bold text-primary/60 uppercase tracking-widest italic">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest italic">
                         Sent by {(notif as any).senderName || 'Staff'}
                       </span>
                     </div>
-                    <h4 className="font-bold text-sm text-text-primary tracking-tight mb-2 group-hover:text-primary transition-colors">{notif.title}</h4>
-                    <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">{notif.message}</p>
+                    <h4 className="font-bold text-sm text-slate-900 tracking-tight mb-2 group-hover:text-blue-600 transition-colors">{notif.title}</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{notif.message}</p>
                     {notif.attachmentUrl && (
-                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest">
                         <Paperclip size={12} /> Has Attachment
                       </div>
                     )}

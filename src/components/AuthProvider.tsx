@@ -241,7 +241,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserData(data);
         
         // Lock activeSchoolId for non-admins to their assigned school
-        if (data.role !== 'admin' && data.schoolId) {
+        const isAdminRole = ['admin', 'super_admin', 'school_admin'].includes(data.role);
+        if (!isAdminRole && data.schoolId) {
           setActiveSchoolIdState(data.schoolId);
           localStorage.setItem('active_school_id', data.schoolId);
         }
@@ -255,14 +256,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setPermissions(roleSnap.data().permissions || []);
             } else {
               // Fallback for system roles if roles collection not yet populated
-              if (data.role === 'admin') setPermissions(['manage_users', 'manage_classes', 'manage_units', 'manage_exams', 'mark_attendance', 'view_reports', 'system_settings', 'view_students', 'manage_fees', 'view_finance', 'manage_timetable', 'manage_whatsapp', 'manage_chat', 'student_admission', 'manage_marks', 'view_results']);
-              else if (data.role === 'teacher') setPermissions(['manage_units', 'manage_exams', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results']);
-              else if (data.role === 'registrar') setPermissions(['view_students', 'student_admission', 'manage_classes', 'manage_units', 'manage_timetable']);
-              else if (data.role === 'finance') setPermissions(['manage_fees', 'view_finance', 'view_reports']);
-              else if (data.role === 'staff') setPermissions(['view_students', 'manage_timetable']);
-              else if (data.role === 'parent') setPermissions(['view_results', 'view_reports']);
-              else if (data.role === 'student') setPermissions(['view_results']);
-              else setPermissions([]);
+              if (['admin', 'super_admin', 'school_admin'].includes(data.role)) {
+                setPermissions(['settings.manage', 'system_settings', 'manage_users', 'manage_classes', 'manage_units', 'manage_exams', 'mark_attendance', 'view_reports', 'view_students', 'manage_fees', 'view_finance', 'manage_timetable', 'manage_whatsapp', 'manage_chat', 'student_admission', 'manage_marks', 'view_results']);
+              } else if (data.role === 'principal') {
+                setPermissions(['settings.manage', 'system_settings', 'view_reports', 'view_students', 'view_finance', 'view_results', 'manage_timetable', 'manage_exams', 'mark_attendance']);
+              } else if (data.role === 'accountant' || data.role === 'finance') {
+                setPermissions(['manage_fees', 'view_finance', 'view_reports', 'view_students']);
+              } else if (data.role === 'teacher') {
+                setPermissions(['manage_units', 'manage_exams', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results', 'mark_attendance']);
+              } else if (data.role === 'registrar') {
+                setPermissions(['view_students', 'student_admission', 'manage_classes', 'manage_units', 'manage_timetable']);
+              } else if (data.role === 'staff') {
+                setPermissions(['view_students', 'manage_timetable']);
+              } else if (data.role === 'parent') {
+                setPermissions(['view_results', 'view_reports']);
+              } else if (data.role === 'student') {
+                setPermissions(['view_results']);
+              } else {
+                setPermissions([]);
+              }
             }
           }, (error) => {
             try {
@@ -411,7 +423,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const studentContext = userData?.role === 'student' ? userData : activeStudent;
 
   const hasPermission = useCallback((permission: string) => {
-    if (userData?.role === 'admin') return true;
+    if (['admin', 'super_admin', 'school_admin'].includes(userData?.role || '')) return true;
+    if (permission === 'settings.manage' || permission === 'system_settings') {
+      return permissions.includes('settings.manage') || permissions.includes('system_settings');
+    }
     return permissions.includes(permission);
   }, [userData?.role, permissions]);
 
