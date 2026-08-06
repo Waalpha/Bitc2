@@ -3795,8 +3795,8 @@ export const Students: React.FC = () => {
     const admNum = student.admissionNumber ? String(student.admissionNumber).toLowerCase() : '';
     
     const matchesSearch = 
-      student.name.toLowerCase().includes(searchLow) ||
-      student.email.toLowerCase().includes(searchLow) ||
+      (student.name || '').toLowerCase().includes(searchLow) ||
+      (student.email || '').toLowerCase().includes(searchLow) ||
       admNum.includes(searchLow);
       
     const matchesClass = selectedClassId === 'all' || (student.classIds && student.classIds.includes(selectedClassId));

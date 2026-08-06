@@ -454,14 +454,14 @@ export const Chat: React.FC = () => {
 
   const filteredUsers = users.filter(u => 
     u.uid !== user?.uid && 
-    (u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     u.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ((u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+     (u.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
      (u.admissionNumber?.toLowerCase().includes(searchTerm.toLowerCase())) ||
      (u.course?.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   const filteredClasses = classes.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDragOver = (e: React.DragEvent) => {

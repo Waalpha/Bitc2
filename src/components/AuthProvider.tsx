@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user]);
 
-  // Handle active school settings subscription
+  // Handle settings subscription
   useEffect(() => {
     if (!isFirebaseReady) {
       setLoading(false);
@@ -145,11 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const isDefault = activeSchoolId === 'bitc';
-    const activeSettingsKey = isDefault ? 'global' : activeSchoolId;
-    const globalRef = doc(db, 'settings', activeSettingsKey);
-    const heroLegacyRef = doc(db, 'settings', isDefault ? 'hero_legacy' : `${activeSchoolId}_hero_legacy`);
-    const galleryRef = doc(db, 'settings', isDefault ? 'gallery' : `${activeSchoolId}_gallery`);
+    const globalRef = doc(db, 'settings', 'global');
+    const heroLegacyRef = doc(db, 'settings', 'hero_legacy');
+    const galleryRef = doc(db, 'settings', 'gallery');
 
     const subs = [
       onSnapshot(globalRef, (snap) => {
@@ -162,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           // Standard defaults fallback
           setSettings({
-            appTitle: activeSchoolId.toUpperCase() === 'BITC' ? 'BITC' : activeSchoolId.charAt(0).toUpperCase() + activeSchoolId.slice(1).toLowerCase(),
+            appTitle: 'BITC',
             fontFamily: 'Inter',
             fontSize: '16px',
             textAlign: 'left',
@@ -171,19 +169,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             portalGallery: []
           });
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, `settings/${activeSettingsKey}`)),
+      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/global')),
       
       onSnapshot(heroLegacyRef, (snap) => {
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, publicHeroImages: snap.data().images || [] } as AppSettings));
         }
-      }, (err) => console.log(`No custom hero legacy for school ${activeSchoolId}`)),
+      }, (err) => console.log('No custom hero legacy settings')),
 
       onSnapshot(galleryRef, (snap) => {
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, portalGallery: snap.data().images || [] } as AppSettings));
         }
-      }, (err) => console.log(`No custom gallery for school ${activeSchoolId}`))
+      }, (err) => console.log('No custom gallery settings'))
     ];
 
     if (demoUserUid) {
@@ -225,7 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subs.forEach(unsub => unsub());
       unsubscribeAuth();
     };
-  }, [activeSchoolId, demoUserUid]);
+  }, [demoUserUid]);
 
   // Synchronize user settings and roles
   useEffect(() => {
@@ -239,13 +237,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = docSnap.data();
         if (data.role) data.role = data.role.toLowerCase();
         setUserData(data);
-        
-        // Lock activeSchoolId for non-admins to their assigned school
-        const isAdminRole = ['admin', 'super_admin', 'school_admin'].includes(data.role);
-        if (!isAdminRole && data.schoolId) {
-          setActiveSchoolIdState(data.schoolId);
-          localStorage.setItem('active_school_id', data.schoolId);
-        }
         
         // Fetch permissions for the user's role
         if (data.role) {
@@ -310,22 +301,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isFirebaseReady || !user || !userData || !settings) return;
     if (userData.role !== 'admin' && userData.role !== 'developer') return;
 
-    const isDefault = activeSchoolId === 'bitc';
-    const activeSettingsKey = isDefault ? 'global' : activeSchoolId;
-
     const oldEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15956.230743516568!2d37.070000!3d-1.033333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e0000000000%3A0x0000000000000000!2sBreakthrough+International+Training+College!5e0!3m2!1sen!2ske!4v1714988426000!5m2!1sen!2ske';
     const mtKenyaEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.956041121345!2d37.081498!3d-1.045059!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e0c4f87770f%3A0x6bba35bc40ebf5bf!2smt.kenya%20soccer%20pitch%2C%20General%20Kago%20Rd%2C%20Thika!5e0!3m2!1sen!2ske!4v1781197480024!5m2!1sen!2ske';
     const kiganjoEmbedUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.118404095059!2d37.09775020000001!3d-1.0732241999999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4fbf02a24a19%3A0x462a484c79a9d615!2sBreakthrough%20International%20Training%20College%2C%20Kiganjo!5e0!3m2!1sen!2ske!4v1781197480024!5m2!1sen!2ske';
 
     if (settings.publicLocationEmbed === oldEmbedUrl || settings.publicLocationEmbed === mtKenyaEmbedUrl) {
       console.log("Migrating map embed URL to Kiganjo breakthrough campus...");
-      const globalRef = doc(db, 'settings', activeSettingsKey);
+      const globalRef = doc(db, 'settings', 'global');
       updateDoc(globalRef, {
         publicLocationEmbed: kiganjoEmbedUrl,
         publicAddress: 'Thika Kiganjo Corner 2, Kenya'
       }).catch(err => console.error("Could not run map migration check:", err));
     }
-  }, [isFirebaseReady, user, userData, settings, activeSchoolId]);
+  }, [isFirebaseReady, user, userData, settings]);
 
   // Sync children list if logged in user is a parent
   useEffect(() => {
