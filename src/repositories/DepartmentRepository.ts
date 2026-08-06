@@ -9,7 +9,7 @@ export class DepartmentRepository extends BaseRepository<Department> {
 
   async findByCode(code: string, schoolId?: string): Promise<Department | null> {
     const depts = await this.findAll(schoolId);
-    return depts.find(d => d.code.toLowerCase() === code.toLowerCase()) || null;
+    return depts.find(d => (d.code || '').toLowerCase() === (code || '').toLowerCase()) || null;
   }
 }
 

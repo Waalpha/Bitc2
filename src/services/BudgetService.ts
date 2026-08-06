@@ -23,7 +23,7 @@ export class BudgetService {
     const expenses = await expenseRepository.findAll(schoolId);
 
     return budgets.map(b => {
-      const categoryExpenses = expenses.filter(e => e.category.toLowerCase() === b.category.toLowerCase() && e.status === 'Approved');
+      const categoryExpenses = expenses.filter(e => (e.category || '').toLowerCase() === (b.category || '').toLowerCase() && e.status === 'Approved');
       const spent = categoryExpenses.reduce((sum, e) => sum + e.amount, 0);
       const remaining = b.allocatedAmount - spent;
       const variancePercentage = b.allocatedAmount > 0 ? ((spent - b.allocatedAmount) / b.allocatedAmount) * 100 : 0;

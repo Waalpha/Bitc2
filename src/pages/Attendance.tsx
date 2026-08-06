@@ -2555,10 +2555,10 @@ void loop() {
                         >
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${isVerified ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-600'}`}>
-                              {student.name.charAt(0)}
+                              {(student?.name || 'S').charAt(0)}
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{student.name}</p>
+                              <p className="text-sm font-bold text-gray-900">{student?.name || 'Unknown Student'}</p>
                               {isVerified && (
                                 <p className="text-xs text-emerald-600 font-bold uppercase tracking-tight">
                                   Last: {isVerified.checkIn?.time || isVerified.leaveOut?.time || isVerified.checkOut?.time}
@@ -3071,10 +3071,10 @@ void loop() {
                   <div key={`${stat.uid || 'stat'}_summary_card_${idx}`} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
-                        {stat.name.charAt(0)}
+                        {(stat?.name || 'S').charAt(0)}
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-gray-900">{stat.name}</h3>
+                        <h3 className="font-bold text-gray-900">{stat?.name || 'Unknown Student'}</h3>
                         <p className="text-xs text-gray-500">{stat.email}</p>
                       </div>
                       <div className={`text-xl font-bold ${stat.percentage >= 75 ? 'text-green-600' : stat.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>

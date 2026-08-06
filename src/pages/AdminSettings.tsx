@@ -1284,11 +1284,11 @@ export const AdminSettings: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
-                            {user.name.charAt(0)}
+                            {(user?.name || 'U').charAt(0)}
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                              <p className="text-sm font-medium text-gray-900">{user?.name || 'Unknown User'}</p>
                               {user.disabled && (
                                 <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-extrabold uppercase tracking-wider">Deactivated</span>
                               )}
@@ -3483,7 +3483,7 @@ export const AdminSettings: React.FC = () => {
                         <img src={school.logoUrl} alt={school.name} className="w-12 h-12 rounded-2xl object-cover border border-gray-200" />
                       ) : (
                         <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center font-black text-lg">
-                          {school.name.charAt(0)}
+                          {(school?.name || 'S').charAt(0)}
                         </div>
                       )}
                       <div>

@@ -4200,7 +4200,7 @@ export const Students: React.FC = () => {
 
             <div className="flex items-start gap-4 pl-6">
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg font-bold relative">
-                {student.name.charAt(0)}
+                {(student?.name || 'S').charAt(0)}
                 {/* Online Status Dot */}
                 {(() => {
                   const lastActive = student.lastActive ? new Date(student.lastActive).getTime() : 0;
@@ -4362,10 +4362,10 @@ export const Students: React.FC = () => {
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200">
-                    {viewingStudent.name.charAt(0)}
+                    {(viewingStudent?.name || 'S').charAt(0)}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{viewingStudent.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{viewingStudent?.name || 'Unknown Student'}</h2>
                     <p className="text-sm font-bold text-blue-600 uppercase tracking-widest">{viewingStudent.admissionNumber || 'No Admission Number'}</p>
                   </div>
                 </div>
@@ -4845,11 +4845,11 @@ export const Students: React.FC = () => {
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold">
-                    {editingStudent.name.charAt(0)}
+                    {(editingStudent?.name || 'S').charAt(0)}
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">Edit Student Profile</h2>
-                    <p className="text-xs text-gray-500">Updating recorded information for {editingStudent.name}</p>
+                    <p className="text-xs text-gray-500">Updating recorded information for {editingStudent?.name || 'Student'}</p>
                   </div>
                 </div>
                 <button onClick={() => setEditingStudent(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">

@@ -9,12 +9,12 @@ export class StudentRepository extends BaseRepository<User> {
 
   async findByRegNo(regNo: string, schoolId?: string): Promise<User | null> {
     const students = await this.findAll(schoolId);
-    return students.find(s => s.regNo?.toLowerCase() === regNo.toLowerCase()) || null;
+    return students.find(s => (s.regNo || '').toLowerCase() === (regNo || '').toLowerCase()) || null;
   }
 
   async findByCourse(course: string, schoolId?: string): Promise<User[]> {
     const students = await this.findAll(schoolId);
-    return students.filter(s => s.course?.toLowerCase() === course.toLowerCase());
+    return students.filter(s => (s.course || '').toLowerCase() === (course || '').toLowerCase());
   }
 }
 

@@ -554,10 +554,10 @@ export const MarksRegister: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                            {student.name.charAt(0)}
+                            {(student?.name || 'S').charAt(0)}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-gray-900">{student.name}</p>
+                            <p className="text-sm font-bold text-gray-900">{student?.name || 'Unknown Student'}</p>
                             <p className="text-xs text-gray-500">{student.email}</p>
                             {student.admissionNumber && (
                               <p className="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-fit mt-1 uppercase tracking-tight">
@@ -863,10 +863,10 @@ export const MarksRegister: React.FC = () => {
               <form onSubmit={handleFinalizeAndSend} className="space-y-5">
                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-blue-600 font-black shadow-sm">
-                    {selectedStudentForResult.name.charAt(0)}
+                    {(selectedStudentForResult?.name || 'S').charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-900">{selectedStudentForResult.name}</p>
+                    <p className="text-sm font-black text-gray-900">{selectedStudentForResult?.name || 'Unknown Student'}</p>
                     <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">{selectedExam?.title}</p>
                   </div>
                 </div>

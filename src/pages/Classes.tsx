@@ -434,10 +434,10 @@ export const Classes: React.FC = () => {
                                 <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-sky-100/60 shadow-2xs group hover:border-sky-300 transition-colors">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 text-xs font-bold">
-                                      {student.name.charAt(0)}
+                                      {(student?.name || 'S').charAt(0)}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{student?.name || 'Unknown Student'}</p>
                                       <div className="flex items-center gap-2">
                                         <p className="text-xs text-gray-500">{student.email}</p>
                                         {balance && (
@@ -485,10 +485,10 @@ export const Classes: React.FC = () => {
                                 <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-emerald-100/60 shadow-2xs group hover:border-emerald-300 transition-colors">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold">
-                                      {student.name.charAt(0)}
+                                      {(student?.name || 'S').charAt(0)}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{student?.name || 'Unknown Student'}</p>
                                       <div className="flex items-center gap-2">
                                         <p className="text-xs text-gray-500">{student.email}</p>
                                         {balance && (
@@ -536,10 +536,10 @@ export const Classes: React.FC = () => {
                                 <div key={student.uid} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-rose-100/40 shadow-2xs group hover:border-rose-300 transition-colors">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-700 text-xs font-bold">
-                                      {student.name.charAt(0)}
+                                      {(student?.name || 'S').charAt(0)}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-semibold text-gray-900">{student.name}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{student?.name || 'Unknown Student'}</p>
                                       <div className="flex items-center gap-2">
                                         <p className="text-xs text-gray-500">{student.email}</p>
                                         {balance && (

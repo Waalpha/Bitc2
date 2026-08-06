@@ -201,7 +201,7 @@ export const StudentVerification: React.FC = () => {
                       {student.photoUrl ? (
                         <img src={student.photoUrl} alt={student.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="text-3xl font-black text-slate-400">{student.name.charAt(0)}</div>
+                        <div className="text-3xl font-black text-slate-400">{(student?.name || 'S').charAt(0)}</div>
                       )}
                     </div>
                     <div className="absolute -bottom-1.5 -right-1.5 bg-emerald-500 text-slate-950 rounded-full p-1 shadow-lg">

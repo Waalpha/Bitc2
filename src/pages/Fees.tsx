@@ -158,8 +158,8 @@ export const Fees: React.FC = () => {
     if (!printWindow) return;
 
     // Find class names for student if any
-    const studentClasses = classes.filter(c => student.classIds?.includes(c.id)).map(c => c.name).join(', ') || 'N/A';
-    const invoiceNumber = `INV-${new Date().getFullYear()}-${(student.admissionNumber || Math.random().toString(36).substring(2, 6).toUpperCase()).replace(/\//g, '-')}`;
+    const studentClasses = classes.filter(c => Array.isArray(student?.classIds) && student.classIds.includes(c.id)).map(c => c?.name || '').filter(Boolean).join(', ') || 'N/A';
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${String(student?.admissionNumber || Math.random().toString(36).substring(2, 6).toUpperCase()).replace(/\//g, '-')}`;
     const todayStr = format(new Date(), 'MMMM dd, yyyy');
     const dueDateStr = format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 'MMMM dd, yyyy'); // 14 days later
 
@@ -413,7 +413,7 @@ export const Fees: React.FC = () => {
             <div class="meta-details">
               <div class="meta-col" style="width: 48%;">
                 <h3>BILL TO (STUDENT)</h3>
-                <p><strong>Name:</strong> ${student.name.toUpperCase()}</p>
+                <p><strong>Name:</strong> ${(student?.name || '').toUpperCase()}</p>
                 ${student.admissionNumber ? `<p><strong>Admission No:</strong> ${student.admissionNumber}</p>` : ''}
                 ${student.email ? `<p><strong>Email:</strong> ${student.email}</p>` : ''}
                 ${student.phone ? `<p><strong>Phone:</strong> ${student.phone}</p>` : ''}
@@ -1159,7 +1159,7 @@ export const Fees: React.FC = () => {
               <div style="margin-top: 2px;">Structure Status: <span class="meta-value" style="color: #059669;">Approved & Active</span></div>
             </div>
             <div class="meta-item" style="text-align: right;">
-              <div>Reference Code: <span class="meta-value">FST-${targetClassId.substring(0, 6).toUpperCase()}</span></div>
+              <div>Reference Code: <span class="meta-value">FST-${(targetClassId || '').substring(0, 6).toUpperCase()}</span></div>
               <div style="margin-top: 2px;">Billing System: <span class="meta-value">Institutional Blueprint Standard</span></div>
             </div>
           </div>
@@ -2176,7 +2176,7 @@ export const Fees: React.FC = () => {
         uid: student.uid,
         name: student.name,
         email: student.email,
-        admNo: student.admissionNumber || student.email.split('@')[0].toUpperCase(),
+        admNo: student?.admissionNumber ? String(student.admissionNumber) : (student?.email ? student.email.split('@')[0].toUpperCase() : 'N/A'),
         totalAmount,
         paidAmount,
         balance,
@@ -2315,7 +2315,7 @@ export const Fees: React.FC = () => {
           </div>
           <div class="header">
             <h1>${reportTitle}</h1>
-            <p>Generated on ${dateStr} • Filter: ${currentFilter.toUpperCase()}</p>
+            <p>Generated on ${dateStr} • Filter: ${(currentFilter || '').toUpperCase()}</p>
           </div>
 
           <div class="summary-title">Class Performance Summary</div>
@@ -2460,7 +2460,7 @@ export const Fees: React.FC = () => {
         // Load all students
         const usersSnap = await getDocs(collection(db, 'users'));
         const allUsers = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-        const filteredStudents = allUsers.filter(u => String(u.role).toLowerCase() === 'student');
+        const filteredStudents = allUsers.filter(u => String(u?.role || '').toLowerCase() === 'student');
         setStudents(filteredStudents);
 
         // Determine students with suspended monthly fees due to 2-month absence (60 days)
@@ -3233,7 +3233,7 @@ export const Fees: React.FC = () => {
              // Check if same title and amount was added in the last 24 hours
              const chargeDate = new Date(h.date);
              const diffHours = (nowObj.getTime() - chargeDate.getTime()) / (1000 * 60 * 60);
-             if (h.amount === Number(fee.amount) && h.description.includes(fee.title) && diffHours < 24) return true;
+             if (h.amount === Number(fee.amount) && (h.description || '').includes(fee.title || '') && diffHours < 24) return true;
              
              return false;
           });
@@ -3469,8 +3469,9 @@ export const Fees: React.FC = () => {
   };
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          s.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (s?.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) || 
+                          (s?.email || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+                          (s?.admissionNumber ? String(s.admissionNumber).toLowerCase().includes((searchTerm || '').toLowerCase()) : false);
     if (!matchesSearch) return false;
 
     const balanceObj = feeBalances.find(b => b.studentId === s.uid);
@@ -3581,7 +3582,7 @@ export const Fees: React.FC = () => {
         return {
           name: s.name,
           email: s.email,
-          admNo: s.admissionNumber || s.email.split('@')[0].toUpperCase(),
+          admNo: s?.admissionNumber ? String(s.admissionNumber) : (s?.email ? s.email.split('@')[0].toUpperCase() : 'N/A'),
           total: studentMonthCharged,
           paid: studentMonthCollected,
           balance: studentMonthCharged - studentMonthCollected
@@ -3608,7 +3609,7 @@ export const Fees: React.FC = () => {
     // Recent payments log
     const allPayments = activeFeeBalances.flatMap(fb => 
       (fb.history || [])
-        .filter(h => h.type === 'payment' && !(h.description && (h.description.toLowerCase().includes('adjustment') || h.description.toLowerCase().includes('adjust'))))
+        .filter(h => h && h.type === 'payment' && !((h.description || '').toLowerCase().includes('adjustment') || (h.description || '').toLowerCase().includes('adjust')))
         .map(h => ({
           ...h,
           studentName: students.find(s => s.uid === fb.studentId)?.name || 'Unknown',
@@ -3826,7 +3827,7 @@ export const Fees: React.FC = () => {
   };
 
   const computedStudentBalance = myBalance ? (myBalance.totalAmount - myBalance.paidAmount) : 0;
-  const totalPenalties = myBalance?.history?.filter(h => h.type === 'charge' && (h.description?.toLowerCase().includes('penalty') || h.description?.toLowerCase().includes('late payment'))).reduce((sum, h) => sum + h.amount, 0) || 0;
+  const totalPenalties = myBalance?.history?.filter(h => h && h.type === 'charge' && ((h.description || '').toLowerCase().includes('penalty') || (h.description || '').toLowerCase().includes('late payment'))).reduce((sum, h) => sum + (h.amount || 0), 0) || 0;
 
   if (!isAdminView && !myBalance) {
     return (
@@ -4014,18 +4015,18 @@ export const Fees: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                              {student.name.charAt(0)}
+                              {(student?.name || 'S').charAt(0)}
                             </div>
                              <div>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-text-primary">{student.name}</p>
-                                {suspendedStudentIds.has(student.uid) && (
+                                <p className="text-sm font-bold text-text-primary">{student?.name || 'Unknown Student'}</p>
+                                {suspendedStudentIds.has(student?.uid || '') && (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 border border-amber-500/20" title="Billing suspended: No attendance in past 2 months">
                                     SUSPENDED
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-text-muted">{student.email}</p>
+                              <p className="text-xs text-text-muted">{student?.email || ''}</p>
                             </div>
                           </div>
                         </td>
@@ -4712,7 +4713,7 @@ export const Fees: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {classes
-                    .filter(cls => !auditSearchQuery ? true : cls.name.toLowerCase().includes(auditSearchQuery.toLowerCase()))
+                    .filter(cls => !auditSearchQuery ? true : (cls?.name || '').toLowerCase().includes((auditSearchQuery || '').toLowerCase()))
                     .map(cls => {
                       const stats = getClassStats(cls.id);
                       const isExpanded = auditSelectedClassId === cls.id;
@@ -4809,7 +4810,7 @@ export const Fees: React.FC = () => {
                         </div>
                       );
                     })}
-                  {classes.filter(cls => !auditSearchQuery ? true : cls.name.toLowerCase().includes(auditSearchQuery.toLowerCase())).length === 0 && (
+                  {classes.filter(cls => !auditSearchQuery ? true : (cls?.name || '').toLowerCase().includes((auditSearchQuery || '').toLowerCase())).length === 0 && (
                     <div className="col-span-full py-12 text-center bg-gray-50 rounded-2xl border border-gray-150 border-dashed">
                       <p className="text-sm font-bold text-gray-400">No classes found matching the query.</p>
                     </div>
@@ -4908,29 +4909,29 @@ export const Fees: React.FC = () => {
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                       <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
-                                        {s.name.charAt(0)}
+                                        {(s?.name || 'S').charAt(0)}
                                       </div>
                                       <div>
-                                        <p className="text-sm font-bold text-slate-800 leading-tight">{s.name}</p>
-                                        <p className="text-[10px] text-gray-400 font-bold mt-0.5">ADM: <span className="font-mono text-slate-600">{s.admNo}</span></p>
+                                        <p className="text-sm font-bold text-slate-800 leading-tight">{s?.name || 'Unknown Student'}</p>
+                                        <p className="text-[10px] text-gray-400 font-bold mt-0.5">ADM: <span className="font-mono text-slate-600">{s?.admNo || 'N/A'}</span></p>
                                       </div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-right text-xs font-bold text-slate-700">
-                                    Ksh {s.totalAmount.toLocaleString()}
+                                    Ksh {(s?.totalAmount || 0).toLocaleString()}
                                   </td>
                                   <td className="px-6 py-4 text-right text-xs font-bold text-emerald-600">
-                                    Ksh {s.paidAmount.toLocaleString()}
+                                    Ksh {(s?.paidAmount || 0).toLocaleString()}
                                   </td>
                                   <td className="px-6 py-4 text-right text-xs font-extrabold">
                                     <span className={
-                                      s.balance > 0 
+                                      (s?.balance || 0) > 0 
                                         ? 'text-rose-500' 
-                                        : s.balance < 0 
+                                        : (s?.balance || 0) < 0 
                                           ? 'text-sky-600' 
                                           : 'text-slate-500'
                                     }>
-                                      Ksh {s.balance.toLocaleString()}
+                                      Ksh {(s?.balance || 0).toLocaleString()}
                                     </span>
                                   </td>
                                   <td className="px-8 py-4 text-right">
@@ -5256,7 +5257,7 @@ export const Fees: React.FC = () => {
                   }
                   return acc;
                 }, []).map((charge, idx) => {
-                  const isChargePenalty = charge.description?.toLowerCase().includes('penalty') || charge.description?.toLowerCase().includes('late payment');
+                  const isChargePenalty = (charge?.description || '').toLowerCase().includes('penalty') || (charge?.description || '').toLowerCase().includes('late payment');
                   return (
                     <div key={idx} className={`flex justify-between items-center py-2 border-b border-gray-50 last:border-0 ${isChargePenalty ? 'bg-rose-500/5 -mx-2 px-2 rounded-lg border-l-2 border-rose-500' : ''}`}>
                       <span className="text-sm text-gray-600 flex flex-wrap items-center gap-1.5">
@@ -5308,7 +5309,7 @@ export const Fees: React.FC = () => {
             <div className="bg-bg-card rounded-2xl shadow-xl border border-white/5 overflow-hidden">
               <div className="divide-y divide-gray-50">
                 {myBalance?.history?.slice().reverse().map((item, idx) => {
-                  const isPenaltyItem = item.type === 'charge' && (item.description?.toLowerCase().includes('penalty') || item.description?.toLowerCase().includes('late payment'));
+                  const isPenaltyItem = item && item.type === 'charge' && ((item.description || '').toLowerCase().includes('penalty') || (item.description || '').toLowerCase().includes('late payment'));
                   return (
                     <div key={item.date + idx} className={`p-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${isPenaltyItem ? 'bg-rose-500/5 border-l-4 border-rose-500' : ''}`}>
                       <div className="flex items-center gap-4">
@@ -5600,7 +5601,7 @@ export const Fees: React.FC = () => {
                     return <div className="text-center py-12 text-gray-400 italic">No transactions found for this student.</div>;
                   }
 
-                  const studentPenalties = studentBalance.history?.filter(h => h.type === 'charge' && (h.description?.toLowerCase().includes('penalty') || h.description?.toLowerCase().includes('late payment'))).reduce((sum, h) => sum + h.amount, 0) || 0;
+                  const studentPenalties = studentBalance.history?.filter(h => h && h.type === 'charge' && ((h.description || '').toLowerCase().includes('penalty') || (h.description || '').toLowerCase().includes('late payment'))).reduce((sum, h) => sum + (h.amount || 0), 0) || 0;
 
                   return (
                     <div className="p-1 space-y-4">
@@ -5637,7 +5638,7 @@ export const Fees: React.FC = () => {
                             {studentBalance.history.slice().reverse().map((item, id) => {
                               // Calculate original index because we sliced and reversed
                               const originalIdx = studentBalance.history.length - 1 - id;
-                              const isPenaltyItem = item.type === 'charge' && (item.description?.toLowerCase().includes('penalty') || item.description?.toLowerCase().includes('late payment'));
+                              const isPenaltyItem = item && item.type === 'charge' && ((item.description || '').toLowerCase().includes('penalty') || (item.description || '').toLowerCase().includes('late payment'));
                               return (
                                 <tr key={item.date + originalIdx} className={`hover:bg-gray-50 transition-colors ${isPenaltyItem ? 'bg-rose-500/5' : ''}`}>
                                   <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
@@ -5777,9 +5778,9 @@ export const Fees: React.FC = () => {
                   {selectedStudent ? (
                     <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                        {selectedStudent.name.charAt(0)}
+                        {(selectedStudent?.name || 'S').charAt(0)}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{selectedStudent.name}</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedStudent?.name || 'Unknown Student'}</span>
                     </div>
                   ) : (
                     <select

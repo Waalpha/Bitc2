@@ -392,7 +392,7 @@ export const Exams: React.FC = () => {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 font-bold text-lg">
-                              {student?.name.charAt(0)}
+                              {(student?.name || 'S').charAt(0)}
                             </div>
                             <div>
                               <p className="font-bold text-gray-900">{student?.name || 'Unknown Student'}</p>

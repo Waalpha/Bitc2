@@ -492,11 +492,11 @@ export const ExamAttendance: React.FC = () => {
                               <td className="px-8 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold shadow-sm group-hover:scale-110 transition-transform">
-                                    {student.name.charAt(0)}
+                                    {(student?.name || 'S').charAt(0)}
                                   </div>
                                   <div>
-                                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">{student.name}</p>
-                                    <p className="text-xs font-bold text-gray-400">{student.admissionNumber || 'No Admission #'}</p>
+                                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">{student?.name || 'Unknown Student'}</p>
+                                    <p className="text-xs font-bold text-gray-400">{student?.admissionNumber || 'No Admission #'}</p>
                                   </div>
                                 </div>
                               </td>

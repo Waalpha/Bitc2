@@ -9,7 +9,7 @@ export class TeacherRepository extends BaseRepository<User> {
 
   async findByDepartment(department: string, schoolId?: string): Promise<User[]> {
     const teachers = await this.findAll(schoolId);
-    return teachers.filter(t => t.department?.toLowerCase() === department.toLowerCase());
+    return teachers.filter(t => (t.department || '').toLowerCase() === (department || '').toLowerCase());
   }
 }
 

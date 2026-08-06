@@ -493,7 +493,7 @@ export const WhatsApp: React.FC = () => {
       <div className={`w-full md:w-[400px] bg-white flex flex-col border-r border-gray-200 ${activeRoom ? 'hidden md:flex' : 'flex'}`}>
         <div className="h-16 bg-[#F0F2F5] px-4 flex items-center justify-between">
           <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">
-            {userData?.name.charAt(0)}
+            {(userData?.name || 'U').charAt(0)}
           </div>
           <div className="flex gap-4 text-[#54656F]">
             {userData?.role !== 'teacher' && (

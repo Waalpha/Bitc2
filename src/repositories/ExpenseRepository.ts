@@ -9,7 +9,7 @@ export class ExpenseRepository extends BaseRepository<Expense> {
 
   async findByCategory(category: string, schoolId?: string): Promise<Expense[]> {
     const expenses = await this.findAll(schoolId);
-    return expenses.filter(e => e.category.toLowerCase() === category.toLowerCase());
+    return expenses.filter(e => (e.category || '').toLowerCase() === (category || '').toLowerCase());
   }
 
   async findByDepartment(departmentId: string, schoolId?: string): Promise<Expense[]> {

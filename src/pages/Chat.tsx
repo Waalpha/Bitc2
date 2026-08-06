@@ -495,7 +495,7 @@ export const Chat: React.FC = () => {
         {/* Sidebar Header */}
         <div className="h-16 bg-[#F0F2F5] px-4 flex items-center justify-between">
           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-            {userData?.name.charAt(0)}
+            {(userData?.name || 'U').charAt(0)}
           </div>
           <div className="flex gap-4 text-[#54656F]">
             <button 
@@ -1056,11 +1056,11 @@ export const Chat: React.FC = () => {
                     className="flex items-center px-4 py-3 hover:bg-[#F5F6F6] cursor-pointer"
                   >
                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                      {user.name.charAt(0)}
+                      {(user?.name || 'U').charAt(0)}
                     </div>
                     <div className="ml-4 flex-1 border-b border-gray-100 pb-3">
                       <div className="flex justify-between items-center">
-                        <p className="font-bold text-gray-900">{user.name}</p>
+                        <p className="font-bold text-gray-900">{user?.name || 'Unknown User'}</p>
                         {user.role === 'student' && user.admissionNumber && (
                           <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
                             {user.admissionNumber}
