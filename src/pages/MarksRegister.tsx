@@ -423,10 +423,11 @@ export const MarksRegister: React.FC = () => {
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(s => {
+    const search = (searchTerm || '').toLowerCase();
+    return (s.name || '').toLowerCase().includes(search) ||
+           (s.email || '').toLowerCase().includes(search);
+  });
 
   const selectedExam = exams.find(e => e.id === selectedExamId);
 

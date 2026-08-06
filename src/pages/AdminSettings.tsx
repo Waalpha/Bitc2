@@ -801,7 +801,7 @@ export const AdminSettings: React.FC = () => {
     if (!newRole.name) return;
     
     try {
-      const roleId = newRole.id || newRole.name.toLowerCase().replace(/\s+/g, '_');
+      const roleId = newRole.id || (newRole.name || '').toLowerCase().replace(/\s+/g, '_');
       await setDoc(doc(db, 'roles', roleId), {
         name: newRole.name,
         description: newRole.description || '',
@@ -818,7 +818,7 @@ export const AdminSettings: React.FC = () => {
   };
 
   const handleDeleteRole = async (id: string) => {
-    if (['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes(id.toLowerCase())) {
+    if (['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes((id || '').toLowerCase())) {
       addToast("Cannot delete core system roles", "error");
       return;
     }
@@ -886,8 +886,9 @@ export const AdminSettings: React.FC = () => {
   };
 
   const filteredUsers = users.filter(u => {
-    const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const search = (searchTerm || '').toLowerCase();
+    const matchesSearch = (u.name || '').toLowerCase().includes(search) || 
+                         (u.email || '').toLowerCase().includes(search);
     const matchesRole = filterRole === 'all' || u.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -3636,7 +3637,7 @@ export const AdminSettings: React.FC = () => {
                     >
                       <Edit size={18} />
                     </button>
-                    {!['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes(role.id.toLowerCase()) && (
+                    {!['admin', 'teacher', 'registrar', 'finance', 'staff', 'parent', 'student'].includes((role.id || '').toLowerCase()) && (
                       <button
                         onClick={() => handleDeleteRole(role.id)}
                         className="p-2 text-gray-400 hover:text-red-600"

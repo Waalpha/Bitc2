@@ -43,10 +43,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     activeStudent,
     activeStudentUid,
     studentContext,
-    setActiveStudentByUid,
-    schools,
-    activeSchoolId,
-    setActiveSchoolId
+    setActiveStudentByUid
   } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);

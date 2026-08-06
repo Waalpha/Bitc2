@@ -285,9 +285,10 @@ export const ExamAttendance: React.FC = () => {
   };
 
   const filteredStudents = useMemo(() => {
+    const search = (searchTerm || '').toLowerCase();
     return students.filter(s => 
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (s.name || '').toLowerCase().includes(search) ||
+      (s.email || '').toLowerCase().includes(search)
     );
   }, [students, searchTerm]);
 
