@@ -7,7 +7,7 @@ import { getDbMode, setDbMode, syncDbFromCloud } from '../lib/mockFirestore';
 import { Toast, ToastMessage } from './Toast';
 import { LogoutButton } from './Auth';
 import { NotificationBell } from './NotificationBell';
-import { Database, RefreshCw, Cloud, CloudOff } from 'lucide-react';
+import { Database, RefreshCw, Cloud, CloudOff, ShieldCheck } from 'lucide-react';
 import { 
   LayoutDashboard, 
   Home,
@@ -152,6 +152,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {
       title: 'ADMINISTRATION',
       items: [
+        { name: 'Davetech Command Center', path: '/davetech-admin', icon: ShieldCheck, permission: 'settings.manage' },
         { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'settings.manage' },
         { name: 'HR Management', path: '/hr', icon: Users, permission: 'hr.manage' },
         { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.manage' },

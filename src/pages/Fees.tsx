@@ -3,16 +3,20 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, addDoc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { FeeBalance, User, Class, ClassFee, Unit, FeeType, FeeGroup, Expense } from '../types';
-import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar, Eye, EyeOff, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Wallet, Plus, History, Send, Search, Filter, CreditCard, ArrowUpRight, ArrowDownLeft, XCircle, BookOpen, Layers, CheckCircle2, Users, RefreshCw, Edit2, Trash2, Printer, TrendingUp, Tags, FileText, Sparkles, Calculator, Calendar, Eye, EyeOff, AlertTriangle, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { Toast, ToastMessage } from '../components/Toast';
+import { FeeImportExportModal } from '../components/fees/FeeImportExportModal';
+import { StudentFeeStatement } from '../components/fees/StudentFeeStatement';
 
 export const Fees: React.FC = () => {
   const { user, userData, hasPermission, settings, studentContext } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'classes' | 'structure' | 'reports'>('individual');
   const [structureClassId, setStructureClassId] = useState<string>('all');
+  const [isImportExportOpen, setIsImportExportOpen] = useState(false);
+  const [statementStudent, setStatementStudent] = useState<{ student: User; balance: FeeBalance } | null>(null);
   const [feeBalances, setFeeBalances] = useState<FeeBalance[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [students, setStudents] = useState<User[]>([]);
@@ -3849,7 +3853,14 @@ export const Fees: React.FC = () => {
           <p className="text-text-secondary">{isAdminView ? 'Manage student fee balances and payments' : 'View your fee balance and payment history'}</p>
         </div>
         {isAdminView && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setIsImportExportOpen(true)}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-sm font-bold"
+            >
+              <FileSpreadsheet size={18} />
+              Import / Export Fees
+            </button>
             <button
               onClick={() => loadFeesData(true)}
               disabled={isLoading}
@@ -4083,9 +4094,9 @@ export const Fees: React.FC = () => {
                                     Invoice
                                   </button>
                                   <button
-                                    onClick={() => handlePrintStudentStatement(student, bal)}
+                                    onClick={() => setStatementStudent({ student, balance: bal })}
                                     className="text-emerald-700 hover:text-emerald-800 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 transition-colors hover:bg-emerald-100 flex items-center gap-1"
-                                    title="Print Statement of Account"
+                                    title="View & Print Official Fee Statement"
                                   >
                                     <FileText size={14} />
                                     Statement
@@ -6080,6 +6091,26 @@ export const Fees: React.FC = () => {
               </div>
             </motion.div>
           </div>
+        )}
+
+        {isImportExportOpen && (
+          <FeeImportExportModal
+            students={students}
+            feeBalances={feeBalances}
+            classes={classes}
+            onClose={() => setIsImportExportOpen(false)}
+            onRefreshData={async () => {
+              await loadFeesData(true);
+            }}
+          />
+        )}
+
+        {statementStudent && (
+          <StudentFeeStatement
+            student={statementStudent.student}
+            balance={statementStudent.balance}
+            onClose={() => setStatementStudent(null)}
+          />
         )}
 
         {printConfirm && (
