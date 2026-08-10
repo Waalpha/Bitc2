@@ -13,8 +13,29 @@ export const MyUnits: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!studentContext || !studentContext.classIds || studentContext.classIds.length === 0) {
-      setLoading(false);
+    const studentClassIds: string[] = Array.isArray(studentContext?.classIds) ? [...studentContext.classIds] : [];
+    if (studentContext?.classId && !studentClassIds.includes(studentContext.classId)) {
+      studentClassIds.push(studentContext.classId);
+    }
+
+    if (!studentContext || studentClassIds.length === 0) {
+      // If no specific class assigned, load all units & classes as general catalog
+      const fetchDataFallback = async () => {
+        try {
+          const snapClasses = await getDocs(collection(db, 'classes'));
+          const clsList = snapClasses.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
+          setClasses(clsList);
+
+          const snapUnits = await getDocs(collection(db, 'units'));
+          const unitList = snapUnits.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit));
+          setUnits(unitList);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching units catalog:", error);
+          setLoading(false);
+        }
+      };
+      fetchDataFallback();
       return;
     }
 
@@ -23,13 +44,13 @@ export const MyUnits: React.FC = () => {
         const snapClasses = await getDocs(collection(db, 'classes'));
         const clsList = snapClasses.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Class))
-          .filter(c => studentContext.classIds?.includes(c.id));
+          .filter(c => studentClassIds.includes(c.id));
         setClasses(clsList);
 
         const snapUnits = await getDocs(collection(db, 'units'));
         const unitList = snapUnits.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Unit))
-          .filter(u => studentContext.classIds?.includes(u.classId));
+          .filter(u => !u.classId || studentClassIds.includes(u.classId));
         setUnits(unitList);
         setLoading(false);
       } catch (error) {

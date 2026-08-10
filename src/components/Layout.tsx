@@ -145,7 +145,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       title: 'ACADEMIC',
       items: [
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: 'classes.view' },
-        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: 'units.view', showForStudentOnly: true },
+        { name: 'My Units', path: '/my-units', icon: BookOpen, permission: 'units.view' },
+        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.view', showForStudentOnly: true },
+        { name: 'Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view', showForStudentOnly: true },
         { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: 'reports.view', showForAdminOnly: true },
       ]
     },
@@ -155,20 +157,20 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { name: 'Davetech Command Center', path: '/davetech-admin', icon: ShieldCheck, permission: 'settings.manage' },
         { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'settings.manage' },
         { name: 'HR Management', path: '/hr', icon: Users, permission: 'hr.manage' },
-        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.manage' },
-        { name: 'Units', path: '/units', icon: BookOpen, permission: 'units.manage' },
+        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.manage', showForAdminOnly: true },
+        { name: 'Units', path: '/units', icon: BookOpen, permission: 'units.manage', showForAdminOnly: true },
       ]
     },
     {
       title: 'STUDENT INFO',
       items: [
-        { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'students.view' },
-        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'students.create' },
+        { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'students.view', showForAdminOnly: true },
+        { name: 'Add Student', path: '/students/admission', icon: User, permission: 'students.create', showForAdminOnly: true },
         { name: 'Student List', path: '/students', icon: Users, permission: 'students.view' },
-        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view' },
+        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view', showForAdminOnly: true },
         { name: 'Exams', path: '/exams', icon: FileText, permission: 'exams.view' },
-        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'exams.view' },
-        { name: 'Marks', path: '/marks', icon: Award, permission: 'exams.grade' },
+        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'exams.view', showForAdminOnly: true },
+        { name: 'Marks', path: '/marks', icon: Award, permission: 'exams.grade', showForAdminOnly: true },
         { name: 'Results', path: '/results', icon: TrendingUp, permission: 'results.view' },
         { name: 'Fees', path: '/fees', icon: Wallet, permission: 'fees.view' },
       ]
@@ -211,8 +213,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
             if (item.showForStudentOnly && !isStudent) return false;
             if (item.showForAdminOnly && isStudent) return false;
-            if (isStudent && item.path === '/dashboard') return true; // Re-enable for student
-            if (isStudent && item.path === '/exams') return true; // Show Exams page for students too so they can take exams
+            const studentAllowedPaths = ['/dashboard', '/profile', '/timetable', '/my-units', '/classes', '/units', '/attendance', '/exams', '/results', '/fees', '/whatsapp'];
+            if (isStudent && studentAllowedPaths.includes(item.path)) return true;
             if (item.role && userData?.role !== item.role) return false;
             return !item.permission || hasPermission(item.permission);
           });

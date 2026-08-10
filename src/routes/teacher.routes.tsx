@@ -21,7 +21,7 @@ export const teacherRoutes: RouteObject[] = [
   {
     path: '/exams',
     element: (
-      <ProtectedRoute permission="manage_exams">
+      <ProtectedRoute>
         <Exams />
       </ProtectedRoute>
     ),
@@ -53,7 +53,7 @@ export const teacherRoutes: RouteObject[] = [
   {
     path: '/units',
     element: (
-      <ProtectedRoute permission="manage_units">
+      <ProtectedRoute>
         <Units />
       </ProtectedRoute>
     ),
@@ -61,7 +61,7 @@ export const teacherRoutes: RouteObject[] = [
   {
     path: '/classes',
     element: (
-      <ProtectedRoute permission="manage_classes">
+      <ProtectedRoute>
         <Classes />
       </ProtectedRoute>
     ),

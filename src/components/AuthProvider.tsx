@@ -260,9 +260,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               } else if (data.role === 'staff') {
                 setPermissions(['view_students', 'manage_timetable']);
               } else if (data.role === 'parent') {
-                setPermissions(['view_results', 'view_reports']);
+                setPermissions(['dashboard.view', 'attendance.view', 'classes.view', 'units.view', 'exams.view', 'results.view', 'fees.view', 'chat.view', 'chat.send', 'view_results', 'view_reports']);
               } else if (data.role === 'student') {
-                setPermissions(['view_results']);
+                setPermissions(['dashboard.view', 'attendance.view', 'classes.view', 'units.view', 'exams.view', 'results.view', 'fees.view', 'chat.view', 'chat.send', 'view_results']);
               } else {
                 setPermissions([]);
               }
