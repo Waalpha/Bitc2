@@ -146,8 +146,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       items: [
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: 'classes.view' },
         { name: 'My Units', path: '/my-units', icon: BookOpen, permission: 'units.view' },
-        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.view', showForStudentOnly: true },
-        { name: 'Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view', showForStudentOnly: true },
+        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.view' },
+        { name: 'Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view' },
         { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: 'reports.view', showForAdminOnly: true },
       ]
     },
@@ -157,8 +157,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { name: 'Davetech Command Center', path: '/davetech-admin', icon: ShieldCheck, permission: 'settings.manage' },
         { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'settings.manage' },
         { name: 'HR Management', path: '/hr', icon: Users, permission: 'hr.manage' },
-        { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.manage', showForAdminOnly: true },
-        { name: 'Units', path: '/units', icon: BookOpen, permission: 'units.manage', showForAdminOnly: true },
+        { name: 'Units Catalog', path: '/units', icon: BookOpen, permission: 'units.manage' },
       ]
     },
     {
@@ -167,10 +166,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { name: 'Student Category', path: '/students/categories', icon: Users, permission: 'students.view', showForAdminOnly: true },
         { name: 'Add Student', path: '/students/admission', icon: User, permission: 'students.create', showForAdminOnly: true },
         { name: 'Student List', path: '/students', icon: Users, permission: 'students.view' },
-        { name: 'Student Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view', showForAdminOnly: true },
         { name: 'Exams', path: '/exams', icon: FileText, permission: 'exams.view' },
-        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'exams.view', showForAdminOnly: true },
-        { name: 'Marks', path: '/marks', icon: Award, permission: 'exams.grade', showForAdminOnly: true },
+        { name: 'Exam Attendance', path: '/exams/attendance', icon: ClipboardCheck, permission: 'exams.view' },
+        { name: 'Marks', path: '/marks', icon: Award, permission: 'exams.grade' },
         { name: 'Results', path: '/results', icon: TrendingUp, permission: 'results.view' },
         { name: 'Fees', path: '/fees', icon: Wallet, permission: 'fees.view' },
       ]

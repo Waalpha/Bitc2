@@ -253,12 +253,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setPermissions(['settings.manage', 'system_settings', 'view_reports', 'view_students', 'view_finance', 'view_results', 'manage_timetable', 'manage_exams', 'mark_attendance']);
               } else if (data.role === 'accountant' || data.role === 'finance') {
                 setPermissions(['manage_fees', 'view_finance', 'view_reports', 'view_students']);
-              } else if (data.role === 'teacher') {
-                setPermissions(['manage_units', 'manage_exams', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'manage_marks', 'view_results', 'mark_attendance']);
+              } else if (data.role === 'teacher' || data.role === 'staff') {
+                setPermissions(['dashboard.view', 'attendance.view', 'attendance.mark', 'mark_attendance', 'classes.view', 'classes.manage', 'manage_classes', 'units.view', 'units.manage', 'manage_units', 'my_units.view', 'exams.view', 'exams.create', 'exams.grade', 'manage_exams', 'results.view', 'view_results', 'fees.view', 'fees.collect', 'fees.manage', 'manage_fees', 'view_students', 'manage_timetable', 'manage_chat', 'manage_whatsapp', 'chat.view', 'chat.send', 'manage_marks']);
               } else if (data.role === 'registrar') {
-                setPermissions(['view_students', 'student_admission', 'manage_classes', 'manage_units', 'manage_timetable']);
-              } else if (data.role === 'staff') {
-                setPermissions(['view_students', 'manage_timetable']);
               } else if (data.role === 'parent') {
                 setPermissions(['dashboard.view', 'attendance.view', 'classes.view', 'units.view', 'exams.view', 'results.view', 'fees.view', 'chat.view', 'chat.send', 'view_results', 'view_reports']);
               } else if (data.role === 'student') {

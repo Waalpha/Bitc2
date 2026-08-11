@@ -76,7 +76,7 @@ export const Fees: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isAdminView = hasPermission('manage_fees');
+  const isAdminView = hasPermission('manage_fees') || hasPermission('fees.manage') || hasPermission('fees.view') || ['admin', 'school_admin', 'super_admin', 'teacher', 'staff', 'accountant', 'finance', 'principal'].includes(userData?.role || '');
 
   const handleDeleteHistoryItem = async (studentId: string, index: number) => {
     if (!isAdminView) return;

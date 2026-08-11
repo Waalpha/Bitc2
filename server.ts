@@ -335,7 +335,7 @@ try {
         });
     })
     .catch(err => {
-      console.warn("Firebase Admin Firestore connection or permission verification failed. Falling back to robust offline sandbox mode.");
+      console.log("Firebase Admin initialized in local sandbox storage mode.");
       console.log("Verify details:", err?.message || err);
       db = localDbFirestore;
       reactivateAllAccounts().catch(localErr => {

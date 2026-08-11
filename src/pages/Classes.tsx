@@ -49,10 +49,10 @@ export const Classes: React.FC = () => {
   };
 
   const role = userData?.role?.toLowerCase();
-  const isTeacher = role === 'teacher';
-  const isAdmin = role === 'admin';
-  const canManageClasses = isAdmin;
-  const canManageUnits = hasPermission('manage_units');
+  const isTeacher = role === 'teacher' || role === 'staff' || hasPermission('classes.view') || hasPermission('classes.manage') || hasPermission('manage_classes');
+  const isAdmin = ['admin', 'school_admin', 'super_admin'].includes(role || '') || hasPermission('classes.manage') || hasPermission('manage_classes');
+  const canManageClasses = isAdmin || isTeacher || hasPermission('classes.manage') || hasPermission('manage_classes');
+  const canManageUnits = hasPermission('manage_units') || hasPermission('units.manage');
 
   useEffect(() => {
     if (!user) return;

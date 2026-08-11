@@ -58,7 +58,7 @@ export const Exams: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isTeacher = userData?.role === 'teacher' || userData?.role === 'admin' || hasPermission('manage_exams');
+  const isTeacher = userData?.role === 'teacher' || userData?.role === 'staff' || ['admin', 'school_admin', 'super_admin'].includes(userData?.role || '') || hasPermission('manage_exams') || hasPermission('exams.view');
 
   useEffect(() => {
     if (!user) return;
@@ -66,7 +66,7 @@ export const Exams: React.FC = () => {
     const fetchExamsData = async () => {
       try {
         const examsQ = isTeacher
-          ? query(collection(db, 'exams'), where('teacherId', '==', user.uid))
+          ? query(collection(db, 'exams'))
           : query(collection(db, 'exams'), where('published', '==', true));
 
         const examsSnap = await getDocs(examsQ);

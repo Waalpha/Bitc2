@@ -122,9 +122,11 @@ export const Transcripts: React.FC = () => {
     try {
       const isPortrait = printOrientation === 'portrait';
       if (previewDocType === 'transcript') {
-        element.style.width = '1000px';
-        element.style.minWidth = '1000px';
-        element.style.maxWidth = '1000px';
+        element.style.width = '850px';
+        element.style.minWidth = '850px';
+        element.style.maxWidth = '850px';
+        element.style.minHeight = '1200px';
+        element.style.boxSizing = 'border-box';
       } else {
         const w = isPortrait ? '840px' : '1120px';
         element.style.width = w;
@@ -1853,7 +1855,7 @@ export const Transcripts: React.FC = () => {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
-                    className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-6 sm:p-12 relative print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
+                    className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-8 sm:p-12 relative max-w-[880px] mx-auto min-h-[1150px] flex flex-col justify-between print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
                   >
                 
                 {/* Institutional Letterhead Header - ALWAYS VISIBLE (Preview & Print) */}
@@ -2443,53 +2445,61 @@ export const Transcripts: React.FC = () => {
 
           /* TRANSCRIPT PRINT CONDENSING FOR A4 SINGLE PAGE */
           #transcript-view-element {
-            padding: 12mm 14mm !important;
+            padding: 10mm 12mm !important;
             border: 1px solid #cbd5e1 !important;
             background-color: #ffffff !important;
-            font-size: 10px !important;
+            box-sizing: border-box !important;
+            font-size: 11px !important;
+            min-height: 297mm !important;
+            height: 297mm !important;
+            max-height: 297mm !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
           }
 
           #transcript-view-element img {
-            max-height: 48px !important;
+            max-height: 52px !important;
           }
 
           #transcript-view-element h1 {
-            font-size: 18px !important;
-            margin-top: 4px !important;
-            margin-bottom: 2px !important;
+            font-size: 22px !important;
+            margin-top: 6px !important;
+            margin-bottom: 4px !important;
           }
 
           #transcript-view-element h2 {
-            font-size: 13px !important;
+            font-size: 16px !important;
+            line-height: 1.2 !important;
           }
 
           #transcript-view-element .pb-6,
           #transcript-view-element .mb-6 {
-            padding-bottom: 6px !important;
-            margin-bottom: 6px !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 8px !important;
           }
 
           #transcript-view-element .mb-10,
           #transcript-view-element .mt-8,
           #transcript-view-element .pb-4 {
-            margin-top: 4px !important;
-            margin-bottom: 6px !important;
-            padding-bottom: 2px !important;
+            margin-top: 6px !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 4px !important;
           }
 
           #transcript-view-element .grid-cols-12 {
-            gap: 8px !important;
-            padding: 8px !important;
-            margin-bottom: 8px !important;
-            border-radius: 8px !important;
+            gap: 10px !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
+            border-radius: 10px !important;
           }
 
           #transcript-view-element .grid-cols-12 p {
-            font-size: 9px !important;
+            font-size: 9.5px !important;
           }
 
           #transcript-view-element .grid-cols-12 p.text-sm {
-            font-size: 11px !important;
+            font-size: 12px !important;
           }
 
           #transcript-view-element table {
@@ -2498,105 +2508,117 @@ export const Transcripts: React.FC = () => {
 
           #transcript-view-element table th,
           #transcript-view-element table td {
-            padding: 3px 6px !important;
-            font-size: 9px !important;
+            padding: 6px 10px !important;
+            font-size: 11px !important;
           }
 
           #transcript-view-element table th {
-            font-size: 9px !important;
+            font-size: 10.5px !important;
             font-weight: 800 !important;
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
           #transcript-view-element .rounded-\[28px\] {
-            border-radius: 8px !important;
-            margin-bottom: 8px !important;
+            border-radius: 10px !important;
+            margin-bottom: 10px !important;
           }
 
           /* Summary blocks */
           #transcript-view-element .grid-cols-3 {
-            gap: 8px !important;
-            margin-bottom: 8px !important;
+            gap: 10px !important;
+            margin-bottom: 10px !important;
           }
 
           #transcript-view-element .grid-cols-3 .p-5 {
-            padding: 6px 10px !important;
-            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
           }
 
           #transcript-view-element .grid-cols-3 p.text-\[10px\] {
-            font-size: 8px !important;
+            font-size: 9px !important;
           }
 
           #transcript-view-element .grid-cols-3 p.text-2xl {
-            font-size: 13px !important;
-            margin-top: 1px !important;
+            font-size: 16px !important;
+            margin-top: 2px !important;
+            font-weight: 900 !important;
           }
 
           #transcript-view-element .grid-cols-3 .w-10 {
-            width: 24px !important;
-            height: 24px !important;
-            border-radius: 4px !important;
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 6px !important;
           }
 
           #transcript-view-element .grid-cols-3 svg {
-            width: 12px !important;
-            height: 12px !important;
+            width: 15px !important;
+            height: 15px !important;
           }
 
           /* Classification panel & note disclaimer */
           #transcript-view-element .mb-12 {
-            margin-bottom: 8px !important;
-            padding: 8px !important;
-            border-radius: 8px !important;
+            margin-bottom: 10px !important;
+            padding: 10px 14px !important;
+            border-radius: 10px !important;
           }
 
           #transcript-view-element .mb-12 h4 {
-            font-size: 11px !important;
-            margin-top: 1px !important;
+            font-size: 13px !important;
+            margin-top: 2px !important;
+            font-weight: 900 !important;
           }
 
           #transcript-view-element .mb-12 .text-\[10px\] {
-            font-size: 8px !important;
+            font-size: 9px !important;
           }
 
           #transcript-view-element p.mt-4 {
-            margin-top: 2px !important;
-            font-size: 7.5px !important;
-            line-height: normal !important;
+            margin-top: 6px !important;
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
           }
 
           /* Signatures and Seals */
           #transcript-view-element .items-end {
-            padding-top: 2px !important;
-            gap: 10px !important;
+            padding-top: 6px !important;
+            gap: 12px !important;
+            margin-top: auto !important;
           }
 
           #transcript-view-element .stamp-seal-container {
-            width: 4cm !important;
-            height: 4cm !important;
+            width: 85px !important;
+            height: 85px !important;
           }
 
-          #transcript-view-element .stamp-seal-container p {
-            font-size: 9px !important;
+          #transcript-view-element .stamp-seal-container img {
+            width: 85px !important;
+            height: 85px !important;
           }
 
           #transcript-view-element .h-14 {
-            height: 30px !important;
+            height: 42px !important;
           }
 
           #transcript-view-element .h-14 svg,
           #transcript-view-element .h-14 img {
-            height: 25px !important;
+            height: 36px !important;
           }
 
           #transcript-view-element .max-w-\[240px\] {
-            margin-top: 1px !important;
-            padding-top: 2px !important;
+            margin-top: 2px !important;
+            padding-top: 3px !important;
           }
 
           #transcript-view-element .max-w-\[240px\] p {
-            font-size: 8px !important;
+            font-size: 10px !important;
             margin-top: 0 !important;
+          }
+
+          #transcript-view-element .max-w-\[240px\] p.text-\[9px\] {
+            font-size: 8.5px !important;
           }
 
           #transcript-view-element .md\:col-span-3 .p-2 {

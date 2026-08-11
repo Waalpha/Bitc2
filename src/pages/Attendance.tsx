@@ -449,7 +449,7 @@ void loop() {
     adminLeaveReasonRef.current = leaveReason;
     adminReturnDateRef.current = returnDate;
     usbDeviceRef.current = usbDevice;
-    globalIsAdminOrSupervisor = userData?.role === 'admin' || userData?.role === 'teacher';
+    globalIsAdminOrSupervisor = ['admin', 'school_admin', 'super_admin', 'teacher', 'staff'].includes(userData?.role || '') || hasPermission('mark_attendance') || hasPermission('attendance.mark') || hasPermission('attendance.view');
   });
 
   const studentStats = useMemo(() => {
@@ -531,9 +531,9 @@ void loop() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const isTeacher = userData?.role === 'teacher' || hasPermission('mark_attendance');
-  const isAdmin = userData?.role === 'admin';
-  const isStudent = userData?.role === 'student' && !hasPermission('mark_attendance');
+  const isTeacher = ['teacher', 'staff'].includes(userData?.role || '') || hasPermission('mark_attendance') || hasPermission('attendance.mark') || hasPermission('attendance.view');
+  const isAdmin = ['admin', 'school_admin', 'super_admin'].includes(userData?.role || '');
+  const isStudent = userData?.role === 'student' && !isTeacher && !isAdmin;
 
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [holidayReason, setHolidayReason] = useState('Public Holiday');

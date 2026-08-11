@@ -86,8 +86,8 @@ export const Units: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const canManageUnits = hasPermission('manage_units');
-  const isTeacher = userData?.role === 'teacher';
+  const isTeacher = userData?.role === 'teacher' || userData?.role === 'staff' || hasPermission('units.view') || hasPermission('manage_units');
+  const canManageUnits = hasPermission('manage_units') || hasPermission('units.manage') || isTeacher || ['admin', 'school_admin', 'super_admin'].includes(userData?.role || '');
 
   useEffect(() => {
     if (!user) return;
