@@ -82,7 +82,7 @@ export const Transcripts: React.FC = () => {
   const [registrarTitleOverride, setRegistrarTitleOverride] = useState(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
   const [signatureUrlOverride, setSignatureUrlOverride] = useState(localStorage.getItem('transcript_signatureUrl') || '');
   const [stampUrlOverride, setStampUrlOverride] = useState(localStorage.getItem('transcript_stampUrl') || '/stamp.png');
-  const [sealDateOverride, setSealDateOverride] = useState(localStorage.getItem('transcript_sealDate') || getTodayISODate());
+  const [sealDateOverride, setSealDateOverride] = useState(getTodayISODate());
   
   // Tutor / Teacher details overrides
   const [principalNameOverride, setPrincipalNameOverride] = useState(localStorage.getItem('transcript_principalName') || 'COURSE TUTOR');
@@ -801,7 +801,7 @@ export const Transcripts: React.FC = () => {
     setRegistrarTitleOverride(localStorage.getItem('transcript_registrarTitle') || 'REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride(localStorage.getItem('transcript_signatureUrl') || '');
     setStampUrlOverride(localStorage.getItem('transcript_stampUrl') || (settings && settings.stampUrl) || '/stamp.png');
-    setSealDateOverride(localStorage.getItem('transcript_sealDate') || getTodayISODate());
+    setSealDateOverride(getTodayISODate());
     setPrincipalNameOverride(localStorage.getItem('transcript_principalName') || 'COURSE TUTOR');
     setPrincipalTitleOverride(localStorage.getItem('transcript_principalTitle') || 'TUTOR / TEACHER');
     setPrincipalSignatureUrlOverride(localStorage.getItem('transcript_principalSignatureUrl') || '');
@@ -932,23 +932,13 @@ export const Transcripts: React.FC = () => {
     return `Bitc/Tvet/${deptCode}/${courseCode}/${admissionYear}/${serialIndex}`;
   };
 
-  // Dynamically synchronize certificate overrides
-  useEffect(() => {
-    if (selectedStudent) {
-      const rList = getTranscriptResults();
-      const avg = rList.length > 0 ? Math.round(rList.reduce((acc, r) => acc + r.score, 0) / rList.length) : 75;
-      
-      const staticCertNo = generateAutomatedSerial(selectedStudent);
-      setCustomCertificateNo(localStorage.getItem(`cert_no_${selectedStudent.uid}`) || staticCertNo);
-      
-      const defaultAward = avg >= 70 ? 'Grade A - Pass WITH DISTINCTION' :
-                           avg >= 60 ? 'Grade B - Pass WITH CREDIT' : 'Grade C - PASS';
-      setCustomAwardClass(localStorage.getItem(`cert_award_${selectedStudent.uid}`) || defaultAward);
-      
-      const defaultDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      setCustomCertificateDate(localStorage.getItem(`cert_date_${selectedStudent.uid}`) || defaultDate);
-    }
-  }, [selectedStudent, submissions, exams]);
+  const getCertificateAwardFromAverage = (avg: number) => {
+    if (avg >= 70) return "PASS WITH DISTINCTION";
+    if (avg >= 60) return "PASS WITH CREDIT";
+    if (avg >= 50) return "PASS WITH CREDIT";
+    if (avg >= 40) return "PASS";
+    return "FAIL";
+  };
 
   // Helper to calculate grade, grade point, and remark according to official college scale
   const calculateResultDetails = (score: number | null | undefined) => {
@@ -1019,10 +1009,10 @@ export const Transcripts: React.FC = () => {
             score,
             grade: details.grade,
             gradePoint: details.gradePoint,
-            hours: unit.hours || 45,
+            hours: (unit as any).hours || 45,
             remark: details.remark,
             status: score >= 40 ? 'PASS' : 'RE-SIT',
-            semester: unit.semester || exam.semester || 'YEAR 1 — SEMESTER I'
+            semester: (unit as any).semester || (exam as any).semester || 'YEAR 1 — SEMESTER I'
           });
         }
       }
@@ -1267,6 +1257,21 @@ export const Transcripts: React.FC = () => {
 
   const currentAverage = calculateAverage();
 
+  // Dynamically synchronize certificate overrides with current transcript average
+  useEffect(() => {
+    if (selectedStudent) {
+      const staticCertNo = generateAutomatedSerial(selectedStudent);
+      setCustomCertificateNo(localStorage.getItem(`cert_no_${selectedStudent.uid}`) || staticCertNo);
+      
+      const computedAward = getCertificateAwardFromAverage(currentAverage);
+      const savedAward = localStorage.getItem(`cert_award_${selectedStudent.uid}`);
+      setCustomAwardClass(savedAward || computedAward);
+      
+      const defaultDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      setCustomCertificateDate(localStorage.getItem(`cert_date_${selectedStudent.uid}`) || defaultDate);
+    }
+  }, [selectedStudent, currentAverage]);
+
   const calculateGPA = () => {
     const scored = results.filter(r => r.score !== null && r.score !== undefined);
     if (scored.length === 0) return "0.00";
@@ -1293,7 +1298,7 @@ export const Transcripts: React.FC = () => {
   const getPerformanceClass = (avg: number) => {
     if (avg >= 70) return "DISTINCTION";
     if (avg >= 60) return "CREDIT";
-    if (avg >= 50) return "SATISFACTORY / PASS";
+    if (avg >= 50) return "CREDIT";
     if (avg >= 40) return "PASS";
     return "FAIL / UNCLASSIFIED";
   };
@@ -1318,6 +1323,7 @@ export const Transcripts: React.FC = () => {
   const groupedResults = getGroupedResults();
 
   const triggerPrint = () => {
+    setSealDateOverride(getTodayISODate());
     window.print();
   };
 
@@ -1818,7 +1824,7 @@ export const Transcripts: React.FC = () => {
                               <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Code</label>
                               <input
                                 type="text"
-                                value={resItem.unitCode}
+                                value={resItem.unitCode || ''}
                                 onChange={(e) => handleResultChange(idx, 'unitCode', e.target.value)}
                                 className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-bold ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                               />
@@ -1827,7 +1833,7 @@ export const Transcripts: React.FC = () => {
                               <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Hours</label>
                               <input
                                 type="number"
-                                value={resItem.hours}
+                                value={resItem.hours ?? ''}
                                 onChange={(e) => handleResultChange(idx, 'hours', parseInt(e.target.value) || 0)}
                                 className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-bold ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                               />
@@ -1838,7 +1844,7 @@ export const Transcripts: React.FC = () => {
                             <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Unit Name</label>
                             <input
                               type="text"
-                              value={resItem.unitName}
+                              value={resItem.unitName || ''}
                               onChange={(e) => handleResultChange(idx, 'unitName', e.target.value)}
                               className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-bold ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             />
@@ -1849,7 +1855,7 @@ export const Transcripts: React.FC = () => {
                               <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Score (%)</label>
                               <input
                                 type="number"
-                                value={resItem.score}
+                                value={resItem.score ?? ''}
                                 onChange={(e) => handleResultChange(idx, 'score', e.target.value)}
                                 className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-black ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-center"
                               />
@@ -1858,7 +1864,7 @@ export const Transcripts: React.FC = () => {
                               <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Grade</label>
                               <input
                                 type="text"
-                                value={resItem.grade}
+                                value={resItem.grade || ''}
                                 onChange={(e) => handleResultChange(idx, 'grade', e.target.value.toUpperCase())}
                                 className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-black ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-center"
                               />
@@ -1866,7 +1872,7 @@ export const Transcripts: React.FC = () => {
                             <div className="w-1/3">
                               <label className="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Result</label>
                               <select
-                                value={resItem.status}
+                                value={resItem.status || 'PASS'}
                                 onChange={(e) => handleResultChange(idx, 'status', e.target.value)}
                                 className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border-none rounded-lg text-xs font-bold ring-1 ring-slate-200 dark:ring-slate-700 text-slate-850 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                               >
@@ -2393,10 +2399,10 @@ export const Transcripts: React.FC = () => {
                     </h2>
                   </div>
 
-                  {customAwardClass && (
+                  {(customAwardClass || getCertificateAwardFromAverage(currentAverage)) && (
                     <div className="mt-0.5">
                       <span className="cert-award-class bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full inline-block">
-                        {customAwardClass}
+                        {customAwardClass || getCertificateAwardFromAverage(currentAverage)}
                       </span>
                     </div>
                   )}

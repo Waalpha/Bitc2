@@ -3887,7 +3887,7 @@ export const AdminSettings: React.FC = () => {
                     <input
                       type="text"
                       required
-                      value={editingUser.name}
+                      value={editingUser.name || ''}
                       onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 font-bold"
                     />
@@ -3896,7 +3896,7 @@ export const AdminSettings: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Role</label>
                     <select
-                      value={editingUser.role}
+                      value={editingUser.role || ''}
                       onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as any })}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 font-bold"
                     >

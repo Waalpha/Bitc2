@@ -4939,7 +4939,7 @@ export const Students: React.FC = () => {
                       <input
                          type="text"
                          required
-                         value={editingStudent.name}
+                         value={editingStudent.name || ''}
                          onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })}
                          className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-bold text-gray-900"
                       />
