@@ -685,22 +685,13 @@ export const Transcripts: React.FC = () => {
   ];
 
   const defaultElectricalUnits = [
-    { code: "EET 101", name: "Introduction to Electrical and Electronics Engineering", hours: 30 },
-    { code: "EET 102", name: "Engineering Mathematics", hours: 45 },
-    { code: "EET 103", name: "Engineering Science", hours: 30 },
-    { code: "EET 104", name: "Electrical Safety and First Aid", hours: 30 },
-    { code: "EET 105", name: "Electrical Workshop Practice I", hours: 90 },
-    { code: "EET 106", name: "Basic Electrical Installation", hours: 60 },
-    { code: "EET 107", name: "Electrical Measurements and Instruments", hours: 45 },
-    { code: "EET 108", name: "Computer Applications", hours: 30 },
-    { code: "EET 201", name: "Basic Electronics", hours: 60 },
-    { code: "EET 202", name: "Electronic Components and Circuits", hours: 60 },
-    { code: "EET 203", name: "Electrical Machines", hours: 45 },
-    { code: "EET 204", name: "Motor Control and Protection", hours: 45 },
-    { code: "EET 205", name: "Solar Photovoltaic Systems", hours: 45 },
-    { code: "EET 206", name: "Electrical Testing and Fault Diagnosis", hours: 45 },
-    { code: "EET 207", name: "Entrepreneurship Education", hours: 30 },
-    { code: "EET 208", name: "Industrial Attachment / Final Practical Project", hours: 150 }
+    { code: "EET-101", name: "Electrical & Electronics Theory", hours: 45 },
+    { code: "EET-102", name: "Electrical Installation Practice", hours: 90 },
+    { code: "EET-103", name: "Electronics Practical", hours: 90 },
+    { code: "EET-104", name: "Electrical Safety & Workshop Practice", hours: 45 },
+    { code: "EET-105", name: "Solar Photovoltaic Systems Installation", hours: 60 },
+    { code: "EET-106", name: "Entrepreneurship Education", hours: 45 },
+    { code: "EET-107", name: "Communication Skills", hours: 45 }
   ];
 
   // Grade mapping
@@ -819,10 +810,19 @@ export const Transcripts: React.FC = () => {
   // Load custom results when selectedStudent changes
   useEffect(() => {
     if (selectedStudent) {
+      const courseName = (selectedStudent.course || '').toLowerCase();
+      const isElectrical = courseName.includes('electrical') || courseName.includes('eet') || courseName.includes('solar') || courseName.includes('wiring') || courseName.includes('electronics');
+      
       const saved = localStorage.getItem(`transcript_override_${selectedStudent.uid}`);
       if (saved) {
         try {
-          setCustomResults(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          if (isElectrical && Array.isArray(parsed) && parsed.length > 7) {
+            setCustomResults(null);
+            localStorage.removeItem(`transcript_override_${selectedStudent.uid}`);
+          } else {
+            setCustomResults(parsed);
+          }
         } catch (e) {
           console.error("Error parsing overrides:", e);
           setCustomResults(null);
@@ -1042,7 +1042,7 @@ export const Transcripts: React.FC = () => {
     template.forEach((item, index) => {
       const exists = results.some(r => r.unitName.toLowerCase() === item.name.toLowerCase() || r.unitCode.toLowerCase() === item.code.toLowerCase());
       if (!exists) {
-        const sem = index < 4 ? 'YEAR 1 — SEMESTER I' : index < 8 ? 'YEAR 1 — SEMESTER II' : 'YEAR 2 — SEMESTER I';
+        const sem = template.length <= 7 ? 'YEAR 1 — SEMESTER I' : (index < 4 ? 'YEAR 1 — SEMESTER I' : index < 8 ? 'YEAR 1 — SEMESTER II' : 'YEAR 2 — SEMESTER I');
 
         if (includeMockData) {
           const seed = (selectedStudent.name ? selectedStudent.name.charCodeAt(0) : 75) + index * 12;
@@ -1223,7 +1223,39 @@ export const Transcripts: React.FC = () => {
     localStorage.removeItem('transcript_principalSignatureUrl');
   };
 
-  const results = customResults !== null ? customResults : getTranscriptResults();
+  const rawResults = customResults !== null ? customResults : getTranscriptResults();
+
+  const normalizeResultItem = (item: any) => {
+    const scoreNum = item.score !== null && item.score !== undefined && !isNaN(Number(item.score)) ? Number(item.score) : null;
+    const details = calculateResultDetails(scoreNum);
+    
+    let finalGrade = item.grade;
+    if (!finalGrade || !isNaN(Number(finalGrade)) || finalGrade === 'PASS' || finalGrade === 'RE-SIT' || finalGrade === 'NOT AVAILABLE') {
+      finalGrade = details.grade;
+    }
+    
+    let finalGradePoint: number | string = item.gradePoint;
+    if (finalGradePoint === undefined || finalGradePoint === null || finalGradePoint === '-' || isNaN(Number(finalGradePoint))) {
+      finalGradePoint = details.gradePoint;
+    }
+
+    let finalRemark = item.remark;
+    if (!finalRemark || finalRemark === 'PASS' || finalRemark === 'RE-SIT' || finalRemark === 'NOT AVAILABLE') {
+      finalRemark = details.remark;
+    }
+
+    return {
+      ...item,
+      score: scoreNum,
+      grade: finalGrade,
+      gradePoint: finalGradePoint,
+      remark: finalRemark,
+      hours: item.hours || 45,
+      status: scoreNum !== null ? (scoreNum >= 40 ? 'PASS' : 'RE-SIT') : 'PENDING',
+    };
+  };
+
+  const results = rawResults.map(normalizeResultItem);
 
   // Aggregate stats ignoring un-evaluated items
   const calculateAverage = () => {
@@ -1915,7 +1947,7 @@ export const Transcripts: React.FC = () => {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
-                  className="bg-white text-slate-900 shadow-xl border border-slate-300 p-8 sm:p-12 relative max-w-[850px] mx-auto min-h-[1123px] flex flex-col justify-between print:p-0 print:border-none print:shadow-none selection:bg-slate-100 font-serif"
+                  className="bg-white text-slate-900 shadow-xl border border-slate-300 p-6 sm:p-8 relative max-w-[850px] mx-auto min-h-[1123px] flex flex-col justify-between print:p-0 print:border-none print:shadow-none selection:bg-slate-100 font-serif"
                 >
                   {/* Subtle Watermark Logo Centered */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0 flex items-center justify-center">
@@ -1923,19 +1955,19 @@ export const Transcripts: React.FC = () => {
                       <img 
                         src={logoUrlOverride} 
                         alt="" 
-                        className="w-64 h-64 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
+                        className="w-56 h-56 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <GraduationCap size={220} className="stroke-[1] text-slate-600 select-none pointer-events-none" />
+                      <GraduationCap size={180} className="stroke-[1] text-slate-600 select-none pointer-events-none" />
                     )}
                   </div>
 
-                  <div className="relative z-10 space-y-6">
+                  <div className="relative z-10 space-y-3">
                     
                     {/* 1. OFFICIAL COLLEGE HEADER */}
-                    <div className="border-b-2 border-slate-900 pb-4">
-                      <div className="flex items-center justify-between gap-6">
+                    <div className="border-b-2 border-slate-900 pb-2">
+                      <div className="flex items-center justify-between gap-4">
                         
                         {/* Logo */}
                         <div className="shrink-0">
@@ -1943,28 +1975,28 @@ export const Transcripts: React.FC = () => {
                             <img 
                               src={logoUrlOverride} 
                               alt="College Logo" 
-                              className="h-20 w-auto object-contain max-w-[120px] mix-blend-multiply"
+                              className="h-16 w-auto object-contain max-w-[100px] mix-blend-multiply"
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <div className="bg-slate-900 text-white p-3 rounded-lg flex items-center justify-center">
-                              <GraduationCap className="text-white w-10 h-10" />
+                            <div className="bg-slate-900 text-white p-2.5 rounded-lg flex items-center justify-center">
+                              <GraduationCap className="text-white w-8 h-8" />
                             </div>
                           )}
                         </div>
 
                         {/* Identity & Accreditation */}
-                        <div className="text-center flex-1 space-y-1">
-                          <h1 className="text-xl sm:text-2xl font-serif font-black uppercase tracking-tight text-slate-950 leading-tight">
+                        <div className="text-center flex-1 space-y-0.5">
+                          <h1 className="text-lg sm:text-xl font-serif font-black uppercase tracking-tight text-slate-950 leading-tight">
                             {schoolNameOverride}
                           </h1>
-                          <p className="text-[10px] sm:text-[11px] font-sans font-bold text-red-700 uppercase tracking-widest leading-none">
+                          <p className="text-[9.5px] font-sans font-bold text-red-700 uppercase tracking-wider leading-none">
                             Ministry of Education & TVETA Registered Institution — Reg No. TVETA/TVC/0082/2016
                           </p>
-                          <p className="text-[9.5px] font-sans text-slate-700 font-medium leading-tight pt-0.5">
+                          <p className="text-[8.5px] font-sans text-slate-700 font-medium leading-tight">
                             {addressOverride} | Tel: {phoneOverride}
                           </p>
-                          <p className="text-[9.5px] font-sans text-slate-700 font-medium leading-none">
+                          <p className="text-[8.5px] font-sans text-slate-700 font-medium leading-none">
                             Email: {emailOverride} | Website: www.bitc.ac.ke
                           </p>
                         </div>
@@ -1974,10 +2006,10 @@ export const Transcripts: React.FC = () => {
                           <div className="p-1 bg-white border border-slate-300 inline-block text-center">
                             <QRCodeCanvas 
                               value={`https://verify.bitc.ac.ke/transcript/${selectedStudent.uid}`}
-                              size={52}
+                              size={44}
                               level="M"
                             />
-                            <span className="text-[7px] font-sans font-bold uppercase tracking-wider text-slate-500 block mt-0.5">VERIFY OFFICIAL</span>
+                            <span className="text-[6.5px] font-sans font-bold uppercase tracking-wider text-slate-500 block mt-0.5">VERIFY OFFICIAL</span>
                           </div>
                         </div>
 
@@ -1985,57 +2017,57 @@ export const Transcripts: React.FC = () => {
                     </div>
 
                     {/* 2. DOCUMENT TITLE */}
-                    <div className="text-center py-2 space-y-0.5">
-                      <h2 className="text-xs font-sans font-black uppercase tracking-[0.3em] text-blue-900">
+                    <div className="text-center py-0.5 space-y-0">
+                      <h2 className="text-[10px] font-sans font-black uppercase tracking-[0.25em] text-blue-900">
                         OFFICIAL ACADEMIC TRANSCRIPT
                       </h2>
-                      <h3 className="text-2xl font-serif font-black uppercase tracking-tight text-slate-950">
+                      <h3 className="text-lg font-serif font-black uppercase tracking-tight text-slate-950">
                         TRANSCRIPT OF RESULTS
                       </h3>
                     </div>
 
                     {/* 3. STUDENT PARTICULARS */}
-                    <div className="border border-slate-900 bg-slate-50/30 p-4">
-                      <div className="flex gap-4 items-start">
-                        <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2 text-xs font-sans">
+                    <div className="border border-slate-900 bg-slate-50/30 p-2.5">
+                      <div className="flex gap-3 items-start">
+                        <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1 text-[10.5px] font-sans">
                           
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Student Name:</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Student Name:</span>
                             <span className="font-black text-slate-950 uppercase">{selectedStudent.name}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Registration No:</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Registration No:</span>
                             <span className="font-mono font-bold text-slate-950 uppercase">{selectedStudent.admissionNumber || 'BITC/2026/001'}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Programme / Course:</span>
-                            <span className="font-bold text-slate-950 uppercase">{selectedStudent.course || 'Certificate Program'}</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Programme / Course:</span>
+                            <span className="font-bold text-slate-950 uppercase truncate">{selectedStudent.course || 'Certificate Program'}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Department:</span>
-                            <span className="font-bold text-slate-950 uppercase">{getDepartmentForCourse(selectedStudent.course)}</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Department:</span>
+                            <span className="font-bold text-slate-950 uppercase truncate">{getDepartmentForCourse(selectedStudent.course)}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">ID / Passport No:</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">ID / Passport No:</span>
                             <span className="font-mono text-slate-950 uppercase">{selectedStudent.idNumber || 'N/A'}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-1">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Academic Intake / Year:</span>
+                          <div className="flex border-b border-slate-200 pb-0.5">
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Academic Intake / Year:</span>
                             <span className="font-semibold text-slate-950 uppercase">{selectedStudent.academicYear || '2025/2026'}</span>
                           </div>
 
                           <div className="flex">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Date of Issue:</span>
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Date of Issue:</span>
                             <span className="font-semibold text-slate-950 uppercase">{sealDateOverride}</span>
                           </div>
 
                           <div className="flex">
-                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Transcript Serial:</span>
+                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Transcript Serial:</span>
                             <span className="font-mono font-bold text-blue-900 uppercase">{generateAutomatedSerial(selectedStudent)}</span>
                           </div>
 
@@ -2043,11 +2075,11 @@ export const Transcripts: React.FC = () => {
 
                         {/* Student Passport Photo Frame */}
                         {selectedStudent.photoUrl && (
-                          <div className="shrink-0 pl-2 border-l border-slate-200">
+                          <div className="shrink-0 pl-1.5 border-l border-slate-200">
                             <img 
                               src={selectedStudent.photoUrl} 
                               alt="Student Photo" 
-                              className="w-16 h-20 object-cover border border-slate-400 p-0.5 bg-white"
+                              className="w-14 h-16 object-cover border border-slate-400 p-0.5 bg-white"
                               referrerPolicy="no-referrer"
                             />
                           </div>
@@ -2057,23 +2089,23 @@ export const Transcripts: React.FC = () => {
 
                     {/* 4. ACADEMIC RESULTS TABLE */}
                     <div className="border border-slate-900">
-                      <table className="w-full text-left border-collapse text-[11px] font-sans">
+                      <table className="w-full text-left border-collapse text-[10px] font-sans">
                         <thead>
-                          <tr className="bg-slate-900 text-white font-bold uppercase text-[9.5px] tracking-wider border-b border-slate-900">
-                            <th className="py-2 px-3 border-r border-slate-700 text-center w-10">S/N</th>
-                            <th className="py-2 px-3 border-r border-slate-700 w-28">UNIT CODE</th>
-                            <th className="py-2 px-3 border-r border-slate-700">UNIT TITLE / COURSE</th>
-                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">CREDIT HRS</th>
-                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">MARK (%)</th>
-                            <th className="py-2 px-3 border-r border-slate-700 text-center w-16">GRADE</th>
-                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">GRADE POINT</th>
-                            <th className="py-2 px-3 text-center w-28">REMARK</th>
+                          <tr className="bg-slate-900 text-white font-bold uppercase text-[9px] tracking-wider border-b border-slate-900">
+                            <th className="py-1.5 px-2 border-r border-slate-700 text-center w-8">S/N</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700 w-24">UNIT CODE</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700">UNIT TITLE / COURSE</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700 text-center w-16">CREDIT HRS</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700 text-center w-16">MARK (%)</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700 text-center w-14">GRADE</th>
+                            <th className="py-1.5 px-2 border-r border-slate-700 text-center w-16">GRADE POINT</th>
+                            <th className="py-1.5 px-2 text-center w-24">REMARK</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-300">
                           {groupedResults.length === 0 ? (
                             <tr>
-                              <td colSpan={8} className="py-8 text-center font-bold text-slate-400 uppercase tracking-widest text-xs">
+                              <td colSpan={8} className="py-6 text-center font-bold text-slate-400 uppercase tracking-widest text-xs">
                                 No Academic Course Units Registered for this Candidate
                               </td>
                             </tr>
@@ -2081,8 +2113,8 @@ export const Transcripts: React.FC = () => {
                             groupedResults.map((group, groupIdx) => (
                               <React.Fragment key={groupIdx}>
                                 {group.semesterName && (
-                                  <tr className="bg-slate-100 font-serif font-black text-slate-900 text-[10px] uppercase tracking-widest border-y border-slate-400">
-                                    <td colSpan={8} className="py-1.5 px-3 bg-slate-200/80 font-extrabold">
+                                  <tr className="bg-slate-100 font-serif font-black text-slate-900 text-[9.5px] uppercase tracking-widest border-y border-slate-400">
+                                    <td colSpan={8} className="py-1 px-2 bg-slate-200/80 font-extrabold">
                                       {group.semesterName}
                                     </td>
                                   </tr>
@@ -2090,28 +2122,28 @@ export const Transcripts: React.FC = () => {
 
                                 {group.items.map((r, i) => (
                                   <tr key={i} className="hover:bg-slate-50">
-                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold text-slate-500">
+                                    <td className="py-1 px-2 border-r border-slate-300 text-center font-mono font-bold text-slate-500">
                                       {r.sn}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 font-mono font-black text-slate-900">
+                                    <td className="py-1 px-2 border-r border-slate-300 font-mono font-black text-slate-900">
                                       {r.unitCode}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 font-semibold text-slate-950 uppercase">
+                                    <td className="py-1 px-2 border-r border-slate-300 font-semibold text-slate-950 uppercase">
                                       {r.unitName}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono">
+                                    <td className="py-1 px-2 border-r border-slate-300 text-center font-mono">
                                       {r.hours}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold">
+                                    <td className="py-1 px-2 border-r border-slate-300 text-center font-mono font-bold">
                                       {r.score !== null ? `${r.score}%` : 'NOT AVAILABLE'}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-black">
+                                    <td className="py-1 px-2 border-r border-slate-300 text-center font-mono font-black">
                                       {r.grade}
                                     </td>
-                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold">
+                                    <td className="py-1 px-2 border-r border-slate-300 text-center font-mono font-bold">
                                       {r.gradePoint}
                                     </td>
-                                    <td className="py-1.5 px-3 text-center font-bold text-[10px] uppercase">
+                                    <td className="py-1 px-2 text-center font-bold text-[9.5px] uppercase">
                                       <span className={r.grade === 'F' ? 'text-red-700 font-black' : 'text-slate-900'}>
                                         {r.remark}
                                       </span>
@@ -2127,29 +2159,29 @@ export const Transcripts: React.FC = () => {
 
                     {/* 5. ACADEMIC SUMMARY TABLE */}
                     <div className="border border-slate-900 bg-slate-50/50">
-                      <table className="w-full text-xs font-sans border-collapse">
+                      <table className="w-full text-[11px] font-sans border-collapse">
                         <tbody>
                           <tr className="border-b border-slate-300 divide-x divide-slate-300">
-                            <td className="p-2.5 text-center">
-                              <span className="block text-[9px] font-bold text-slate-500 uppercase">TOTAL CREDIT HOURS</span>
-                              <span className="font-mono font-black text-slate-950 text-sm">{totalCreditHours} Hrs</span>
+                            <td className="p-1.5 text-center">
+                              <span className="block text-[8.5px] font-bold text-slate-500 uppercase">TOTAL CREDIT HOURS</span>
+                              <span className="font-mono font-black text-slate-950 text-xs">{totalCreditHours} Hrs</span>
                             </td>
-                            <td className="p-2.5 text-center">
-                              <span className="block text-[9px] font-bold text-slate-500 uppercase">TOTAL UNITS GRADED</span>
-                              <span className="font-mono font-black text-slate-950 text-sm">{gradedUnitsCount} Units</span>
+                            <td className="p-1.5 text-center">
+                              <span className="block text-[8.5px] font-bold text-slate-500 uppercase">TOTAL UNITS GRADED</span>
+                              <span className="font-mono font-black text-slate-950 text-xs">{gradedUnitsCount} Units</span>
                             </td>
-                            <td className="p-2.5 text-center">
-                              <span className="block text-[9px] font-bold text-slate-500 uppercase">AVERAGE MARK (%)</span>
-                              <span className="font-mono font-black text-blue-900 text-sm">{currentAverage}%</span>
+                            <td className="p-1.5 text-center">
+                              <span className="block text-[8.5px] font-bold text-slate-500 uppercase">AVERAGE MARK (%)</span>
+                              <span className="font-mono font-black text-blue-900 text-xs">{currentAverage}%</span>
                             </td>
-                            <td className="p-2.5 text-center">
-                              <span className="block text-[9px] font-bold text-slate-500 uppercase">CUMULATIVE GPA</span>
-                              <span className="font-mono font-black text-emerald-800 text-sm">{currentGPA} / 4.00</span>
+                            <td className="p-1.5 text-center">
+                              <span className="block text-[8.5px] font-bold text-slate-500 uppercase">CUMULATIVE GPA</span>
+                              <span className="font-mono font-black text-emerald-800 text-xs">{currentGPA} / 4.00</span>
                             </td>
                           </tr>
                           <tr>
-                            <td colSpan={4} className="p-2.5 bg-slate-100 text-center">
-                              <span className="text-[10px] font-bold text-slate-600 uppercase mr-2">ACADEMIC CLASSIFICATION:</span>
+                            <td colSpan={4} className="p-1.5 bg-slate-100 text-center">
+                              <span className="text-[9.5px] font-bold text-slate-600 uppercase mr-2">ACADEMIC CLASSIFICATION:</span>
                               <span className="font-serif font-black text-slate-950 text-xs tracking-wide uppercase border-b-2 border-slate-900 pb-0.5">
                                 {getPerformanceClass(currentAverage)}
                               </span>
@@ -2160,8 +2192,8 @@ export const Transcripts: React.FC = () => {
                     </div>
 
                     {/* 6. OFFICIAL GRADING SCALE TABLE */}
-                    <div className="border border-slate-300 p-2 text-[9.5px] font-sans">
-                      <div className="font-bold text-slate-800 uppercase text-[9px] mb-1 tracking-wider border-b border-slate-200 pb-0.5">
+                    <div className="border border-slate-300 p-1.5 text-[8.5px] font-sans">
+                      <div className="font-bold text-slate-800 uppercase text-[8.5px] mb-0.5 tracking-wider border-b border-slate-200 pb-0.5">
                         OFFICIAL INSTITUTIONAL GRADING SYSTEM:
                       </div>
                       <table className="w-full text-center border-collapse">
@@ -2186,32 +2218,32 @@ export const Transcripts: React.FC = () => {
                   </div>
 
                   {/* 7. OFFICIAL AUTHENTICATION & SIGNATURES */}
-                  <div className="relative z-10 pt-4 space-y-4 font-sans">
+                  <div className="relative z-10 pt-2 space-y-2 font-sans">
                     
-                    <div className="grid grid-cols-3 gap-6 items-end">
+                    <div className="grid grid-cols-3 gap-4 items-end">
                       
                       {/* Left: Registrar Signature */}
                       <div className="text-left">
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">REGISTRAR SIGNATURE</p>
-                        <div className="h-12 flex items-center justify-start py-1 relative text-blue-900">
+                        <p className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">REGISTRAR SIGNATURE</p>
+                        <div className="h-9 flex items-center justify-start py-0.5 relative text-blue-900">
                           {isSignoffPrinted && (
                             signatureUrlOverride ? (
                               <img 
                                 src={signatureUrlOverride} 
                                 alt="Signature" 
-                                className="h-10 w-auto object-contain" 
+                                className="h-8 w-auto object-contain" 
                                 referrerPolicy="no-referrer" 
                               />
                             ) : (
-                              <svg className="h-10 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg className="h-8 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                               </svg>
                             )
                           )}
                         </div>
-                        <div className="border-t border-slate-900 pt-1">
-                          <p className="text-xs font-black text-slate-950 uppercase">{registrarNameOverride}</p>
-                          <p className="text-[9px] font-bold text-slate-600 uppercase">{registrarTitleOverride}</p>
+                        <div className="border-t border-slate-900 pt-0.5">
+                          <p className="text-[10px] font-black text-slate-950 uppercase">{registrarNameOverride}</p>
+                          <p className="text-[8.5px] font-bold text-slate-600 uppercase">{registrarTitleOverride}</p>
                         </div>
                       </div>
 
@@ -2219,11 +2251,11 @@ export const Transcripts: React.FC = () => {
                       <div className="flex flex-col items-center justify-center text-center">
                         {isSignoffPrinted && (
                           stampUrlOverride ? (
-                            <div className="relative stamp-seal-container w-28 h-28 flex items-center justify-center select-none rotate-[-4deg]">
+                            <div className="relative stamp-seal-container w-20 h-20 flex items-center justify-center select-none rotate-[-4deg]">
                               <img 
                                 src={stampUrlOverride} 
                                 alt="Official Stamp" 
-                                className="w-28 h-28 object-contain opacity-95 mix-blend-multiply"
+                                className="w-20 h-20 object-contain opacity-95 mix-blend-multiply"
                                 referrerPolicy="no-referrer"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -2231,11 +2263,11 @@ export const Transcripts: React.FC = () => {
                               />
                             </div>
                           ) : (
-                            <div className="relative stamp-seal-container w-24 h-24 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[8px] uppercase p-1 opacity-85 rotate-[-8deg]">
+                            <div className="relative stamp-seal-container w-20 h-20 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[7.5px] uppercase p-1 opacity-85 rotate-[-8deg]">
                               <div>
-                                <p className="font-extrabold text-[7px]">REGISTRAR</p>
-                                <p className="font-black text-[10px]">BITC</p>
-                                <p className="font-bold text-[6px]">OFFICIAL SEAL</p>
+                                <p className="font-extrabold text-[6.5px]">REGISTRAR</p>
+                                <p className="font-black text-[9px]">BITC</p>
+                                <p className="font-bold text-[5.5px]">OFFICIAL SEAL</p>
                               </div>
                             </div>
                           )
@@ -2244,29 +2276,29 @@ export const Transcripts: React.FC = () => {
 
                       {/* Right: Tutor Signature */}
                       <div className="text-right">
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
-                        <div className="h-12 flex items-center justify-end py-1 relative text-blue-900">
+                        <p className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
+                        <div className="h-9 flex items-center justify-end py-0.5 relative text-blue-900">
                           {isSignoffPrinted && (
                             principalSignatureUrlOverride ? (
                               <img 
                                 src={principalSignatureUrlOverride} 
                                 alt="Tutor Signature" 
-                                className="h-10 w-auto object-contain" 
+                                className="h-8 w-auto object-contain" 
                                 referrerPolicy="no-referrer" 
                               />
                             ) : null
                           )}
                         </div>
-                        <div className="border-t border-slate-900 pt-1">
-                          <p className="text-xs font-black text-slate-950 uppercase">{principalNameOverride || 'COURSE TUTOR'}</p>
-                          <p className="text-[9px] font-bold text-slate-600 uppercase">APPROVED & VERIFIED</p>
+                        <div className="border-t border-slate-900 pt-0.5">
+                          <p className="text-[10px] font-black text-slate-950 uppercase">{principalNameOverride || 'COURSE TUTOR'}</p>
+                          <p className="text-[8.5px] font-bold text-slate-600 uppercase">APPROVED & VERIFIED</p>
                         </div>
                       </div>
 
                     </div>
 
                     {/* 8. OFFICIAL DISCLAIMER */}
-                    <div className="text-[8.5px] font-serif italic text-slate-600 text-center border-t border-slate-300 pt-2 leading-tight">
+                    <div className="text-[7.5px] font-serif italic text-slate-600 text-center border-t border-slate-300 pt-1 leading-tight">
                       "This transcript is an official academic record issued by Breakthrough International Training College. It is valid only when bearing the authorized signature, official institutional stamp, and valid verification information. Any unauthorized alteration or modification renders this document invalid."
                     </div>
 

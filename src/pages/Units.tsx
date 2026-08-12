@@ -54,24 +54,15 @@ export const Units: React.FC = () => {
       ]
     },
     electrical: {
-      name: "Certificate in Electrical and Electronics Technology",
+      name: "Certificate in Electrical & Electronics Technology (6 Months)",
       units: [
-        "EET 101: Introduction to Electrical and Electronics Engineering",
-        "EET 102: Engineering Mathematics",
-        "EET 103: Engineering Science",
-        "EET 104: Electrical Safety and First Aid",
-        "EET 105: Electrical Workshop Practice I",
-        "EET 106: Basic Electrical Installation",
-        "EET 107: Electrical Measurements and Instruments",
-        "EET 108: Computer Applications",
-        "EET 201: Basic Electronics",
-        "EET 202: Electronic Components and Circuits",
-        "EET 203: Electrical Machines",
-        "EET 204: Motor Control and Protection",
-        "EET 205: Solar Photovoltaic Systems",
-        "EET 206: Electrical Testing and Fault Diagnosis",
-        "EET 207: Entrepreneurship Education",
-        "EET 208: Industrial Attachment / Final Practical Project"
+        "EET 101: Electrical & Electronics Theory",
+        "EET 102: Electrical Installation Practice",
+        "EET 103: Electronics Practical",
+        "EET 104: Electrical Safety & Workshop Practice",
+        "EET 105: Solar Photovoltaic Systems Installation",
+        "EET 106: Entrepreneurship Education",
+        "EET 107: Communication Skills"
       ]
     }
   };
