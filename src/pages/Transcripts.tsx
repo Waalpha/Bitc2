@@ -122,16 +122,23 @@ export const Transcripts: React.FC = () => {
     try {
       const isPortrait = printOrientation === 'portrait';
       if (previewDocType === 'transcript') {
-        element.style.width = '850px';
-        element.style.minWidth = '850px';
-        element.style.maxWidth = '850px';
-        element.style.minHeight = '1200px';
+        element.style.width = '794px';
+        element.style.minWidth = '794px';
+        element.style.maxWidth = '794px';
+        element.style.height = '1123px';
+        element.style.minHeight = '1123px';
+        element.style.maxHeight = '1123px';
         element.style.boxSizing = 'border-box';
       } else {
-        const w = isPortrait ? '840px' : '1120px';
+        const w = isPortrait ? '794px' : '1123px';
+        const h = isPortrait ? '1123px' : '794px';
         element.style.width = w;
         element.style.minWidth = w;
         element.style.maxWidth = w;
+        element.style.height = h;
+        element.style.minHeight = h;
+        element.style.maxHeight = h;
+        element.style.boxSizing = 'border-box';
       }
 
       await new Promise(resolve => setTimeout(resolve, 250));
@@ -146,23 +153,9 @@ export const Transcripts: React.FC = () => {
       const imgData = canvas.toDataURL('image/png');
       const isPortraitDoc = printOrientation === 'portrait';
       
-      const margin = 8; // 8mm margin
+      const margin = 0; // Standard A4 fit (internal padding is already styled inside element)
       const pageWidth = isPortraitDoc ? 210 : 297;
       const pageHeight = isPortraitDoc ? 297 : 210;
-      
-      const printableWidth = pageWidth - (margin * 2);
-      const printableHeight = pageHeight - (margin * 2);
-      
-      let width = printableWidth;
-      let height = (canvas.height * width) / canvas.width;
-      
-      if (height > printableHeight) {
-        height = printableHeight;
-        width = (canvas.width * height) / canvas.height;
-      }
-      
-      const x = margin + (printableWidth - width) / 2;
-      const y = margin + (printableHeight - height) / 2;
       
       const pdf = new jsPDF({
         orientation: isPortraitDoc ? 'portrait' : 'landscape',
@@ -170,7 +163,7 @@ export const Transcripts: React.FC = () => {
         format: 'a4'
       });
       
-      pdf.addImage(imgData, 'PNG', x, y, width, height);
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
       
       const fileName = selectedStudent 
         ? `${selectedStudent.name.trim().replace(/\s+/g, '_')}_${previewDocType === 'transcript' ? 'Transcript' : 'Certificate'}.pdf` 
@@ -957,6 +950,34 @@ export const Transcripts: React.FC = () => {
     }
   }, [selectedStudent, submissions, exams]);
 
+  // Helper to calculate grade, grade point, and remark according to official college scale
+  const calculateResultDetails = (score: number | null | undefined) => {
+    if (score === null || score === undefined || isNaN(score)) {
+      return {
+        grade: 'NOT AVAILABLE',
+        gradePoint: '-',
+        remark: 'NOT AVAILABLE'
+      };
+    }
+    const s = Math.min(100, Math.max(0, score));
+    if (s >= 70) return { grade: 'A', gradePoint: 4.0, remark: 'DISTINCTION' };
+    if (s >= 60) return { grade: 'B', gradePoint: 3.0, remark: 'CREDIT' };
+    if (s >= 50) return { grade: 'C', gradePoint: 2.0, remark: 'SATISFACTORY' };
+    if (s >= 40) return { grade: 'D', gradePoint: 1.0, remark: 'PASS' };
+    return { grade: 'F', gradePoint: 0.0, remark: 'FAIL' };
+  };
+
+  const getDepartmentForCourse = (courseName?: string) => {
+    if (!courseName) return 'Department of Vocational & Technical Studies';
+    const c = courseName.toLowerCase();
+    if (c.includes('caregiver') || c.includes('nursing') || c.includes('health')) return 'Department of Health & Social Care';
+    if (c.includes('ict') || c.includes('computer') || c.includes('programming')) return 'Department of Information Technology & Computing';
+    if (c.includes('beauty') || c.includes('hair') || c.includes('cosmetology')) return 'Department of Cosmetology & Personal Care Services';
+    if (c.includes('electrical') || c.includes('electronics') || c.includes('solar') || c.includes('wiring')) return 'Department of Electrical & Renewable Energy Engineering';
+    if (c.includes('hospitality') || c.includes('catering') || c.includes('food')) return 'Department of Hospitality & Food Technology';
+    return 'Department of Academic & Technical Studies';
+  };
+
   // Dynamically calculate grades for any selected student
   const getTranscriptResults = () => {
     if (!selectedStudent) return [];
@@ -965,16 +986,19 @@ export const Transcripts: React.FC = () => {
     const results: {
       unitCode: string;
       unitName: string;
-      score: number;
+      score: number | null;
       grade: string;
+      gradePoint: number | string;
       hours: number;
-      status: 'PASS' | 'RE-SIT';
+      remark: string;
+      status: 'PASS' | 'RE-SIT' | 'PENDING';
+      semester?: string;
       isPlaceholder?: boolean;
     }[] = [];
 
-    // Option A: Extract real units and matches
     const mappedUnitIds = new Set<string>();
 
+    // 1. Extract real unit submissions first
     studentSubmissions.forEach(sub => {
       const exam = exams.find(e => e.id === sub.examId);
       if (exam && exam.unitId && sub.grade !== undefined) {
@@ -982,67 +1006,77 @@ export const Transcripts: React.FC = () => {
         if (unit && !mappedUnitIds.has(unit.id)) {
           mappedUnitIds.add(unit.id);
           
-          // Calculate percentage score
           const rawPercentage = (sub.grade / (exam.maxMarks || 100)) * 100;
           const score = Math.round(Math.min(100, Math.max(0, rawPercentage)));
-          
-          // Classify grade
-          const matchedGrade = grades.find(g => score >= g.minPercentage && score <= g.maxPercentage);
-          const gradeLabel = matchedGrade ? matchedGrade.label : 'F';
-          const pass = score >= (exam.passingMarks || 40);
+          const details = calculateResultDetails(score);
 
-          // Get uniform code based on unit name
           const initials = unit.name ? unit.name.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase() : 'UNT';
-          const randomCode = `${initials}-${100 + Math.floor(Math.random() * 200)}`;
+          const code = unit.code || `${initials}-101`;
 
           results.push({
-            unitCode: randomCode,
+            unitCode: code,
             unitName: unit.name,
             score,
-            grade: gradeLabel,
-            hours: 45, // Standard hours
-            status: pass ? 'PASS' : 'RE-SIT'
+            grade: details.grade,
+            gradePoint: details.gradePoint,
+            hours: unit.hours || 45,
+            remark: details.remark,
+            status: score >= 40 ? 'PASS' : 'RE-SIT',
+            semester: unit.semester || exam.semester || 'YEAR 1 — SEMESTER I'
           });
         }
       }
     });
 
-    // Option B: Fill missing curriculum units
-    const isMockChecked = includeMockData || results.length === 0;
-    if (isMockChecked) {
-      // Find template list based on student course
-      const studentCourse = (selectedStudent.course || "").toLowerCase();
-      let template = defaultCaregiverUnits;
-      if (studentCourse.includes('ict') || studentCourse.includes('computer') || studentCourse.includes('programming')) {
-        template = defaultIctUnits;
-      } else if (studentCourse.includes('cosmetology') || studentCourse.includes('beauty') || studentCourse.includes('hair')) {
-        template = defaultCosmetologyUnits;
-      } else if (studentCourse.includes('electrical') || studentCourse.includes('electronics') || studentCourse.includes('eet') || studentCourse.includes('solar') || studentCourse.includes('wiring')) {
-        template = defaultElectricalUnits;
-      }
+    // 2. Add full curriculum units for student course
+    const studentCourse = (selectedStudent.course || "").toLowerCase();
+    let template = defaultCaregiverUnits;
+    if (studentCourse.includes('ict') || studentCourse.includes('computer') || studentCourse.includes('programming')) {
+      template = defaultIctUnits;
+    } else if (studentCourse.includes('cosmetology') || studentCourse.includes('beauty') || studentCourse.includes('hair')) {
+      template = defaultCosmetologyUnits;
+    } else if (studentCourse.includes('electrical') || studentCourse.includes('electronics') || studentCourse.includes('eet') || studentCourse.includes('solar') || studentCourse.includes('wiring')) {
+      template = defaultElectricalUnits;
+    }
 
-      template.forEach((item, index) => {
-        // Only append if it wasn't already matched by name
-        const exists = results.some(r => r.unitName.toLowerCase() === item.name.toLowerCase());
-        if (!exists) {
-          // Generate realistic grade
+    template.forEach((item, index) => {
+      const exists = results.some(r => r.unitName.toLowerCase() === item.name.toLowerCase() || r.unitCode.toLowerCase() === item.code.toLowerCase());
+      if (!exists) {
+        const sem = index < 4 ? 'YEAR 1 — SEMESTER I' : index < 8 ? 'YEAR 1 — SEMESTER II' : 'YEAR 2 — SEMESTER I';
+
+        if (includeMockData) {
           const seed = (selectedStudent.name ? selectedStudent.name.charCodeAt(0) : 75) + index * 12;
-          const score = 55 + (seed % 38); // between 55% and 93%
-          const matchedGrade = grades.find(g => score >= g.minPercentage && score <= g.maxPercentage);
-          const gradeLabel = matchedGrade ? matchedGrade.label : 'C';
+          const score = 55 + (seed % 38); // 55% - 93%
+          const details = calculateResultDetails(score);
 
           results.push({
             unitCode: item.code,
             unitName: item.name,
             score,
-            grade: gradeLabel,
+            grade: details.grade,
+            gradePoint: details.gradePoint,
             hours: item.hours,
+            remark: details.remark,
             status: score >= 40 ? 'PASS' : 'RE-SIT',
+            semester: sem,
             isPlaceholder: true
           });
+        } else {
+          results.push({
+            unitCode: item.code,
+            unitName: item.name,
+            score: null,
+            grade: 'NOT AVAILABLE',
+            gradePoint: '-',
+            hours: item.hours,
+            remark: 'NOT AVAILABLE',
+            status: 'PENDING',
+            semester: sem,
+            isPlaceholder: false
+          });
         }
-      });
-    }
+      }
+    });
 
     return results;
   };
@@ -1191,39 +1225,65 @@ export const Transcripts: React.FC = () => {
 
   const results = customResults !== null ? customResults : getTranscriptResults();
 
-  // Aggregate stats
+  // Aggregate stats ignoring un-evaluated items
   const calculateAverage = () => {
-    if (results.length === 0) return 0;
-    const sum = results.reduce((acc, curr) => acc + curr.score, 0);
-    return Math.round(sum / results.length);
+    const scored = results.filter(r => r.score !== null && r.score !== undefined);
+    if (scored.length === 0) return 0;
+    const sum = scored.reduce((acc, curr) => acc + (curr.score || 0), 0);
+    return Math.round(sum / scored.length);
   };
 
   const currentAverage = calculateAverage();
 
-  // Standard Kenan / GPA conversion
   const calculateGPA = () => {
-    if (results.length === 0) return "0.00";
-    const sumGpaPoints = results.reduce((acc, curr) => {
-      // scale mapping: A (70+) -> 4.0, B (60-69) -> 3.0, C (50-59) -> 2.0, D (40-49) -> 1.0, F (<40) -> 0.0
+    const scored = results.filter(r => r.score !== null && r.score !== undefined);
+    if (scored.length === 0) return "0.00";
+    const sumGpaPoints = scored.reduce((acc, curr) => {
       let pt = 0;
-      if (curr.score >= 70) pt = 4.0;
-      else if (curr.score >= 60) pt = 3.0;
-      else if (curr.score >= 50) pt = 2.0;
-      else if (curr.score >= 40) pt = 1.0;
+      if (typeof curr.gradePoint === 'number') {
+        pt = curr.gradePoint;
+      } else if (curr.score !== null) {
+        if (curr.score >= 70) pt = 4.0;
+        else if (curr.score >= 60) pt = 3.0;
+        else if (curr.score >= 50) pt = 2.0;
+        else if (curr.score >= 40) pt = 1.0;
+      }
       return acc + pt;
     }, 0);
-    return (sumGpaPoints / results.length).toFixed(2);
+    return (sumGpaPoints / scored.length).toFixed(2);
   };
 
   const currentGPA = calculateGPA();
 
+  const totalCreditHours = results.reduce((acc, r) => acc + (r.hours || 0), 0);
+  const gradedUnitsCount = results.filter(r => r.score !== null && r.score !== undefined).length;
+
   const getPerformanceClass = (avg: number) => {
-    if (avg >= 70) return "FIRST CLASS HONORS EQUIVALENT (DISTINCTION)";
-    if (avg >= 60) return "SECOND CLASS UPPER DIVISION EQUIVALENT (CREDIT)";
-    if (avg >= 50) return "SECOND CLASS LOWER DIVISION EQUIVALENT (PASS)";
-    if (avg >= 40) return "PASS DIVISION";
+    if (avg >= 70) return "DISTINCTION";
+    if (avg >= 60) return "CREDIT";
+    if (avg >= 50) return "SATISFACTORY / PASS";
+    if (avg >= 40) return "PASS";
     return "FAIL / UNCLASSIFIED";
   };
+
+  const getGroupedResults = () => {
+    const groups: { semesterName: string; items: (typeof results[0] & { sn: number })[] }[] = [];
+    let currentSn = 1;
+
+    results.forEach(item => {
+      const sem = item.semester || 'YEAR 1 — SEMESTER I';
+      let group = groups.find(g => g.semesterName === sem);
+      if (!group) {
+        group = { semesterName: sem, items: [] };
+        groups.push(group);
+      }
+      group.items.push({ ...item, sn: currentSn++ });
+    });
+
+    return groups;
+  };
+
+  const groupedResults = getGroupedResults();
 
   const triggerPrint = () => {
     window.print();
@@ -1850,352 +1910,369 @@ export const Transcripts: React.FC = () => {
             ) : selectedStudent ? (
               previewDocType === 'transcript' ? (
                 <motion.div
-                    id="transcript-view-element"
-                    key="transcript-view"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 shadow-xl border border-slate-150 rounded-[40px] overflow-hidden p-8 sm:p-12 relative max-w-[880px] mx-auto min-h-[1150px] flex flex-col justify-between print:p-0 print:border-none print:shadow-none print:rounded-none selection:bg-slate-100"
-                  >
-                
-                {/* Institutional Letterhead Header - ALWAYS VISIBLE (Preview & Print) */}
-                <div className="border-b border-sky-100 dark:border-slate-100 pb-6 mb-6">
-                  <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-                    
-                    {/* Left: Logo & School Name */}
-                    <div className="flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
-                      {logoUrlOverride ? (
-                        <img 
-                          src={logoUrlOverride} 
-                          alt="School Logo" 
-                          className="h-16 w-auto object-contain max-w-[110px] rounded-xl self-center mix-blend-multiply"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="bg-slate-900 dark:bg-slate-900 text-white p-3 rounded-2xl shadow-sm shrink-0 flex items-center justify-center">
-                          <GraduationCap className="text-white w-9 h-9" />
-                        </div>
-                      )}
-                      
-                      <div className="space-y-0.5">
-                        <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-slate-950 leading-tight">
-                          {schoolNameOverride}
-                        </h2>
-                        <p className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-[0.15em] leading-none">
-                          Ministry of Higher Education, Science & Technology & TVETA Registered
-                        </p>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-none pt-0.5">
-                          Official Certificate of Registrar of Academic Affairs
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Right: Address & Contact parameters */}
-                    <div className="text-center md:text-right text-[9px] text-slate-500 font-black uppercase tracking-widest space-y-0.5 border-t md:border-t-0 md:border-l border-slate-150 pt-3 md:pt-0 md:pl-5 leading-normal shrink-0">
-                      <p className="flex items-center justify-center md:justify-end gap-1.5 font-bold text-slate-800">
-                        <MapPin size={10} className="text-slate-400" /> {addressOverride}
-                      </p>
-                      <p className="flex items-center justify-center md:justify-end gap-1.5">
-                        <Phone size={10} className="text-slate-400" /> {phoneOverride}
-                      </p>
-                      <p className="flex items-center justify-center md:justify-end gap-1.5">
-                        <Mail size={10} className="text-slate-400" /> {emailOverride}
-                      </p>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Elegant small watermark centered - VISIBLE ON BOTH PRINT & PREVIEW */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.035] pointer-events-none z-0 flex items-center justify-center">
-                  {logoUrlOverride ? (
-                    <img 
-                      src={logoUrlOverride} 
-                      alt="" 
-                      className="w-36 h-36 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <GraduationCap size={160} className="stroke-[1.25] text-slate-400 select-none pointer-events-none" />
-                  )}
-                </div>
-
-                {/* Display interactive toggle indicators */}
-                <div className="pb-4 border-b border-slate-100 flex items-center justify-between z-10 relative print:hidden">
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest">
-                      Official Document
-                    </span>
-                    <span className="text-slate-400 font-bold ml-1 text-xs">
-                      {results.length} Units Graded
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {/* Mock notification badge for testing */}
-                    {results.some(r => r.isPlaceholder) && (
-                      <span className="px-2.5 py-1.5 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                        <Sparkles size={11} /> Predictive Coursework Loaded
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Main institutional heading */}
-                <div className="text-center mt-8 mb-10 z-10 relative">
-                  <p className="text-[11px] font-black uppercase tracking-[0.4em] text-blue-600 mb-2 leading-none">Official Academic Record</p>
-                  <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">
-                    Transcript of Results
-                  </h1>
-                </div>
-
-                {/* Demographics Card Section */}
-                <div className="flex flex-col md:flex-row gap-8 border border-slate-200 rounded-[28px] p-6 bg-slate-50/50 mb-10 text-slate-800 z-10 relative print:bg-transparent print:border-black print:rounded-none">
-                  
-                  {/* Photo or barcode identifier */}
-                  <div className="md:w-1/6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 pr-0 md:pr-8 print:border-black print:border-r shrink-0">
-                    {selectedStudent.photoUrl ? (
+                  id="transcript-view-element"
+                  key="transcript-view"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="bg-white text-slate-900 shadow-xl border border-slate-300 p-8 sm:p-12 relative max-w-[850px] mx-auto min-h-[1123px] flex flex-col justify-between print:p-0 print:border-none print:shadow-none selection:bg-slate-100 font-serif"
+                >
+                  {/* Subtle Watermark Logo Centered */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none z-0 flex items-center justify-center">
+                    {logoUrlOverride ? (
                       <img 
-                        src={selectedStudent.photoUrl} 
-                        alt="Student Profile" 
-                        className="h-20 w-20 rounded-2xl object-cover border border-slate-200 print:border-black shadow-sm"
+                        src={logoUrlOverride} 
+                        alt="" 
+                        className="w-64 h-64 object-contain grayscale opacity-25 select-none pointer-events-none mix-blend-multiply" 
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-20 h-20 rounded-2xl bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-2xl print:border print:border-black">
-                        {selectedStudent.name?.charAt(0)}
-                      </div>
+                      <GraduationCap size={220} className="stroke-[1] text-slate-600 select-none pointer-events-none" />
                     )}
-                    <span className="text-[9px] font-bold text-slate-400 mt-2 tracking-widest uppercase">ID verified</span>
                   </div>
 
-                  {/* Information block */}
-                  <div className="flex-1 flex flex-wrap gap-y-4 text-xs text-left">
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Candidate Name</p>
-                      <p className="font-black text-slate-900 uppercase text-sm">{selectedStudent.name}</p>
+                  <div className="relative z-10 space-y-6">
+                    
+                    {/* 1. OFFICIAL COLLEGE HEADER */}
+                    <div className="border-b-2 border-slate-900 pb-4">
+                      <div className="flex items-center justify-between gap-6">
+                        
+                        {/* Logo */}
+                        <div className="shrink-0">
+                          {logoUrlOverride ? (
+                            <img 
+                              src={logoUrlOverride} 
+                              alt="College Logo" 
+                              className="h-20 w-auto object-contain max-w-[120px] mix-blend-multiply"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="bg-slate-900 text-white p-3 rounded-lg flex items-center justify-center">
+                              <GraduationCap className="text-white w-10 h-10" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Identity & Accreditation */}
+                        <div className="text-center flex-1 space-y-1">
+                          <h1 className="text-xl sm:text-2xl font-serif font-black uppercase tracking-tight text-slate-950 leading-tight">
+                            {schoolNameOverride}
+                          </h1>
+                          <p className="text-[10px] sm:text-[11px] font-sans font-bold text-red-700 uppercase tracking-widest leading-none">
+                            Ministry of Education & TVETA Registered Institution — Reg No. TVETA/TVC/0082/2016
+                          </p>
+                          <p className="text-[9.5px] font-sans text-slate-700 font-medium leading-tight pt-0.5">
+                            {addressOverride} | Tel: {phoneOverride}
+                          </p>
+                          <p className="text-[9.5px] font-sans text-slate-700 font-medium leading-none">
+                            Email: {emailOverride} | Website: www.bitc.ac.ke
+                          </p>
+                        </div>
+
+                        {/* Verification QR / Serial Badge */}
+                        <div className="shrink-0 text-right hidden sm:block">
+                          <div className="p-1 bg-white border border-slate-300 inline-block text-center">
+                            <QRCodeCanvas 
+                              value={`https://verify.bitc.ac.ke/transcript/${selectedStudent.uid}`}
+                              size={52}
+                              level="M"
+                            />
+                            <span className="text-[7px] font-sans font-bold uppercase tracking-wider text-slate-500 block mt-0.5">VERIFY OFFICIAL</span>
+                          </div>
+                        </div>
+
+                      </div>
                     </div>
 
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Registration Number</p>
-                      <p className="font-bold text-slate-900 uppercase text-sm tracking-tight">{selectedStudent.admissionNumber || 'N/A'}</p>
+                    {/* 2. DOCUMENT TITLE */}
+                    <div className="text-center py-2 space-y-0.5">
+                      <h2 className="text-xs font-sans font-black uppercase tracking-[0.3em] text-blue-900">
+                        OFFICIAL ACADEMIC TRANSCRIPT
+                      </h2>
+                      <h3 className="text-2xl font-serif font-black uppercase tracking-tight text-slate-950">
+                        TRANSCRIPT OF RESULTS
+                      </h3>
                     </div>
 
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Enrolled Program</p>
-                      <p className="font-bold text-slate-900 uppercase text-sm">{selectedStudent.course || 'Certificate Program'}</p>
+                    {/* 3. STUDENT PARTICULARS */}
+                    <div className="border border-slate-900 bg-slate-50/30 p-4">
+                      <div className="flex gap-4 items-start">
+                        <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2 text-xs font-sans">
+                          
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Student Name:</span>
+                            <span className="font-black text-slate-950 uppercase">{selectedStudent.name}</span>
+                          </div>
+
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Registration No:</span>
+                            <span className="font-mono font-bold text-slate-950 uppercase">{selectedStudent.admissionNumber || 'BITC/2026/001'}</span>
+                          </div>
+
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Programme / Course:</span>
+                            <span className="font-bold text-slate-950 uppercase">{selectedStudent.course || 'Certificate Program'}</span>
+                          </div>
+
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Department:</span>
+                            <span className="font-bold text-slate-950 uppercase">{getDepartmentForCourse(selectedStudent.course)}</span>
+                          </div>
+
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">ID / Passport No:</span>
+                            <span className="font-mono text-slate-950 uppercase">{selectedStudent.idNumber || 'N/A'}</span>
+                          </div>
+
+                          <div className="flex border-b border-slate-200 pb-1">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Academic Intake / Year:</span>
+                            <span className="font-semibold text-slate-950 uppercase">{selectedStudent.academicYear || '2025/2026'}</span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Date of Issue:</span>
+                            <span className="font-semibold text-slate-950 uppercase">{sealDateOverride}</span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="w-36 font-bold text-slate-600 uppercase text-[10px]">Transcript Serial:</span>
+                            <span className="font-mono font-bold text-blue-900 uppercase">{generateAutomatedSerial(selectedStudent)}</span>
+                          </div>
+
+                        </div>
+
+                        {/* Student Passport Photo Frame */}
+                        {selectedStudent.photoUrl && (
+                          <div className="shrink-0 pl-2 border-l border-slate-200">
+                            <img 
+                              src={selectedStudent.photoUrl} 
+                              alt="Student Photo" 
+                              className="w-16 h-20 object-cover border border-slate-400 p-0.5 bg-white"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Academic Intake</p>
-                      <p className="font-bold text-slate-900 uppercase text-sm">{selectedStudent.academicYear || 'September 2026'}</p>
+                    {/* 4. ACADEMIC RESULTS TABLE */}
+                    <div className="border border-slate-900">
+                      <table className="w-full text-left border-collapse text-[11px] font-sans">
+                        <thead>
+                          <tr className="bg-slate-900 text-white font-bold uppercase text-[9.5px] tracking-wider border-b border-slate-900">
+                            <th className="py-2 px-3 border-r border-slate-700 text-center w-10">S/N</th>
+                            <th className="py-2 px-3 border-r border-slate-700 w-28">UNIT CODE</th>
+                            <th className="py-2 px-3 border-r border-slate-700">UNIT TITLE / COURSE</th>
+                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">CREDIT HRS</th>
+                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">MARK (%)</th>
+                            <th className="py-2 px-3 border-r border-slate-700 text-center w-16">GRADE</th>
+                            <th className="py-2 px-3 border-r border-slate-700 text-center w-20">GRADE POINT</th>
+                            <th className="py-2 px-3 text-center w-28">REMARK</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-300">
+                          {groupedResults.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="py-8 text-center font-bold text-slate-400 uppercase tracking-widest text-xs">
+                                No Academic Course Units Registered for this Candidate
+                              </td>
+                            </tr>
+                          ) : (
+                            groupedResults.map((group, groupIdx) => (
+                              <React.Fragment key={groupIdx}>
+                                {group.semesterName && (
+                                  <tr className="bg-slate-100 font-serif font-black text-slate-900 text-[10px] uppercase tracking-widest border-y border-slate-400">
+                                    <td colSpan={8} className="py-1.5 px-3 bg-slate-200/80 font-extrabold">
+                                      {group.semesterName}
+                                    </td>
+                                  </tr>
+                                )}
+
+                                {group.items.map((r, i) => (
+                                  <tr key={i} className="hover:bg-slate-50">
+                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold text-slate-500">
+                                      {r.sn}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 font-mono font-black text-slate-900">
+                                      {r.unitCode}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 font-semibold text-slate-950 uppercase">
+                                      {r.unitName}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono">
+                                      {r.hours}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold">
+                                      {r.score !== null ? `${r.score}%` : 'NOT AVAILABLE'}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-black">
+                                      {r.grade}
+                                    </td>
+                                    <td className="py-1.5 px-3 border-r border-slate-300 text-center font-mono font-bold">
+                                      {r.gradePoint}
+                                    </td>
+                                    <td className="py-1.5 px-3 text-center font-bold text-[10px] uppercase">
+                                      <span className={r.grade === 'F' ? 'text-red-700 font-black' : 'text-slate-900'}>
+                                        {r.remark}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
 
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">ID / Passport Number</p>
-                      <p className="font-semibold text-slate-950 uppercase">{selectedStudent.idNumber || 'Not Classified'}</p>
-                    </div>
-
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Date of Issue</p>
-                      <p className="font-semibold text-slate-950 uppercase">{sealDateOverride}</p>
-                    </div>
-
-                    <div className="w-full sm:w-1/2 lg:w-1/3 shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Transcript Serial</p>
-                      <p className="font-bold text-blue-600 uppercase font-mono tracking-tight text-xs sm:text-sm select-all">{generateAutomatedSerial(selectedStudent)}</p>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Table: Course Results Sheet */}
-                <div className="border border-slate-200 rounded-[28px] overflow-hidden mb-10 z-10 relative print:border-black print:rounded-none">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-widest font-black print:bg-black print:text-white">
-                        <th className="py-4 px-6 border-b border-slate-200 border-r print:border-black">No.</th>
-                        <th className="py-4 px-6 border-b border-slate-200 border-r print:border-black">Unit Code</th>
-                        <th className="py-4 px-6 border-b border-slate-200 border-r print:border-black">Academic Unit name</th>
-                        <th className="py-4 px-6 border-b border-slate-200 border-r text-center print:border-black">Hours</th>
-                        <th className="py-4 px-6 border-b border-slate-200 border-r text-center print:border-black">Score (%)</th>
-                        <th className="py-4 px-6 border-b border-slate-200 border-r text-center print:border-black">Grade</th>
-                        <th className="py-4 px-6 border-b border-slate-200 text-center">Result</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 print:divide-black">
-                      {results.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-12 px-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest font-mono">
-                            No Graded Assessment Entries Found for this Candidate
-                          </td>
-                        </tr>
-                      ) : (
-                        results.map((r, i) => (
-                          <tr key={i} className="hover:bg-slate-50 transition-colors duration-150 print:hover:bg-transparent">
-                            <td className="py-3 px-6 border-r border-slate-200 font-bold text-slate-400 text-center font-mono print:border-black">{i + 1}</td>
-                            <td className="py-3 px-6 border-r border-slate-200 font-black text-slate-800 font-mono print:border-black">{r.unitCode}</td>
-                            <td className="py-3 px-6 border-r border-slate-200 font-bold text-slate-900 uppercase print:border-black">{r.unitName}</td>
-                            <td className="py-3 px-6 border-r border-slate-200 text-center font-mono print:border-black">{r.hours} Hrs</td>
-                            <td className="py-3 px-6 border-r border-slate-200 text-center font-black text-slate-950 font-mono print:border-black">
-                              {r.score}%
+                    {/* 5. ACADEMIC SUMMARY TABLE */}
+                    <div className="border border-slate-900 bg-slate-50/50">
+                      <table className="w-full text-xs font-sans border-collapse">
+                        <tbody>
+                          <tr className="border-b border-slate-300 divide-x divide-slate-300">
+                            <td className="p-2.5 text-center">
+                              <span className="block text-[9px] font-bold text-slate-500 uppercase">TOTAL CREDIT HOURS</span>
+                              <span className="font-mono font-black text-slate-950 text-sm">{totalCreditHours} Hrs</span>
                             </td>
-                            <td className="py-3 px-6 border-r border-slate-200 text-center font-black text-slate-900 text-sm print:border-black">
-                              <span className={`px-2 py-0.5 rounded-lg font-bold text-xs ${
-                                r.grade === 'A' ? 'text-emerald-700 bg-emerald-50 print:bg-transparent print:text-black font-extrabold' : 
-                                r.grade === 'B' ? 'text-blue-700 bg-blue-50 print:bg-transparent print:text-black' : 
-                                r.grade === 'F' ? 'text-red-700 bg-rose-50 print:bg-transparent print:text-black font-black' : 'text-slate-800'
-                              }`}>
-                                {r.grade}
-                              </span>
+                            <td className="p-2.5 text-center">
+                              <span className="block text-[9px] font-bold text-slate-500 uppercase">TOTAL UNITS GRADED</span>
+                              <span className="font-mono font-black text-slate-950 text-sm">{gradedUnitsCount} Units</span>
                             </td>
-                            <td className="py-3 px-6 text-center text-xs">
-                              <span className={`font-black tracking-widest text-[10px] ${
-                                r.status === 'PASS' 
-                                  ? 'text-emerald-600 bg-emerald-50/50 px-2 py-1 rounded-lg print:text-black print:bg-transparent font-black' 
-                                  : 'text-red-600 bg-rose-50/50 px-2 py-1 rounded-lg print:text-black print:bg-transparent'
-                              }`}>
-                                {r.status}
+                            <td className="p-2.5 text-center">
+                              <span className="block text-[9px] font-bold text-slate-500 uppercase">AVERAGE MARK (%)</span>
+                              <span className="font-mono font-black text-blue-900 text-sm">{currentAverage}%</span>
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <span className="block text-[9px] font-bold text-slate-500 uppercase">CUMULATIVE GPA</span>
+                              <span className="font-mono font-black text-emerald-800 text-sm">{currentGPA} / 4.00</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colSpan={4} className="p-2.5 bg-slate-100 text-center">
+                              <span className="text-[10px] font-bold text-slate-600 uppercase mr-2">ACADEMIC CLASSIFICATION:</span>
+                              <span className="font-serif font-black text-slate-950 text-xs tracking-wide uppercase border-b-2 border-slate-900 pb-0.5">
+                                {getPerformanceClass(currentAverage)}
                               </span>
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        </tbody>
+                      </table>
+                    </div>
 
-                {/* Score Aggregations Summary */}
-                <div className="flex flex-col md:flex-row gap-6 mb-10 z-10 relative">
-                  
-                  {/* Total Units completed */}
-                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
-                    <div className="text-left">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Weightage Completed</p>
-                      <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{results.length} Units</p>
+                    {/* 6. OFFICIAL GRADING SCALE TABLE */}
+                    <div className="border border-slate-300 p-2 text-[9.5px] font-sans">
+                      <div className="font-bold text-slate-800 uppercase text-[9px] mb-1 tracking-wider border-b border-slate-200 pb-0.5">
+                        OFFICIAL INSTITUTIONAL GRADING SYSTEM:
+                      </div>
+                      <table className="w-full text-center border-collapse">
+                        <thead>
+                          <tr className="text-slate-600 font-bold border-b border-slate-200">
+                            <th className="py-0.5">MARK RANGE</th>
+                            <th className="py-0.5">GRADE</th>
+                            <th className="py-0.5">GRADE POINT</th>
+                            <th className="py-0.5">REMARK / PERFORMANCE TIER</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-150 font-medium text-slate-800">
+                          <tr><td>70% – 100%</td><td className="font-bold">A</td><td>4.0</td><td>Distinction / Excellent Performance</td></tr>
+                          <tr><td>60% – 69%</td><td className="font-bold">B</td><td>3.0</td><td>Credit / Very Good Performance</td></tr>
+                          <tr><td>50% – 59%</td><td className="font-bold">C</td><td>2.0</td><td>Satisfactory / Good Performance</td></tr>
+                          <tr><td>40% – 49%</td><td className="font-bold">D</td><td>1.0</td><td>Pass</td></tr>
+                          <tr><td>0% – 39%</td><td className="font-bold text-red-700">F</td><td>0.0</td><td>Fail / Re-sit Required</td></tr>
+                        </tbody>
+                      </table>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 print:border print:border-black">
-                      <BookOpen size={16} />
-                    </div>
+
                   </div>
 
-                  {/* Cumulative average */}
-                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
-                    <div className="text-left">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cumulative Average</p>
-                      <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{currentAverage}%</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 print:border print:border-black">
-                      <Award size={16} />
-                    </div>
-                  </div>
-
-                  {/* GPA Rating */}
-                  <div className="flex-1 min-w-[200px] border border-slate-200 rounded-[24px] p-5 flex items-center justify-between bg-slate-50/50 print:border-black print:rounded-none">
-                    <div className="text-left">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Equiv. Cumulative GPA</p>
-                      <p className="text-2xl font-black text-slate-900 mt-2 font-mono">{currentGPA} / 4.00</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 print:border print:border-black">
-                      <GraduationCap size={16} />
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Classification and registry disclaimer */}
-                <div className="border border-slate-200 rounded-[28px] p-6 mb-12 bg-slate-50/50 dark:bg-slate-950/20 print:border-black">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">TRANSCRIPT CLASSIFICATION & AWARD</p>
-                      <h4 className="text-base font-black text-slate-900 mt-2 truncate tracking-tight">
-                        {getPerformanceClass(currentAverage)}
-                      </h4>
-                    </div>
-                    <div className="px-4 py-2 border border-slate-300 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 text-xs font-black uppercase text-emerald-600 flex items-center gap-2 print:border-black shrink-0">
-                      <CheckCircle size={14} className="stroke-[2.5]" /> RECOMMENDED FOR GRADUATION
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-4 leading-relaxed border-t border-slate-100 pt-4 print:border-black print:text-black">
-                    NOTE: This academic transcript is generated directly from the digital registry database of Breakthrough International Training College (BITC). This document is valid only when bearing the official embossed stamp, hologram verification code, and registrar's signature. Any alterations will invalidate the record.
-                  </p>
-                </div>
-
-                {/* Registrar Signature & Seal stamp */}
-                <div className="flex flex-col md:flex-row gap-8 items-end pt-4 justify-between">
-                  
-                  {/* Digital Signature */}
-                  <div className="md:w-[38%] text-left">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">AUTHORIZED SIGNATORY</p>
-                    <div className="h-14 flex items-center justify-start py-2 relative text-blue-800">
-                      {isSignoffPrinted && (
-                        signatureUrlOverride ? (
-                          <img 
-                            src={signatureUrlOverride} 
-                            alt="Signature" 
-                            className="h-12 w-auto object-contain max-h-12" 
-                            referrerPolicy="no-referrer" 
-                          />
-                        ) : (
-                          /* Realistic Registrar Autograph SVG */
-                          <svg className="h-12 w-auto opacity-80" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                            <path d="M40 30 L180 50" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
-                          </svg>
-                        )
-                      )}
-                    </div>
-                    <div className="border-t border-slate-200 pt-2.5 max-w-[240px] print:border-black">
-                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{registrarNameOverride}</p>
-                      <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1 print:text-black">{registrarTitleOverride}</p>
-                    </div>
-                  </div>
-
-                  {/* Stamp / Logo seal */}
-                  <div className="md:w-[24%] flex justify-center py-4 print:py-0 shrink-0">
-                    {isSignoffPrinted && (
-                      stampUrlOverride ? (
-                        <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center select-none rotate-[-5deg]">
-                          <img 
-                            src={stampUrlOverride} 
-                            alt="Official Stamp" 
-                            className="w-36 h-36 object-contain opacity-95 mix-blend-multiply"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
+                  {/* 7. OFFICIAL AUTHENTICATION & SIGNATURES */}
+                  <div className="relative z-10 pt-4 space-y-4 font-sans">
+                    
+                    <div className="grid grid-cols-3 gap-6 items-end">
+                      
+                      {/* Left: Registrar Signature */}
+                      <div className="text-left">
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">REGISTRAR SIGNATURE</p>
+                        <div className="h-12 flex items-center justify-start py-1 relative text-blue-900">
+                          {isSignoffPrinted && (
+                            signatureUrlOverride ? (
+                              <img 
+                                src={signatureUrlOverride} 
+                                alt="Signature" 
+                                className="h-10 w-auto object-contain" 
+                                referrerPolicy="no-referrer" 
+                              />
+                            ) : (
+                              <svg className="h-10 w-auto opacity-85" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 40 C30 10, 60 80, 80 40 C100 10, 120 70, 150 35 C170 15, 120 20, 160 50 C200 80, 210 20, 230 40" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                              </svg>
+                            )
+                          )}
                         </div>
-                      ) : (
-                        <div className="relative stamp-seal-container w-36 h-36 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[10px] tracking-tighter uppercase p-2 select-none opacity-85 rotate-[-10deg] print:border-black print:text-black">
-                          <div className="absolute inset-0 border border-blue-900 border-dashed rounded-full m-1 print:border-black" />
-                          <div>
-                            <p className="font-extrabold text-[9px] leading-none mb-1">REGISTRAR</p>
-                            <p className="font-black leading-none my-0.5">BITC</p>
-                            <p className="font-black text-[8px] leading-tight mt-1">OFFICIAL SEAL</p>
-                            <p className="font-bold text-[7px] tracking-normal leading-normal italic text-slate-400 print:text-black mt-1">VERIFIED</p>
-                          </div>
+                        <div className="border-t border-slate-900 pt-1">
+                          <p className="text-xs font-black text-slate-950 uppercase">{registrarNameOverride}</p>
+                          <p className="text-[9px] font-bold text-slate-600 uppercase">{registrarTitleOverride}</p>
                         </div>
-                      )
-                    )}
-                  </div>
+                      </div>
 
-                  {/* Tutor / Teacher Signature */}
-                  <div className="md:w-[38%] text-right flex flex-col items-end">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
-                    <div className="h-14 flex items-center justify-end py-2 relative">
-                      {/* Removed digital signature for physical signature of Tutor */}
+                      {/* Center: Stamp Seal */}
+                      <div className="flex flex-col items-center justify-center text-center">
+                        {isSignoffPrinted && (
+                          stampUrlOverride ? (
+                            <div className="relative stamp-seal-container w-28 h-28 flex items-center justify-center select-none rotate-[-4deg]">
+                              <img 
+                                src={stampUrlOverride} 
+                                alt="Official Stamp" 
+                                className="w-28 h-28 object-contain opacity-95 mix-blend-multiply"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="relative stamp-seal-container w-24 h-24 flex items-center justify-center border-4 border-double border-blue-900 rounded-full text-blue-950 font-black text-center text-[8px] uppercase p-1 opacity-85 rotate-[-8deg]">
+                              <div>
+                                <p className="font-extrabold text-[7px]">REGISTRAR</p>
+                                <p className="font-black text-[10px]">BITC</p>
+                                <p className="font-bold text-[6px]">OFFICIAL SEAL</p>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      {/* Right: Tutor Signature */}
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">{principalTitleOverride || 'TUTOR / TEACHER'}</p>
+                        <div className="h-12 flex items-center justify-end py-1 relative text-blue-900">
+                          {isSignoffPrinted && (
+                            principalSignatureUrlOverride ? (
+                              <img 
+                                src={principalSignatureUrlOverride} 
+                                alt="Tutor Signature" 
+                                className="h-10 w-auto object-contain" 
+                                referrerPolicy="no-referrer" 
+                              />
+                            ) : null
+                          )}
+                        </div>
+                        <div className="border-t border-slate-900 pt-1">
+                          <p className="text-xs font-black text-slate-950 uppercase">{principalNameOverride || 'COURSE TUTOR'}</p>
+                          <p className="text-[9px] font-bold text-slate-600 uppercase">APPROVED & VERIFIED</p>
+                        </div>
+                      </div>
+
                     </div>
-                    <div className="border-t border-slate-200 pt-2.5 w-full max-w-[240px] text-right print:border-black">
-                      <p className="text-xs font-black text-slate-900 uppercase print:text-black">{principalNameOverride || 'COURSE TUTOR'}</p>
-                      <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mt-1 print:text-black">APPROVED & VERIFIED</p>
+
+                    {/* 8. OFFICIAL DISCLAIMER */}
+                    <div className="text-[8.5px] font-serif italic text-slate-600 text-center border-t border-slate-300 pt-2 leading-tight">
+                      "This transcript is an official academic record issued by Breakthrough International Training College. It is valid only when bearing the authorized signature, official institutional stamp, and valid verification information. Any unauthorized alteration or modification renders this document invalid."
                     </div>
+
                   </div>
-
-                </div>
-
-              </motion.div>
-            ) : (
+                </motion.div>
+              ) : (
               <motion.div
                 id="certificate-view-element"
                 key="certificate-view"
@@ -2445,31 +2522,35 @@ export const Transcripts: React.FC = () => {
 
           /* TRANSCRIPT PRINT CONDENSING FOR A4 SINGLE PAGE */
           #transcript-view-element {
-            padding: 10mm 12mm !important;
-            border: 1px solid #cbd5e1 !important;
+            padding: 12mm 15mm !important;
+            border: none !important;
             background-color: #ffffff !important;
             box-sizing: border-box !important;
             font-size: 11px !important;
+            width: 210mm !important;
             min-height: 297mm !important;
             height: 297mm !important;
             max-height: 297mm !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+            overflow: hidden !important;
           }
 
           #transcript-view-element img {
-            max-height: 52px !important;
+            max-height: 56px !important;
           }
 
           #transcript-view-element h1 {
             font-size: 22px !important;
-            margin-top: 6px !important;
-            margin-bottom: 4px !important;
+            font-weight: 900 !important;
+            margin-top: 4px !important;
+            margin-bottom: 6px !important;
           }
 
           #transcript-view-element h2 {
-            font-size: 16px !important;
+            font-size: 17px !important;
+            font-weight: 900 !important;
             line-height: 1.2 !important;
           }
 
@@ -2482,57 +2563,61 @@ export const Transcripts: React.FC = () => {
           #transcript-view-element .mb-10,
           #transcript-view-element .mt-8,
           #transcript-view-element .pb-4 {
-            margin-top: 6px !important;
-            margin-bottom: 10px !important;
+            margin-top: 4px !important;
+            margin-bottom: 8px !important;
             padding-bottom: 4px !important;
           }
 
-          #transcript-view-element .grid-cols-12 {
-            gap: 10px !important;
-            padding: 10px !important;
-            margin-bottom: 10px !important;
-            border-radius: 10px !important;
+          #transcript-view-element .rounded-\[28px\] {
+            border-radius: 12px !important;
+            margin-bottom: 8px !important;
           }
 
-          #transcript-view-element .grid-cols-12 p {
-            font-size: 9.5px !important;
+          #transcript-view-element .grid-cols-12,
+          #transcript-view-element .flex-wrap {
+            gap: 6px 12px !important;
           }
 
-          #transcript-view-element .grid-cols-12 p.text-sm {
-            font-size: 12px !important;
+          #transcript-view-element p.text-\[10px\] {
+            font-size: 9px !important;
+            font-weight: 800 !important;
+          }
+
+          #transcript-view-element p.text-sm {
+            font-size: 11.5px !important;
+            font-weight: 800 !important;
           }
 
           #transcript-view-element table {
             margin-bottom: 0 !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
           }
 
           #transcript-view-element table th,
           #transcript-view-element table td {
             padding: 6px 10px !important;
-            font-size: 11px !important;
+            font-size: 10.5px !important;
           }
 
           #transcript-view-element table th {
-            font-size: 10.5px !important;
-            font-weight: 800 !important;
+            font-size: 10px !important;
+            font-weight: 900 !important;
             background-color: #0f172a !important;
             color: #ffffff !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
-          #transcript-view-element .rounded-\[28px\] {
-            border-radius: 10px !important;
-            margin-bottom: 10px !important;
-          }
-
           /* Summary blocks */
-          #transcript-view-element .grid-cols-3 {
-            gap: 10px !important;
-            margin-bottom: 10px !important;
+          #transcript-view-element .grid-cols-3,
+          #transcript-view-element .gap-6 {
+            gap: 8px !important;
+            margin-bottom: 8px !important;
           }
 
-          #transcript-view-element .grid-cols-3 .p-5 {
+          #transcript-view-element .grid-cols-3 .p-5,
+          #transcript-view-element .p-5 {
             padding: 8px 12px !important;
             border-radius: 10px !important;
           }
@@ -2541,8 +2626,9 @@ export const Transcripts: React.FC = () => {
             font-size: 9px !important;
           }
 
-          #transcript-view-element .grid-cols-3 p.text-2xl {
-            font-size: 16px !important;
+          #transcript-view-element .grid-cols-3 p.text-2xl,
+          #transcript-view-element p.text-2xl {
+            font-size: 17px !important;
             margin-top: 2px !important;
             font-weight: 900 !important;
           }
@@ -2560,13 +2646,13 @@ export const Transcripts: React.FC = () => {
 
           /* Classification panel & note disclaimer */
           #transcript-view-element .mb-12 {
-            margin-bottom: 10px !important;
-            padding: 10px 14px !important;
+            margin-bottom: 8px !important;
+            padding: 8px 12px !important;
             border-radius: 10px !important;
           }
 
           #transcript-view-element .mb-12 h4 {
-            font-size: 13px !important;
+            font-size: 13.5px !important;
             margin-top: 2px !important;
             font-weight: 900 !important;
           }
@@ -2578,28 +2664,28 @@ export const Transcripts: React.FC = () => {
           #transcript-view-element p.mt-4 {
             margin-top: 6px !important;
             font-size: 8.5px !important;
-            line-height: 1.3 !important;
+            line-height: 1.35 !important;
           }
 
           /* Signatures and Seals */
           #transcript-view-element .items-end {
-            padding-top: 6px !important;
+            padding-top: 4px !important;
             gap: 12px !important;
             margin-top: auto !important;
           }
 
           #transcript-view-element .stamp-seal-container {
-            width: 85px !important;
-            height: 85px !important;
+            width: 90px !important;
+            height: 90px !important;
           }
 
           #transcript-view-element .stamp-seal-container img {
-            width: 85px !important;
-            height: 85px !important;
+            width: 90px !important;
+            height: 90px !important;
           }
 
           #transcript-view-element .h-14 {
-            height: 42px !important;
+            height: 40px !important;
           }
 
           #transcript-view-element .h-14 svg,
@@ -2609,11 +2695,11 @@ export const Transcripts: React.FC = () => {
 
           #transcript-view-element .max-w-\[240px\] {
             margin-top: 2px !important;
-            padding-top: 3px !important;
+            padding-top: 2px !important;
           }
 
           #transcript-view-element .max-w-\[240px\] p {
-            font-size: 10px !important;
+            font-size: 10.5px !important;
             margin-top: 0 !important;
           }
 
