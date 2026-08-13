@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, AppNotification } from '../types';
-import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon, Camera, Trash2, Upload } from 'lucide-react';
+import { Search, GraduationCap, Mail, Calendar, BookOpen, Settings2, X, Printer, Send, Paperclip, Loader2, MessageSquare, Clock, User2, Phone, MapPin, ShieldCheck, Briefcase, HeartPulse, Info, Eye, Check, Save, RefreshCw, AlertTriangle, FileText, AlertCircle, QrCode, CreditCard, Download, Image as ImageIcon, Camera, Trash2, Upload, AlertOctagon } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -146,6 +146,22 @@ export const Students: React.FC = () => {
     dbStatus: 'active' as 'none' | 'pending' | 'active' | 'completed',
     dbNotes: '',
     syncToDb: true
+  });
+
+  // Suspension Letter Generator States
+  const [suspensionModalStudent, setSuspensionModalStudent] = useState<User | null>(null);
+  const [suspensionConfig, setSuspensionConfig] = useState({
+    dateOfLetter: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    refNo: '',
+    startDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    endDate: 'Until further notice pending disciplinary review',
+    durationDays: '30 Calendar Days',
+    reason: "Gross misconduct, violation of institutional safety protocols, and persistent breach of the Student Handbook and Code of Conduct as determined following Disciplinary Committee findings.",
+    terms: "1. The student is strictly prohibited from entering any campus, facility, or clinical attachment site without prior written permission from the Academic Registrar.\n2. All academic rights, lecture attendance privileges, and online portal access are temporarily suspended.\n3. The student must report to the Disciplinary Board on the scheduled review date.\n4. Written appeal may be lodged with the Principal within seven (7) working days from the date of this letter.",
+    signatoryName: localStorage.getItem('suspension_signatoryName') || 'OFFICE OF THE ACADEMIC REGISTRAR',
+    signatoryTitle: localStorage.getItem('suspension_signatoryTitle') || 'DISCIPLINARY BOARD & ACADEMIC AFFAIRS',
+    ccList: 'Parent / Guardian, Dean of Students, Head of Department, Security Office, Student File',
+    updateStudentLifecycle: true
   });
 
   // Import/Export States
@@ -2258,6 +2274,337 @@ export const Students: React.FC = () => {
     printWindow.document.close();
   };
 
+  const handlePrintSuspensionLetter = async (student: User, customConfig?: typeof suspensionConfig) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      addToast("Failed to open print window. Please allow popups.", "error");
+      return;
+    }
+
+    const config = customConfig || suspensionConfig;
+    const schoolName = settings?.schoolName || settings?.appTitle || 'Breakthrough International Training College';
+    const schoolAddress = settings?.publicAddress || 'P.O. Box 1234-01000, Thika, Kenya';
+    const schoolPhone = settings?.publicPhone || '+254 7XX XXX XXX';
+    const schoolEmail = settings?.publicEmail || 'info@bitc.ac.ke';
+    const today = config.dateOfLetter || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    const refNo = config.refNo || `BITC/REG/DISC/SUSP/${new Date().getFullYear()}/${student.admissionNumber || 'ADM'}`;
+    const startDate = config.startDate || today;
+    const endDate = config.endDate || 'Until further notice pending disciplinary review';
+    const durationDays = config.durationDays || '30 Calendar Days';
+    const reason = config.reason;
+    const termsList = config.terms.split('\n').filter(t => t.trim().length > 0);
+    const signatoryName = config.signatoryName || 'OFFICE OF THE ACADEMIC REGISTRAR';
+    const signatoryTitle = config.signatoryTitle || 'DISCIPLINARY BOARD & ACADEMIC AFFAIRS';
+    const ccList = config.ccList || 'Parent / Guardian, Dean of Students, Head of Department, Security Office, Student File';
+
+    // Update localStorage signatories for future use
+    localStorage.setItem('suspension_signatoryName', signatoryName);
+    localStorage.setItem('suspension_signatoryTitle', signatoryTitle);
+
+    // If updateStudentLifecycle is checked, update status in Firestore
+    if (config.updateStudentLifecycle && student.uid) {
+      try {
+        const studentRef = doc(db, 'users', student.uid);
+        await updateDoc(studentRef, {
+          lifecycleStatus: 'Suspended',
+          status: 'suspended',
+          suspensionReason: reason,
+          suspensionStartDate: startDate,
+          suspensionEndDate: endDate,
+          lastUpdated: new Date().toISOString()
+        });
+        setStudents(prev => prev.map(s => s.uid === student.uid ? { ...s, lifecycleStatus: 'Suspended', status: 'suspended' as any } : s));
+        addToast(`Updated status for ${student.name} to Suspended in database.`, "success");
+      } catch (err) {
+        console.error("Failed to update student lifecycle status:", err);
+      }
+    }
+
+    const html = `
+      <html>
+        <head>
+          <title>Suspension Letter - ${student.name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+            
+            @page {
+              size: A4 portrait;
+              margin: 6mm 10mm;
+            }
+
+            * {
+              box-sizing: border-box;
+            }
+
+            body { 
+              font-family: 'Inter', sans-serif; 
+              line-height: 1.35; 
+              color: #0f172a; 
+              padding: 10px 20px;
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+              font-size: 11px;
+            }
+
+            .header { 
+              text-align: center; 
+              border-bottom: 2px double #cbd5e1; 
+              padding-bottom: 5px; 
+              margin-bottom: 8px; 
+            }
+            .logo { max-height: 48px; margin-bottom: 2px; }
+            .school-name { font-size: 17px; font-weight: 900; color: #1e3a8a; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .school-info { font-size: 9px; color: #475569; margin: 1px 0; font-weight: 600; }
+            
+            .letter-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 10px; }
+            .date { font-weight: 800; color: #1e293b; }
+            .ref-no { font-weight: 700; color: #64748b; font-family: monospace; }
+            
+            .recipient { margin-bottom: 8px; border-left: 3px solid #dc2626; padding-left: 10px; background: #fef2f2; padding-top: 5px; padding-bottom: 5px; border-radius: 0 6px 6px 0; }
+            .recipient p { margin: 1px 0; color: #1e293b; text-transform: uppercase; font-size: 10.5px; }
+            .recipient-label { font-size: 8.5px; color: #991b1b; font-weight: 800; letter-spacing: 0.5px; display: inline-block; width: 90px; }
+            
+            .subject { 
+              font-weight: 900; 
+              text-transform: uppercase; 
+              margin-bottom: 8px;
+              font-size: 11.5px;
+              text-align: center;
+              color: #991b1b;
+              background: #fef2f2;
+              border: 1px solid #fecaca;
+              padding: 5px 10px;
+              border-radius: 6px;
+              letter-spacing: 0.5px;
+            }
+            
+            .content p { margin-bottom: 6px; text-align: justify; font-size: 10.5px; color: #334155; line-height: 1.35; }
+
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 4px 12px;
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 6px 10px;
+              margin: 6px 0;
+            }
+            .details-item { font-size: 10px; }
+            .details-label { font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+            .details-val { font-weight: 800; color: #0f172a; margin-top: 1px; }
+
+            .misconduct-box { 
+              background: #fff1f2; 
+              border: 1px solid #fecdd3;
+              border-left: 3px solid #e11d48; 
+              padding: 6px 10px; 
+              margin: 6px 0; 
+              font-size: 10.5px;
+              font-weight: 500;
+              color: #881337;
+              border-radius: 4px;
+              line-height: 1.35;
+            }
+
+            .terms-box {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 6px 10px;
+              margin: 6px 0;
+            }
+            .terms-title { font-size: 9px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.5px; }
+            .terms-list { margin: 0; padding-left: 14px; font-size: 10px; color: #334155; }
+            .terms-list li { margin-bottom: 2px; line-height: 1.3; }
+            
+            .closing { margin-top: 8px; page-break-inside: avoid; }
+            .closing p { margin-bottom: 2px; font-size: 10.5px; }
+            .signature-space { height: 30px; margin-top: 2px; position: relative; }
+            .stamp { position: absolute; top: -12px; left: 80px; max-height: 55px; opacity: 0.85; mix-blend-mode: multiply; z-index: 1; }
+            .signature-line { border-top: 1.5px solid #0f172a; width: 180px; margin-top: 2px; }
+            .signatory-name { font-weight: 800; margin-top: 2px; font-size: 10.5px; color: #0f172a; text-transform: uppercase; }
+            .signatory-title { font-size: 9px; color: #475569; font-weight: 700; text-transform: uppercase; }
+
+            .cc-box {
+              margin-top: 8px;
+              font-size: 8.5px;
+              color: #64748b;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 4px;
+            }
+            .cc-label { font-weight: 800; text-transform: uppercase; color: #475569; }
+            
+            .footer { 
+              margin-top: 8px; 
+              font-size: 7.5px; 
+              border-top: 1px solid #f1f5f9; 
+              padding-top: 3px;
+              text-align: center;
+              color: #94a3b8;
+              font-style: italic;
+            }
+
+            .watermark-container {
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 100vw;
+              height: 100vh;
+              z-index: -1000;
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0.08;
+              overflow: hidden;
+            }
+            .watermark-img {
+              width: 10cm;
+              height: 10cm;
+              max-width: 10cm;
+              max-height: 10cm;
+              object-fit: contain;
+              filter: grayscale(100%);
+            }
+            .watermark-text {
+              font-size: 32pt;
+              font-weight: 900;
+              font-family: 'Inter', sans-serif;
+              color: #dc2626;
+              transform: rotate(-30deg);
+              text-align: center;
+              white-space: nowrap;
+              letter-spacing: 4px;
+            }
+
+            @media print {
+              html, body {
+                height: 100%;
+                overflow: hidden;
+              }
+              body { 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                max-width: 100% !important;
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+              }
+              .no-print { display: none; }
+              .watermark-container { opacity: 0.10 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="watermark-container">
+            ${settings?.logoUrl 
+              ? `<img src="${settings.logoUrl}" class="watermark-img" alt="" />` 
+              : `<div class="watermark-text">SUSPENSION NOTICE</div>`
+            }
+          </div>
+          <div class="header">
+            ${settings?.logoUrl ? `<img src="${settings.logoUrl}" class="logo" alt="School Logo" />` : ''}
+            <h1 class="school-name">${schoolName}</h1>
+            <p class="school-info">${schoolAddress}</p>
+            <p class="school-info">TEL: ${schoolPhone} | EMAIL: ${schoolEmail}</p>
+          </div>
+
+          <div class="letter-meta">
+            <div class="date">DATE: ${today}</div>
+            <div class="ref-no">REF: ${refNo}</div>
+          </div>
+
+          <div class="recipient">
+            <p><span class="recipient-label">TO:</span> ${student.name.toUpperCase()}</p>
+            <p><span class="recipient-label">ADM NO:</span> ${student.admissionNumber || 'N/A'}</p>
+            <p><span class="recipient-label">COURSE:</span> ${student.course || 'N/A'}</p>
+            <p><span class="recipient-label">CLASS / YEAR:</span> ${getClassNames(student.classIds)} (YEAR ${student.year || '1'})</p>
+          </div>
+
+          <div class="subject">
+            OFFICIAL NOTICE OF TEMPORARY DISCIPLINARY SUSPENSION
+          </div>
+
+          <div class="content">
+            <p>Dear ${student.name.split(' ')[0]},</p>
+            
+            <p>
+              This letter serves as formal notification from the Management and Academic Disciplinary Board of 
+              <strong>${schoolName}</strong> that you have been placed under <strong>temporary disciplinary suspension</strong> 
+              from the institution with immediate effect.
+            </p>
+
+            <div class="details-grid">
+              <div class="details-item">
+                <div class="details-label">Suspension Effective Date</div>
+                <div class="details-val">${startDate}</div>
+              </div>
+              <div class="details-item">
+                <div class="details-label">Scheduled End / Resumption Date</div>
+                <div class="details-val">${endDate}</div>
+              </div>
+              <div class="details-item">
+                <div class="details-label">Suspension Period</div>
+                <div class="details-val">${durationDays}</div>
+              </div>
+              <div class="details-item">
+                <div class="details-label">Disciplinary Ref</div>
+                <div class="details-val">${refNo}</div>
+              </div>
+            </div>
+
+            <p><strong>GROUNDS AND REASON FOR SUSPENSION:</strong></p>
+            <div class="misconduct-box">
+              "${reason}"
+            </div>
+
+            <div class="terms-box">
+              <div class="terms-title">Directives and Conditions during Suspension:</div>
+              <ul class="terms-list">
+                ${termsList.map(t => `<li>${t}</li>`).join('')}
+              </ul>
+            </div>
+
+            <p>
+              Failure to comply with any of the conditions above constitutes insubordination and may result in immediate termination of studentship. We trust you will reflect upon your conduct and realign with institutional standards.
+            </p>
+          </div>
+
+          <div class="closing">
+            <p>Yours Faithfully,</p>
+            <div class="signature-space">
+              ${settings?.stampUrl ? `<img src="${settings.stampUrl}" class="stamp" />` : ''}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signatory-name">${signatoryName}</div>
+            <div class="signatory-title">${signatoryTitle}</div>
+            <div class="signatory-title">${schoolName}</div>
+          </div>
+
+          <div class="cc-box">
+            <span class="cc-label">C.C. :</span> ${ccList}
+          </div>
+
+          <div class="footer">
+            THIS IS AN OFFICIAL DISCIPLINARY COMMUNICATION OF ${schoolName}. GENERATED ELECTRONICALLY. NO ALTERATIONS PERMITTED.
+          </div>
+
+          <script>
+            window.onload = function() { 
+              window.print(); 
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const handlePrintWarningLetter = (student: User) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -4329,6 +4676,19 @@ export const Students: React.FC = () => {
                         <AlertCircle size={20} />
                       </button>
                       <button
+                        onClick={() => {
+                          setSuspensionConfig(prev => ({
+                            ...prev,
+                            refNo: `BITC/REG/DISC/SUSP/${new Date().getFullYear()}/${student.admissionNumber || 'ADM'}`
+                          }));
+                          setSuspensionModalStudent(student);
+                        }}
+                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Generate Suspension Letter"
+                      >
+                        <AlertOctagon size={20} />
+                      </button>
+                      <button
                         onClick={() => handlePrintTerminationLetter(student)}
                         className="text-gray-400 hover:text-rose-600 transition-colors"
                         title="Generate Termination Letter"
@@ -4663,6 +5023,23 @@ export const Students: React.FC = () => {
                 >
                   <Printer size={18} />
                   Print Admission Letter
+                </button>
+                <button
+                  onClick={() => {
+                    if (viewingStudent) {
+                      setSuspensionConfig(prev => ({
+                        ...prev,
+                        refNo: `BITC/REG/DISC/SUSP/${new Date().getFullYear()}/${viewingStudent.admissionNumber || 'ADM'}`
+                      }));
+                      setSuspensionModalStudent(viewingStudent);
+                      setViewingStudent(null);
+                    }
+                  }}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-lg shadow-red-100 flex items-center gap-2"
+                  title="Generate Official Disciplinary Suspension Letter"
+                >
+                  <AlertOctagon size={18} />
+                  Suspension Letter
                 </button>
                 <button
                   onClick={() => {
@@ -6445,6 +6822,222 @@ export const Students: React.FC = () => {
                     Certified Electronic Academic Document (B.I.T.C Registry Dispatch Protocol)
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {suspensionModalStudent && (
+          <div className="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden border border-red-100 flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-6 bg-gradient-to-r from-red-600 to-rose-700 text-white flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white/15 rounded-2xl backdrop-blur-md text-white">
+                    <AlertOctagon size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black tracking-tight">Generate Suspension Letter</h2>
+                    <p className="text-xs text-red-100 font-medium">
+                      Formal Disciplinary Notice for <span className="font-bold underline">{suspensionModalStudent.name}</span> ({suspensionModalStudent.admissionNumber || 'No Adm No'})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSuspensionModalStudent(null)}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar bg-slate-50/50">
+                {/* Notice Alert Banner */}
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-xs text-red-900">
+                  <AlertOctagon size={18} className="text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Official Disciplinary Record</p>
+                    <p className="text-red-700 mt-0.5">
+                      Generating this letter will produce an official, printable letterhead notice. You can also sync the student's status directly to <span className="font-bold uppercase">'Suspended'</span> in the database.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grid of Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Letter Reference No.
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.refNo}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, refNo: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-mono font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      placeholder="BITC/REG/DISC/SUSP/2026/001"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Date of Letter
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.dateOfLetter}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, dateOfLetter: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Suspension Effective Start Date
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.startDate}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Scheduled End / Resumption Date
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.endDate}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      placeholder="e.g. 15th September 2026"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Suspension Duration Text
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.durationDays}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, durationDays: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      placeholder="e.g. 30 Calendar Days / 2 Weeks"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Grounds & Reason for Suspension
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={suspensionConfig.reason}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, reason: e.target.value }))}
+                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 leading-relaxed"
+                      placeholder="Detail the specific violations or findings..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Directives & Conditions (One item per line)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={suspensionConfig.terms}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, terms: e.target.value }))}
+                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 leading-relaxed font-mono"
+                      placeholder="List conditions, e.g. 1. Barred from campus..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Signatory Official Name
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.signatoryName}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, signatoryName: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Signatory Title
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.signatoryTitle}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, signatoryTitle: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                      Copies To (CC List)
+                    </label>
+                    <input
+                      type="text"
+                      value={suspensionConfig.ccList}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, ccList: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Database Sync Switch */}
+                <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                      <RefreshCw size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">Update Student Status in Database</p>
+                      <p className="text-[10px] text-gray-500">Automatically set student status to 'Suspended' in Firestore</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={suspensionConfig.updateStudentLifecycle}
+                      onChange={e => setSuspensionConfig(prev => ({ ...prev, updateStudentLifecycle: e.target.checked }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shrink-0">
+                <button
+                  onClick={() => setSuspensionModalStudent(null)}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl text-xs font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handlePrintSuspensionLetter(suspensionModalStudent, suspensionConfig);
+                    setSuspensionModalStudent(null);
+                  }}
+                  className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-red-200 flex items-center gap-2 active:scale-95"
+                >
+                  <Printer size={16} />
+                  Generate & Print Suspension Letter
+                </button>
               </div>
             </motion.div>
           </div>
