@@ -57,6 +57,7 @@ const SYSTEM_COURSES = [
   "Certificate in Professional Cookery, General Baking & Cake Decoration",
   "Diploma in Catering & Hospitality Management",
   "Certificate in Electrical and Electronics Technology",
+  "Certificate in Theology & Christian Ministry",
   "Certificate in Theology & Biblical Studies",
   "Diploma in Theology & Christian Ministry"
 ];

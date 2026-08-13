@@ -16,6 +16,7 @@ import {
   ClipboardCheck, 
   FileText, 
   Award,
+  Building2,
   Menu, 
   X, 
   ChevronDown,
@@ -144,8 +145,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {
       title: 'ACADEMIC',
       items: [
+        { name: 'Departments', path: '/departments', icon: Building2, permission: 'classes.view' },
         { name: 'Timetable', path: '/timetable', icon: Calendar, permission: 'classes.view' },
         { name: 'My Units', path: '/my-units', icon: BookOpen, permission: 'units.view' },
+        { name: 'Units & Syllabus', path: '/units', icon: BookOpen, permission: 'units.view' },
         { name: 'Classes', path: '/classes', icon: Users, permission: 'classes.view' },
         { name: 'Attendance', path: '/attendance', icon: ClipboardCheck, permission: 'attendance.view' },
         { name: 'Academic Transcripts', path: '/transcripts', icon: FileText, permission: 'reports.view', showForAdminOnly: true },
@@ -211,8 +214,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             if (isRestricted && item.path !== '/dashboard' && item.path !== '/fees') return false;
             if (item.showForStudentOnly && !isStudent) return false;
             if (item.showForAdminOnly && isStudent) return false;
-            const studentAllowedPaths = ['/dashboard', '/profile', '/timetable', '/my-units', '/classes', '/units', '/attendance', '/exams', '/results', '/fees', '/whatsapp'];
+            const studentAllowedPaths = ['/dashboard', '/profile', '/departments', '/timetable', '/my-units', '/classes', '/units', '/attendance', '/exams', '/results', '/fees', '/whatsapp'];
             if (isStudent && studentAllowedPaths.includes(item.path)) return true;
+            const isTeacher = userData?.role === 'teacher' || userData?.role === 'staff' || userData?.role === 'instructor' || userData?.role === 'principal';
+            const teacherAllowedPaths = ['/dashboard', '/departments', '/timetable', '/my-units', '/units', '/classes', '/attendance', '/exams', '/exams/attendance', '/marks', '/results', '/students', '/whatsapp'];
+            if (isTeacher && teacherAllowedPaths.includes(item.path)) return true;
             if (item.role && userData?.role !== item.role) return false;
             return !item.permission || hasPermission(item.permission);
           });

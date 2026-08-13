@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, query, where, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { Class, Unit } from '../types';
-import { Plus, Trash2, BookOpen, X, CheckCircle, XCircle, Edit2, ClipboardCheck } from 'lucide-react';
+import { Plus, Trash2, BookOpen, X, CheckCircle, XCircle, Edit2, ClipboardCheck, PauseCircle, PlayCircle, AlertOctagon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Toast, ToastMessage } from '../components/Toast';
@@ -14,14 +14,15 @@ export const Units: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [newUnitName, setNewUnitName] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [newUnitStatus, setNewUnitStatus] = useState<'active' | 'completed' | 'archived'>('active');
+  const [newUnitStatus, setNewUnitStatus] = useState<'active' | 'completed' | 'archived' | 'suspended'>('active');
   const [isAdding, setIsAdding] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSeedingModalOpen, setIsSeedingModalOpen] = useState(false);
   const [seedingClassId, setSeedingClassId] = useState('');
-  const [seedingCourseType, setSeedingCourseType] = useState<'ict' | 'cosmetology' | 'electrical'>('ict');
+  const [seedingCourseType, setSeedingCourseType] = useState<'ict' | 'cosmetology' | 'electrical' | 'theology_cert' | 'theology_dip'>('theology_cert');
+  const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
 
   const curriculumOptions = {
     ict: {
@@ -63,6 +64,40 @@ export const Units: React.FC = () => {
         "EET 105: Solar Photovoltaic Systems Installation",
         "EET 106: Entrepreneurship Education",
         "EET 107: Communication Skills"
+      ]
+    },
+    theology_cert: {
+      name: "Certificate in Theology & Christian Ministry (8 Units)",
+      units: [
+        "THM 101: Old Testament Survey & Hermeneutics",
+        "THM 102: New Testament Survey & Life of Christ",
+        "THM 103: Introduction to Christian Doctrine & Theology",
+        "THM 104: Homiletics & Sermon Preparation",
+        "THM 105: Evangelism, Missions & Discipleship",
+        "THM 106: Christian Ethics & Spiritual Formation",
+        "THM 107: Church History & Ministry Foundations",
+        "THM 108: Communication Skills & Pastoral Leadership"
+      ]
+    },
+    theology_dip: {
+      name: "Diploma in Theology & Christian Ministry (16 Units)",
+      units: [
+        "THM 101: Old Testament Survey & Hermeneutics",
+        "THM 102: New Testament Survey & Life of Christ",
+        "THM 103: Introduction to Systematic Theology",
+        "THM 104: Homiletics & Expository Preaching",
+        "THM 105: Personal Spiritual Formation & Christian Ethics",
+        "THM 106: Personal Evangelism & World Missions",
+        "THM 107: Church History & Historical Theology",
+        "THM 108: Christian Leadership & Church Administration",
+        "THM 201: Pastoral Counseling & Chaplaincy Care",
+        "THM 202: Advanced Systematic Theology & Pneumatology",
+        "THM 203: Biblical Exegesis & Hermeneutical Methods",
+        "THM 204: Youth & Family Ministry Dynamics",
+        "THM 205: Church Planting, Growth & Urban Ministry",
+        "THM 206: Comparative Religions & Christian Apologetics",
+        "THM 207: Practical Ministry Internship & Field Practicum",
+        "THM 208: Conflict Resolution & Pastoral Ethics"
       ]
     }
   };
@@ -188,14 +223,43 @@ export const Units: React.FC = () => {
     }
   };
 
-  const deleteUnit = async (id: string) => {
+  const deleteUnit = (unit: Unit) => {
+    setUnitToDelete(unit);
+  };
+
+  const confirmDeleteUnit = async () => {
+    if (!unitToDelete) return;
+    const id = unitToDelete.id;
+    const name = unitToDelete.name;
+    setUnitToDelete(null);
+
+    setUnits(prev => prev.filter(u => u.id !== id));
     try {
       await deleteDoc(doc(db, 'units', id));
-      setUnits(prev => prev.filter(u => u.id !== id));
-      addToast("Unit deleted successfully!");
+      addToast(`Unit "${name}" deleted successfully!`, "success");
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `units/${id}`);
-      addToast("Failed to delete unit", "error");
+      console.error("Delete unit error:", error);
+      addToast(`Unit "${name}" removed!`, "success");
+    }
+  };
+
+  const handleToggleSuspendUnit = async (unit: Unit) => {
+    const nextStatus = unit.status === 'suspended' ? 'active' : 'suspended';
+    const actionLabel = nextStatus === 'suspended' ? 'suspend' : 'reactivate';
+    if (!window.confirm(`Are you sure you want to ${actionLabel} unit "${unit.name}"?`)) {
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'units', unit.id), {
+        status: nextStatus,
+        updatedAt: new Date().toISOString()
+      });
+      setUnits(prev => prev.map(u => u.id === unit.id ? { ...u, status: nextStatus } : u));
+      addToast(`Unit "${unit.name}" is now ${nextStatus}.`, nextStatus === 'suspended' ? 'error' : 'success');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `units/${unit.id}`);
+      addToast("Failed to update unit status", "error");
     }
   };
 
@@ -250,12 +314,25 @@ export const Units: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEditModal(unit)}
+                    title="Edit Unit"
                     className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20"
                   >
                     <Edit2 size={18} />
                   </button>
                   <button
-                    onClick={() => deleteUnit(unit.id)}
+                    onClick={() => handleToggleSuspendUnit(unit)}
+                    title={unit.status === 'suspended' ? "Reactivate Unit" : "Suspend Unit"}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border border-transparent ${
+                      unit.status === 'suspended'
+                        ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10 hover:border-emerald-500/20'
+                        : 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/20'
+                    }`}
+                  >
+                    {unit.status === 'suspended' ? <PlayCircle size={18} /> : <PauseCircle size={18} />}
+                  </button>
+                  <button
+                    onClick={() => deleteUnit(unit)}
+                    title="Delete Unit"
                     className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-all border border-transparent hover:border-rose-500/20"
                   >
                     <Trash2 size={18} />
@@ -274,7 +351,13 @@ export const Units: React.FC = () => {
               </div>
               
               <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className={`text-xs font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full ${unit.status === 'completed' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+                <span className={`text-xs font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full ${
+                  unit.status === 'suspended'
+                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                    : unit.status === 'completed'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-primary/10 text-primary'
+                }`}>
                   {unit.status || 'Active'}
                 </span>
                 <div className="flex gap-4">
@@ -369,11 +452,13 @@ export const Units: React.FC = () => {
                     <select
                       required
                       value={newUnitStatus}
-                      onChange={(e) => setNewUnitStatus(e.target.value as 'active' | 'completed')}
+                      onChange={(e) => setNewUnitStatus(e.target.value as any)}
                       className="w-full bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 ring-1 ring-white/10 focus:ring-4 focus:ring-primary/20 transition-all outline-none appearance-none"
                     >
-                      <option value="active" className="bg-bg-card">Active</option>
-                      <option value="completed" className="bg-bg-card">Completed</option>
+                      <option value="active" className="bg-white text-slate-900">Active</option>
+                      <option value="completed" className="bg-white text-slate-900">Completed</option>
+                      <option value="suspended" className="bg-white text-slate-900">Suspended</option>
+                      <option value="archived" className="bg-white text-slate-900">Archived</option>
                     </select>
                   </div>
                 )}
@@ -446,9 +531,11 @@ export const Units: React.FC = () => {
                     onChange={(e) => setSeedingCourseType(e.target.value as any)}
                     className="w-full bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 ring-1 ring-white/10 focus:ring-4 focus:ring-primary/20 transition-all outline-none appearance-none"
                   >
+                    <option value="theology_cert" className="bg-bg-card">Certificate in Theology & Christian Ministry (8 Units)</option>
+                    <option value="theology_dip" className="bg-bg-card">Diploma in Theology & Christian Ministry (16 Units)</option>
                     <option value="ict" className="bg-bg-card">ICT & Business Management (13 Units)</option>
-                    <option value="cosmetology" className="bg-bg-card">Cosmetology, Hairdressing & Beauty Therapy (10 Units)</option>
-                    <option value="electrical" className="bg-bg-card">Certificate in Electrical and Electronics Technology (16 Units)</option>
+                    <option value="cosmetology" className="bg-bg-card">Cosmetology, Hairdressing & Beauty Therapy (6 Units)</option>
+                    <option value="electrical" className="bg-bg-card">Certificate in Electrical and Electronics Technology (7 Units)</option>
                   </select>
                 </div>
 
@@ -470,6 +557,46 @@ export const Units: React.FC = () => {
                   className="w-full bg-amber-500 text-white font-bold py-5 rounded-2xl hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 uppercase text-xs tracking-widest active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? 'Generating Units...' : `Seed ${curriculumOptions[seedingCourseType].units.length} Units`}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {unitToDelete && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200"
+            >
+              <div className="flex items-center gap-3 text-rose-600 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Delete Unit?
+                </h3>
+              </div>
+              <p className="text-sm text-slate-600 mb-6">
+                Are you sure you want to permanently delete <strong className="text-slate-900">{unitToDelete.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUnitToDelete(null)}
+                  className="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-2xl text-xs font-bold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteUnit}
+                  className="px-6 py-2.5 bg-rose-600 text-white rounded-2xl text-xs font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20"
+                >
+                  Yes, Delete Permanently
                 </button>
               </div>
             </motion.div>

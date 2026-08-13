@@ -12,6 +12,7 @@ export const ROUTES = {
     CATEGORIES: '/students/categories',
   },
   ACADEMICS: {
+    DEPARTMENTS: '/departments',
     CLASSES: '/classes',
     UNITS: '/units',
     MY_UNITS: '/my-units',

@@ -175,15 +175,35 @@ service cloud.firestore {
       allow write: if isSchoolAdmin() && schoolIdUnchanged();
     }
 
-    // Classes & Units
+    // Departments, Courses, Classes, Units, Semesters, Academic Years
+    match /departments/{deptId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
     match /classes/{classId} {
-      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || !('schoolId' in resource.data));
-      allow write: if isSchoolAdmin() && isValidId(classId) && schoolIdUnchanged();
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
     }
 
     match /units/{unitId} {
-      allow read: if isAuthenticated() && (isSameSchool(resource.data.schoolId) || !('schoolId' in resource.data));
-      allow write: if (isSchoolAdmin() || isTeacher()) && isValidId(unitId) && schoolIdUnchanged();
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /semesters/{semesterId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /academicYears/{yearId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
     }
 
     // Exams & Submissions

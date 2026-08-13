@@ -694,6 +694,36 @@ export const Transcripts: React.FC = () => {
     { code: "EET-107", name: "Communication Skills", hours: 45 }
   ];
 
+  const defaultTheologyCertUnits = [
+    { code: "THM-101", name: "Old Testament Survey & Hermeneutics", hours: 45 },
+    { code: "THM-102", name: "New Testament Survey & Life of Christ", hours: 45 },
+    { code: "THM-103", name: "Introduction to Christian Doctrine & Theology", hours: 45 },
+    { code: "THM-104", name: "Homiletics & Sermon Preparation", hours: 45 },
+    { code: "THM-105", name: "Evangelism, Missions & Discipleship", hours: 45 },
+    { code: "THM-106", name: "Christian Ethics & Spiritual Formation", hours: 45 },
+    { code: "THM-107", name: "Church History & Ministry Foundations", hours: 45 },
+    { code: "THM-108", name: "Communication Skills & Pastoral Leadership", hours: 30 }
+  ];
+
+  const defaultTheologyDipUnits = [
+    { code: "THM-101", name: "Old Testament Survey & Hermeneutics", hours: 45 },
+    { code: "THM-102", name: "New Testament Survey & Life of Christ", hours: 45 },
+    { code: "THM-103", name: "Introduction to Systematic Theology", hours: 45 },
+    { code: "THM-104", name: "Homiletics & Expository Preaching", hours: 45 },
+    { code: "THM-105", name: "Personal Spiritual Formation & Christian Ethics", hours: 45 },
+    { code: "THM-106", name: "Personal Evangelism & World Missions", hours: 45 },
+    { code: "THM-107", name: "Church History & Historical Theology", hours: 45 },
+    { code: "THM-108", name: "Christian Leadership & Church Administration", hours: 45 },
+    { code: "THM-201", name: "Pastoral Counseling & Chaplaincy Care", hours: 60 },
+    { code: "THM-202", name: "Advanced Systematic Theology & Pneumatology", hours: 60 },
+    { code: "THM-203", name: "Biblical Exegesis & Hermeneutical Methods", hours: 60 },
+    { code: "THM-204", name: "Youth & Family Ministry Dynamics", hours: 45 },
+    { code: "THM-205", name: "Church Planting, Growth & Urban Ministry", hours: 60 },
+    { code: "THM-206", name: "Comparative Religions & Christian Apologetics", hours: 45 },
+    { code: "THM-207", name: "Practical Ministry Internship & Field Practicum", hours: 90 },
+    { code: "THM-208", name: "Conflict Resolution & Pastoral Ethics", hours: 45 }
+  ];
+
   // Grade mapping
   const getDefaultGrades = (): Grade[] => [
     { id: 'g_a', label: 'A', minPercentage: 70, maxPercentage: 100, comment: 'Excellent' },
@@ -1021,7 +1051,13 @@ export const Transcripts: React.FC = () => {
     // 2. Add full curriculum units for student course
     const studentCourse = (selectedStudent.course || "").toLowerCase();
     let template = defaultCaregiverUnits;
-    if (studentCourse.includes('ict') || studentCourse.includes('computer') || studentCourse.includes('programming')) {
+    if (studentCourse.includes('theology') || studentCourse.includes('biblical') || studentCourse.includes('ministry') || studentCourse.includes('christian')) {
+      if (studentCourse.includes('diploma') || studentCourse.includes('dip')) {
+        template = defaultTheologyDipUnits;
+      } else {
+        template = defaultTheologyCertUnits;
+      }
+    } else if (studentCourse.includes('ict') || studentCourse.includes('computer') || studentCourse.includes('programming')) {
       template = defaultIctUnits;
     } else if (studentCourse.includes('cosmetology') || studentCourse.includes('beauty') || studentCourse.includes('hair')) {
       template = defaultCosmetologyUnits;

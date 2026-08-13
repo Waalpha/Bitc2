@@ -7,9 +7,19 @@ import { ExamAttendance } from '../pages/ExamAttendance';
 import { MarksRegister } from '../pages/MarksRegister';
 import { Timetable } from '../pages/Timetable';
 import { Units } from '../pages/Units';
+import { MyUnits } from '../pages/MyUnits';
 import { Classes } from '../pages/Classes';
+import { Departments } from '../pages/Departments';
 
 export const teacherRoutes: RouteObject[] = [
+  {
+    path: '/departments',
+    element: (
+      <ProtectedRoute>
+        <Departments />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/attendance',
     element: (
@@ -55,6 +65,14 @@ export const teacherRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <Units />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-units',
+    element: (
+      <ProtectedRoute>
+        <MyUnits />
       </ProtectedRoute>
     ),
   },

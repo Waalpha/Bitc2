@@ -12,6 +12,7 @@ export interface Department {
   hodId?: string;
   hodName?: string;
   description?: string;
+  status?: 'active' | 'suspended';
 }
 
 export interface Course {
@@ -24,6 +25,7 @@ export interface Course {
   level: ProgramLevel;
   durationYears?: number;
   totalCredits?: number;
+  status?: 'active' | 'suspended';
 }
 
 export interface Classroom {
@@ -113,7 +115,7 @@ export interface Unit {
   semesterId?: string;
   lecturerId?: string;
   prerequisites?: string[];
-  status: 'active' | 'completed' | 'archived';
+  status?: 'active' | 'completed' | 'archived' | 'suspended';
 }
 
 export interface PublicUnit {

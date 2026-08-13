@@ -2436,6 +2436,69 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Faculty Portal Quick Navigation */}
+        <div className="bg-bg-card p-6 rounded-[32px] border border-white/5 shadow-xl">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              Faculty Academic Tools Quick Access
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link 
+              to="/attendance" 
+              className="p-5 rounded-2xl bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 transition-all flex flex-col items-start justify-between group active:scale-95"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <ClipboardCheck size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Attendance</h4>
+                <p className="text-[10px] text-text-muted mt-0.5">Mark & view class logs</p>
+              </div>
+            </Link>
+
+            <Link 
+              to="/timetable" 
+              className="p-5 rounded-2xl bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 transition-all flex flex-col items-start justify-between group active:scale-95"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Calendar size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Timetable</h4>
+                <p className="text-[10px] text-text-muted mt-0.5">Teaching schedule</p>
+              </div>
+            </Link>
+
+            <Link 
+              to="/my-units" 
+              className="p-5 rounded-2xl bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 transition-all flex flex-col items-start justify-between group active:scale-95"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Units</h4>
+                <p className="text-[10px] text-text-muted mt-0.5">My assigned units</p>
+              </div>
+            </Link>
+
+            <Link 
+              to="/classes" 
+              className="p-5 rounded-2xl bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 transition-all flex flex-col items-start justify-between group active:scale-95"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Users size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Classes</h4>
+                <p className="text-[10px] text-text-muted mt-0.5">Manage class rosters</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
         {/* Highlights Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-8 rounded-[32px] border border-[#E2E8F0] shadow-sm text-[#0F172A] relative overflow-hidden group">

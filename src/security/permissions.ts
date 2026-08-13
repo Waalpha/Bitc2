@@ -101,7 +101,9 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { id: 'attendance.view', name: 'View Attendance', category: 'Academics', description: 'View daily and course-level attendance logs' },
   { id: 'attendance.mark', name: 'Mark Attendance', category: 'Academics', description: 'Record student attendance and check-in status' },
 
-  // Classes & Units
+  // Departments, Classes & Units
+  { id: 'departments.view', name: 'View Departments', category: 'Academics', description: 'View academic departments and course programs' },
+  { id: 'departments.manage', name: 'Manage Departments', category: 'Academics', description: 'Create, edit, or delete academic departments and programs' },
   { id: 'classes.view', name: 'View Classes', category: 'Academics', description: 'View class rosters, rooms, and timetables' },
   { id: 'classes.manage', name: 'Manage Classes', category: 'Academics', description: 'Create, edit, or delete class groups and schedules' },
   { id: 'units.view', name: 'View Units / Subjects', category: 'Academics', description: 'View syllabus units and course catalog' },

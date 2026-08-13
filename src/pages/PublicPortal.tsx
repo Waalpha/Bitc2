@@ -166,24 +166,24 @@ const COURSES: Course[] = [
   },
   {
     id: 'theo-1',
-    name: 'Certificate in Theology & Biblical Studies',
+    name: 'Certificate in Theology & Christian Ministry',
     category: 'theology',
-    duration: '1 Year',
+    duration: '1 Year (8 Core Units)',
     requirements: 'KCSE D- minus / Secondary Certificate or equivalent',
-    exams: 'TVET CDACC',
-    skills: ['Biblical Interpretation', 'Christian Ministry Ethics', 'Basic Pastoral Counseling', 'Homiletics & Preaching'],
-    description: 'Foundations of Christian doctrine, spiritual formation, and pulpit practice designed to empower aspiring church lay leaders.',
+    exams: 'TVET CDACC / National Council',
+    skills: ['Old & New Testament Survey', 'Hermeneutics & Exegesis', 'Homiletics & Sermon Preparation', 'Evangelism & Discipleship', 'Christian Ethics & Pastoral Leadership'],
+    description: 'Foundations of Christian doctrine, Old & New Testament survey, spiritual formation, sermon preparation, and pastoral leadership designed for church workers and emerging ministers.',
     featured: false
   },
   {
     id: 'theo-2',
     name: 'Diploma in Theology & Christian Ministry',
     category: 'theology',
-    duration: '2 Years',
-    requirements: 'KCSE D Plain and above (or equivalent certificate)',
-    exams: 'TVET CDACC',
-    skills: ['Systematic Theology', 'Chaplaincy Care', 'Pastoral Counseling', 'Church Administration Skills'],
-    description: 'A comprehensive guide to ecclesiology, sermon preparation, local church planting, and effective parish governance.',
+    duration: '2 Years (16 Core Units)',
+    requirements: 'KCSE D Plain and above (or Certificate in Theology)',
+    exams: 'TVET CDACC / National Council',
+    skills: ['Systematic Theology & Pneumatology', 'Expository Preaching', 'Pastoral Counseling & Chaplaincy Care', 'Church Administration & Urban Ministry', 'Apologetics & Field Practicum'],
+    description: 'Advanced systematic theology, sermon preparation, pastoral counseling, church planting, youth & family ministry, conflict resolution, and parish governance.',
     featured: true
   }
 ];
