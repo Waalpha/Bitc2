@@ -4,7 +4,7 @@ export interface User {
   name: string;
   email: string;
   role: string; // Dynamic role
-  schoolId?: string; // Multi-tenant school ID reference
+  schoolId?: string; // School campus ID reference
   phone?: string;
   photoUrl?: string;
   createdAt: string;

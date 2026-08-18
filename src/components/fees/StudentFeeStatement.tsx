@@ -222,7 +222,7 @@ export const StudentFeeStatement: React.FC<StudentFeeStatementProps> = ({
 
             <div className="text-center sm:text-right">
               <p className="text-[10px] italic">This is an official computer-generated fee statement from {settings?.appTitle || 'BITC'}.</p>
-              <p className="text-[10px] font-bold text-slate-600 mt-1">{(settings as any)?.copyrightText || '© 2026 Davetech ERP Platform'}</p>
+              <p className="text-[10px] font-bold text-slate-600 mt-1">{(settings as any)?.copyrightText || '© 2026 Breakthrough International Training College (BITC)'}</p>
             </div>
           </div>
         </div>

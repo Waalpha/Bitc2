@@ -3,7 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc, deleteDoc, getDocs, setDoc, addDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthProvider';
 import { User, Class, Unit, AppSettings, Expense, ErpNextSyncLog } from '../types';
-import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare, Link, Server, Zap, Copy, ExternalLink, ShieldCheck, School } from 'lucide-react';
+import { Users, Shield, Trash2, Edit, Save, X, Search, Filter, Settings as SettingsIcon, BookOpen, Plus, Upload, Loader2, Key, Wallet, Receipt, DollarSign, Lock, Fingerprint, RefreshCw, Smartphone, Check, MapPin, Phone, Mail, Database, Archive, Download, AlertTriangle, Clock, FileDown, FileUp, CheckCircle, Globe, GraduationCap, Megaphone, Star, MessageSquare, Link, Server, Zap, Copy, ExternalLink, ShieldCheck, School, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage } from '../components/Toast';
 import { Role, PERMISSIONS } from '../types';
@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { isBiometricSupported, registerBiometric } from '../services/biometricService';
 
 import { uploadFile, getCloudinaryConfig } from '../services/uploadService';
+import { PublicPortalEditor } from '../components/admin/PublicPortalEditor';
 
 export const AdminSettings: React.FC = () => {
   const { userData, settings: globalSettings } = useAuth();
@@ -95,6 +96,12 @@ export const AdminSettings: React.FC = () => {
     textAlign: 'left',
     isSchoolClosed: false,
     schoolClosedReason: '',
+    bankName: 'Co-operative Bank of Kenya',
+    bankAccountName: 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE',
+    bankAccountNumber: '032000025240',
+    bankBranch: 'Thika Makongeni',
+    bankPaybill: '247247',
+    bankPaymentInstructions: "Quote your Admission Number as payment reference on all deposits. Cash payments on campus are strictly prohibited.",
     publicAddress: 'Thika Kiganjo Corner 2, Kenya',
     publicPhone: '+254 700 000 000',
     publicEmail: 'info@bitc.ac.ke',
@@ -111,7 +118,7 @@ export const AdminSettings: React.FC = () => {
     publicHeroTitleItalic: false,
     publicHeroDescriptionBold: false,
     publicHeroDescriptionItalic: false,
-    publicHeroPhotoOpacity: 90,
+    publicHeroPhotoOpacity: 100,
     publicLogoUrl: '',
     publicPrimaryColor: '#1E46C8',
     publicSecondaryColor: '#0B255F',
@@ -1632,6 +1639,107 @@ export const AdminSettings: React.FC = () => {
               </div>
             </div>
 
+            <div className="pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                  <Building2 size={16} className="text-purple-600" />
+                  Official Bank & Tuition Collection Details
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppSettings(prev => ({
+                      ...prev,
+                      bankName: 'Co-operative Bank of Kenya',
+                      bankAccountName: 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE',
+                      bankAccountNumber: '032000025240',
+                      bankBranch: 'Thika Makongeni',
+                      bankPaybill: '247247',
+                      bankPaymentInstructions: "Quote your Admission Number as payment reference on all deposits. Cash payments on campus are strictly prohibited."
+                    }));
+                    addToast('Official bank details restored to defaults!', 'success');
+                  }}
+                  className="text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw size={12} />
+                  Restore Official Bank Details
+                </button>
+              </div>
+
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Bank Account Name</label>
+                    <input
+                      type="text"
+                      value={appSettings.bankAccountName || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, bankAccountName: e.target.value })}
+                      placeholder="e.g. BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={appSettings.bankName || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, bankName: e.target.value })}
+                      placeholder="e.g. Co-operative Bank of Kenya"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Account Number (A/C No.)</label>
+                    <input
+                      type="text"
+                      value={appSettings.bankAccountNumber || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, bankAccountNumber: e.target.value })}
+                      placeholder="e.g. 032000025240"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Branch</label>
+                    <input
+                      type="text"
+                      value={appSettings.bankBranch || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, bankBranch: e.target.value })}
+                      placeholder="e.g. Thika Makongeni"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Paybill / Till Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={appSettings.bankPaybill || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, bankPaybill: e.target.value })}
+                      placeholder="e.g. 247247"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Payment Instructions / Narrative Reference</label>
+                  <textarea
+                    rows={2}
+                    value={appSettings.bankPaymentInstructions || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, bankPaymentInstructions: e.target.value })}
+                    placeholder="e.g. Quote your Admission Number as payment reference on all deposits. Cash payments on campus are strictly prohibited."
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-gray-900"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">This appears on invoices, receipts, student portal fee statements, and public portal admission letters.</p>
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isSaving}
@@ -2182,1062 +2290,13 @@ export const AdminSettings: React.FC = () => {
       </AnimatePresence>
 
       {activeTab === 'portal' && (
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-8 max-w-4xl">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <Globe size={24} className="text-purple-600 animate-pulse" />
-              Public Website Portal Settings
-            </h2>
-            <p className="text-xs text-gray-500">Customize physical locations, phone, email, map positions, dynamic slider slides, and gallery collections rendered on your public website.</p>
-          </div>
-
-          <form onSubmit={handleSaveSettings} className="space-y-6">
-            
-            {/* School Contact Information Section */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                <MapPin size={16} className="text-purple-500" />
-                Public Contact Info
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Inquiry Phone Line</label>
-                  <input
-                    type="text"
-                    value={appSettings.publicPhone || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicPhone: e.target.value })}
-                    placeholder="e.g. +254 712 345 678"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Support Email</label>
-                  <input
-                    type="email"
-                    value={appSettings.publicEmail || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicEmail: e.target.value })}
-                    placeholder="e.g. info@college.ac.ke"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Physical Location Address</label>
-                  <input
-                    type="text"
-                    value={appSettings.publicAddress || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicAddress: e.target.value })}
-                    placeholder="e.g. Kiganjo Corner 2, Thika"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Google Maps Embed Location URL</label>
-                <input
-                  type="text"
-                  value={appSettings.publicLocationEmbed || ''}
-                  onChange={(e) => setAppSettings({ ...appSettings, publicLocationEmbed: e.target.value })}
-                  placeholder="https://www.google.com/maps/embed?..."
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
-                />
-                <p className="mt-1 text-[10px] text-gray-405">Paste the raw src link of a Google Maps embed iframe to render on the contact section.</p>
-              </div>
-            </div>
-
-            {/* Hero Main Defaults Section */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                <Shield size={16} className="text-purple-500" />
-                Hero Configuration
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Title Heading</label>
-                  <input
-                    type="text"
-                    value={appSettings.publicHeroTitle || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitle: e.target.value })}
-                    placeholder="Empowering Professionals, Shaping Futures"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Subtitle Description</label>
-                  <textarea
-                    value={appSettings.publicHeroDescription || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescription: e.target.value })}
-                    placeholder="Breakthrough training college offers..."
-                    className="w-full px-4 py-2 bg-white border border-gray-305 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm min-h-[40px]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Title Font Size</label>
-                  <select
-                    value={appSettings.publicHeroTitleSize || 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleSize: e.target.value })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
-                  >
-                    <option value="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Extra Small (text-2xl to text-5xl)</option>
-                    <option value="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">Small - Recommended (text-3xl to text-6xl)</option>
-                    <option value="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Medium (text-4xl to text-7xl)</option>
-                    <option value="text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Large / Original (text-5xl to text-8xl)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Subtitle Font Size</label>
-                  <select
-                    value={appSettings.publicHeroDescriptionSize || 'text-xs sm:text-sm md:text-base'}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionSize: e.target.value })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
-                  >
-                    <option value="text-[10px] sm:text-xs md:text-sm">Smallest (text-xs)</option>
-                    <option value="text-xs sm:text-sm md:text-base">Medium - Recommended (text-sm to text-base)</option>
-                    <option value="text-sm sm:text-base md:text-lg">Large (text-base to text-lg)</option>
-                    <option value="text-base sm:text-lg md:text-xl">Extra Large / Original (text-lg to text-xl)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Headline Font Family</label>
-                  <select
-                    value={appSettings.publicHeroFont || 'Inter'}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroFont: e.target.value })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
-                  >
-                    <option value="Inter">Inter (Sans-Serif Modern)</option>
-                    <option value="Poppins">Poppins (Geometric Round)</option>
-                    <option value="Montserrat">Montserrat (Classic Alternate)</option>
-                    <option value="Space Grotesk">Space Grotesk (Tech Modern)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Headline Text Alignment</label>
-                  <select
-                    value={appSettings.publicHeroAlign || 'left'}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroAlign: e.target.value as any })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 font-medium text-xs"
-                  >
-                    <option value="left">Left Align</option>
-                    <option value="center">Center Align</option>
-                    <option value="right">Right Align</option>
-                  </select>
-                </div>
-                <div className="flex flex-col justify-center gap-2 pt-2 md:pt-4">
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={appSettings.publicHeroTitleBold !== false}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleBold: e.target.checked })}
-                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
-                    />
-                    <span>Heavy bold styling on Heading Title</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!appSettings.publicHeroTitleItalic}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroTitleItalic: e.target.checked })}
-                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
-                    />
-                    <span>Italicize Title</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                <div className="flex flex-col gap-2 justify-center">
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!appSettings.publicHeroDescriptionBold}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionBold: e.target.checked })}
-                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
-                    />
-                    <span>Bold subtitle description</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!appSettings.publicHeroDescriptionItalic}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroDescriptionItalic: e.target.checked })}
-                      className="rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
-                    />
-                    <span>Italicize subtitle description</span>
-                  </label>
-                </div>
-
-                {/* Hero Photo Transparency / Opacity Setting */}
-                <div className="bg-purple-50/60 p-3.5 rounded-xl border border-purple-100 flex flex-col justify-between gap-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-extrabold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Hero Photo Transparency / Opacity</span>
-                    </label>
-                    <span className="text-xs font-black text-purple-700 bg-white px-2.5 py-0.5 rounded-md border border-purple-200 shadow-sm font-mono">
-                      {appSettings.publicHeroPhotoOpacity ?? 90}%
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-purple-400">10% (Transparent)</span>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      step="5"
-                      value={appSettings.publicHeroPhotoOpacity ?? 90}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicHeroPhotoOpacity: Number(e.target.value) })}
-                      className="flex-1 accent-purple-600 h-2 bg-purple-200 rounded-lg cursor-pointer"
-                    />
-                    <span className="text-[10px] font-bold text-purple-700">100% (Full Crystal)</span>
-                  </div>
-
-                  {/* Preset Quick Buttons */}
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="text-[10px] text-gray-500 font-medium mr-1">Presets:</span>
-                    {[
-                      { label: '30% Soft', val: 30 },
-                      { label: '60% Balanced', val: 60 },
-                      { label: '85% Clear', val: 85 },
-                      { label: '100% Full', val: 100 }
-                    ].map((preset) => (
-                      <button
-                        key={preset.val}
-                        type="button"
-                        onClick={() => setAppSettings({ ...appSettings, publicHeroPhotoOpacity: preset.val })}
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md transition-all border cursor-pointer ${
-                          (appSettings.publicHeroPhotoOpacity ?? 90) === preset.val
-                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                            : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-100'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Color Customizers */}
-              <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Primary Blue (#1E46C8)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={appSettings.publicPrimaryColor || '#1E46C8'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
-                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      value={appSettings.publicPrimaryColor || '#1E46C8'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicPrimaryColor: e.target.value })}
-                      placeholder="#1E46C8"
-                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Dark Navy Headings (#0B255F)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={appSettings.publicSecondaryColor || '#0B255F'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
-                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      value={appSettings.publicSecondaryColor || '#0B255F'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicSecondaryColor: e.target.value })}
-                      placeholder="#0B255F"
-                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">Yellow CTA Button (#FFC928)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={appSettings.publicAccentColor || '#FFC928'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
-                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-0 bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      value={appSettings.publicAccentColor || '#FFC928'}
-                      onChange={(e) => setAppSettings({ ...appSettings, publicAccentColor: e.target.value })}
-                      placeholder="#FFC928"
-                      className="flex-1 px-3 py-1.5 text-xs font-bold border rounded-lg uppercase"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Public Portal Logo */}
-              <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-200">
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Public Portal Logo Override</label>
-                <p className="text-[10px] text-gray-400 mb-2">Configure a specific header logo for your public portal. Leaves blank to use primary system logo.</p>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="text"
-                    value={appSettings.publicLogoUrl || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicLogoUrl: e.target.value })}
-                    placeholder="Paste public logo URL..."
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
-                  />
-                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
-                    <Upload size={14} className="text-gray-400" />
-                    <span>Upload Logo</span>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'publicLogoUrl')} className="hidden" />
-                  </label>
-                </div>
-                {appSettings.publicLogoUrl && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <img src={appSettings.publicLogoUrl} alt="Public Logo Preview" className="h-10 w-auto rounded object-contain border border-gray-200" referrerPolicy="no-referrer" />
-                    <button
-                      type="button"
-                      onClick={() => setAppSettings(prev => ({ ...prev, publicLogoUrl: '' }))}
-                      className="text-[10px] font-bold text-red-500 hover:underline"
-                    >
-                      Reset Custom Logo
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Hero Default Backing Image / Fallback</label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="text"
-                    value={appSettings.publicHeroImageUrl || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, publicHeroImageUrl: e.target.value })}
-                    placeholder="Paste image URL or upload below..."
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
-                  />
-                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
-                    <Upload size={14} className="text-gray-400" />
-                    <span>Upload Image</span>
-                    <input type="file" accept="image/*" onChange={handleHeroFallbackUpload} className="hidden" />
-                  </label>
-                </div>
-                {appSettings.publicHeroImageUrl && (
-                  <img src={appSettings.publicHeroImageUrl} alt="Fallback Preview" className="h-20 w-auto rounded mt-2 object-cover border border-gray-200" referrerPolicy="no-referrer" />
-                )}
-              </div>
-            </div>
-
-            {/* About Us and Overview Section */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                <BookOpen size={16} className="text-purple-500" />
-                About Section Content
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Us Headline Title</label>
-                  <input
-                    type="text"
-                    value={appSettings.aboutTitle || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, aboutTitle: e.target.value })}
-                    placeholder="A Breakthrough in Professional Education"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Us Description</label>
-                  <textarea
-                    value={appSettings.portalAboutUs || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, portalAboutUs: e.target.value })}
-                    placeholder="Enter thorough operational summary..."
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm min-h-[80px]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">About Section Right Image</label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="text"
-                    value={appSettings.aboutImageUrl || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, aboutImageUrl: e.target.value })}
-                    placeholder="Paste image URL or upload below..."
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-xs font-medium"
-                  />
-                  <label className="flex items-center gap-2 border border-gray-300 bg-white rounded-lg px-4 py-2 hover:border-purple-500 hover:bg-purple-50 cursor-pointer text-xs font-medium">
-                    <Upload size={14} className="text-gray-400" />
-                    <span>Upload Image</span>
-                    <input type="file" accept="image/*" onChange={handleAboutImageUpload} className="hidden" />
-                  </label>
-                </div>
-                {appSettings.aboutImageUrl && (
-                  <img src={appSettings.aboutImageUrl} alt="About Us Preview" className="h-20 w-auto rounded mt-2 object-cover border border-gray-200" referrerPolicy="no-referrer" />
-                )}
-              </div>
-            </div>
-
-            {/* Slideshow and Gallery Media Managers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Dynamic Slideshow Manager */}
-              <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-                <h3 className="text-xs font-black tracking-widest text-gray-700 uppercase leading-none">Slideshow Slides</h3>
-                <p className="text-[10px] text-gray-450">Add up to 12 sliding photos to loop in high resolution on the hero header section.</p>
-                
-                <div className="flex items-center gap-2">
-                  <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 bg-white rounded-xl p-3 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-all">
-                    <Upload size={16} className="text-gray-400" />
-                    <span className="text-xs text-gray-600 font-bold">Upload Custom Slide</span>
-                    <input type="file" multiple accept="image/*" onChange={handleHeroImagesUpload} className="hidden" />
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 max-h-[160px] overflow-y-auto pr-1">
-                  {(appSettings.publicHeroImages || []).map((slideUrl, idx) => (
-                    <div key={`slide_admin_${idx}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
-                      <img src={slideUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      <button
-                        type="button"
-                        onClick={() => removeHeroImage(idx)}
-                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
-                        title="Remove Slide Photo"
-                      >
-                        <Trash2 size={12} className="text-white fill-white" />
-                      </button>
-                    </div>
-                  ))}
-                  {(appSettings.publicHeroImages || []).length === 0 && (
-                    <span className="text-[10px] text-gray-400 col-span-3 text-center py-4 italic">No slideshow photos uploaded. Using default collection.</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Campus Life Gallery Manager */}
-              <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-                <h3 className="text-xs font-black tracking-widest text-gray-700 uppercase leading-none">Campus Operations Gallery</h3>
-                <p className="text-[10px] text-gray-450">Add up to 12 direct snapshots showcasing campuses operations, labs, and student activities.</p>
-
-                <div className="flex items-center gap-2">
-                  <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 bg-white rounded-xl p-3 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-all">
-                    <Upload size={16} className="text-gray-400" />
-                    <span className="text-xs text-gray-600 font-bold">Upload Gallery Snap</span>
-                    <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 max-h-[160px] overflow-y-auto pr-1">
-                  {(appSettings.portalGallery || []).map((galUrl, idx) => (
-                    <div key={`gal_admin_${idx}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
-                      <img src={galUrl} alt={`Gallery Snap ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryImage(idx)}
-                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
-                        title="Remove Gallery Photo"
-                      >
-                        <Trash2 size={12} className="text-white fill-white" />
-                      </button>
-                    </div>
-                  ))}
-                  {(appSettings.portalGallery || []).length === 0 && (
-                    <span className="text-[10px] text-gray-400 col-span-3 text-center py-4 italic">No gallery photos uploaded. Using default collection.</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Top notice/announcement banner controls */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                  <Megaphone size={16} className="text-purple-500 animate-pulse" />
-                  Top Announcement Notice Banner
-                </h3>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={appSettings.portalNoticeEnabled || false}
-                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeEnabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  <span className="ml-2 text-xs font-bold text-gray-600 uppercase tracking-wider">Enabled</span>
-                </label>
-              </div>
-              <p className="text-[10px] text-gray-450">Configure an eye-catching message bar that stays at the absolute top of the homepage to call active attention (e.g. for Intakes, Holidays, or Admissions Notice).</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Notice Headline Text</label>
-                  <input
-                    type="text"
-                    value={appSettings.portalNoticeText || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeText: e.target.value })}
-                    placeholder="e.g. September Intake for all Accredited Diploma & Certificate Courses is currently ongoing!"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
-                    disabled={!appSettings.portalNoticeEnabled}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Notice Action URL Link (Anchor or External Link)</label>
-                  <input
-                    type="text"
-                    value={appSettings.portalNoticeLink || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, portalNoticeLink: e.target.value })}
-                    placeholder="e.g. #programs"
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-900 text-sm font-medium"
-                    disabled={!appSettings.portalNoticeEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Institutional stats controls */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                <Database size={16} className="text-purple-500" />
-                Institutional Numbers & Counters
-              </h3>
-              <p className="text-[10px] text-gray-450">Change the four main numbers showcased on the public landing page statistics block to match your newest audited metrics.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Stat 1 */}
-                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
-                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 1</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-1">
-                      <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Counter</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat1Number || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat1Number: e.target.value })}
-                        placeholder="e.g. 200+"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Label / Title</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat1Label || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat1Label: e.target.value })}
-                        placeholder="e.g. Active Enrolled Students"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Subtext</label>
-                    <input
-                      type="text"
-                      value={appSettings.portalStat1Sub || ''}
-                      onChange={(e) => setAppSettings({ ...appSettings, portalStat1Sub: e.target.value })}
-                      placeholder="e.g. Across both physical learning campuses"
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Stat 2 */}
-                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
-                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 2</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-1">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat2Number || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat2Number: e.target.value })}
-                        placeholder="e.g. 200+"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat2Label || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat2Label: e.target.value })}
-                        placeholder="e.g. Certified Graduates"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
-                    <input
-                      type="text"
-                      value={appSettings.portalStat2Sub || ''}
-                      onChange={(e) => setAppSettings({ ...appSettings, portalStat2Sub: e.target.value })}
-                      placeholder="e.g. Working in corporate healthcare & ICT industry"
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Stat 3 */}
-                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
-                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 3</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-1">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat3Number || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat3Number: e.target.value })}
-                        placeholder="e.g. 5+"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat3Label || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat3Label: e.target.value })}
-                        placeholder="e.g. Instructors & Specialists"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
-                    <input
-                      type="text"
-                      value={appSettings.portalStat3Sub || ''}
-                      onChange={(e) => setAppSettings({ ...appSettings, portalStat3Sub: e.target.value })}
-                      placeholder="e.g. Dedicated corporate industry professionals"
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Stat 4 */}
-                <div className="p-4 bg-white rounded-xl border border-gray-200/60 space-y-3">
-                  <div className="text-xs font-black text-purple-600 uppercase tracking-wider">Statistic Counter 4</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-1">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Counter</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat4Number || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat4Number: e.target.value })}
-                        placeholder="e.g. 1"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-black"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Label / Title</label>
-                      <input
-                        type="text"
-                        value={appSettings.portalStat4Label || ''}
-                        onChange={(e) => setAppSettings({ ...appSettings, portalStat4Label: e.target.value })}
-                        placeholder="e.g. Physical Campuses"
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Subtext</label>
-                    <input
-                      type="text"
-                      value={appSettings.portalStat4Sub || ''}
-                      onChange={(e) => setAppSettings({ ...appSettings, portalStat4Sub: e.target.value })}
-                      placeholder="e.g. Located in Thika Kiganjo, Corner 2"
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-gray-900 text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonials controls */}
-            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                  <MessageSquare size={16} className="text-purple-500" />
-                  Alumni Student Testimonials
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentList = appSettings.portalTestimonials || [
-                      {
-                        name: 'Abigail Wambui',
-                        role: 'Software Developer Graduate',
-                        workplace: 'Fintech Firm, Nairobi',
-                        quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                        rating: 5,
-                        avatar: '👩‍💻'
-                      },
-                      {
-                        name: 'Kevin Kiprop',
-                        role: 'Healthcare Caregiver Alumnus',
-                        workplace: 'Professional Care Home, United Kingdom',
-                        quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                        rating: 5,
-                        avatar: '👨‍⚕️'
-                      },
-                      {
-                        name: 'Gladys Atieno',
-                        role: 'Cosmetology & Hairdressing Lead',
-                        workplace: 'Owner, Royal Glitz Spa - Thika',
-                        quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                        rating: 5,
-                        avatar: '💇‍♀️'
-                      }
-                    ];
-                    const newList = [...currentList, {
-                      name: 'New Graduate Name',
-                      role: 'New Alumnus',
-                      workplace: 'Company/Self-Employed',
-                      quote: 'The specialized program was incredibly practical and project-oriented. Excellent mentors!',
-                      rating: 5,
-                      avatar: '🎓'
-                    }];
-                    setAppSettings({ ...appSettings, portalTestimonials: newList });
-                  }}
-                  className="px-3 py-1.5 bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus size={12} />
-                  Add Testimonial
-                </button>
-              </div>
-              <p className="text-[10px] text-gray-450">Review, modify, or add alumni student testimonials displayed in the sliding quote carousel under student stories.</p>
-              
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                {(appSettings.portalTestimonials || [
-                  {
-                    name: 'Abigail Wambui',
-                    role: 'Software Developer Graduate',
-                    workplace: 'Fintech Firm, Nairobi',
-                    quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                    rating: 5,
-                    avatar: '👩‍💻'
-                  },
-                  {
-                    name: 'Kevin Kiprop',
-                    role: 'Healthcare Caregiver Alumnus',
-                    workplace: 'Professional Care Home, United Kingdom',
-                    quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                    rating: 5,
-                    avatar: '👨‍⚕️'
-                  },
-                  {
-                    name: 'Gladys Atieno',
-                    role: 'Cosmetology & Hairdressing Lead',
-                    workplace: 'Owner, Royal Glitz Spa - Thika',
-                    quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                    rating: 5,
-                    avatar: '💇‍♀️'
-                  }
-                ]).map((test, index) => (
-                  <div key={`test_admin_${index}`} className="p-4 bg-white rounded-xl border border-gray-200 space-y-3 relative group">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentList = appSettings.portalTestimonials || [
-                          {
-                            name: 'Abigail Wambui',
-                            role: 'Software Developer Graduate',
-                            workplace: 'Fintech Firm, Nairobi',
-                            quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                            rating: 5,
-                            avatar: '👩‍💻'
-                          },
-                          {
-                            name: 'Kevin Kiprop',
-                            role: 'Healthcare Caregiver Alumnus',
-                            workplace: 'Professional Care Home, United Kingdom',
-                            quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                            rating: 5,
-                            avatar: '👨‍⚕️'
-                          },
-                          {
-                            name: 'Gladys Atieno',
-                            role: 'Cosmetology & Hairdressing Lead',
-                            workplace: 'Owner, Royal Glitz Spa - Thika',
-                            quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                            rating: 5,
-                            avatar: '💇‍♀️'
-                          }
-                        ];
-                        const newList = currentList.filter((_, i) => i !== index);
-                        setAppSettings({ ...appSettings, portalTestimonials: newList });
-                      }}
-                      className="absolute top-3 right-3 text-red-500 hover:text-red-700 p-1 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer"
-                      title="Delete Testimonial"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-
-                    <div className="text-[10px] font-black text-gray-400">TESTIMONIAL {index + 1}</div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Graduate Name</label>
-                        <input
-                          type="text"
-                          value={test.name}
-                          onChange={(e) => {
-                            const currentList = [...(appSettings.portalTestimonials || [
-                              {
-                                name: 'Abigail Wambui',
-                                role: 'Software Developer Graduate',
-                                workplace: 'Fintech Firm, Nairobi',
-                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                                rating: 5,
-                                avatar: '👩‍💻'
-                              },
-                              {
-                                name: 'Kevin Kiprop',
-                                role: 'Healthcare Caregiver Alumnus',
-                                workplace: 'Professional Care Home, United Kingdom',
-                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                                rating: 5,
-                                avatar: '👨‍⚕️'
-                              },
-                              {
-                                name: 'Gladys Atieno',
-                                role: 'Cosmetology & Hairdressing Lead',
-                                workplace: 'Owner, Royal Glitz Spa - Thika',
-                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                                rating: 5,
-                                avatar: '💇‍♀️'
-                              }
-                            ])];
-                            currentList[index] = { ...currentList[index], name: e.target.value };
-                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                          }}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px] font-semibold"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Program Role</label>
-                        <input
-                          type="text"
-                          value={test.role}
-                          onChange={(e) => {
-                            const currentList = [...(appSettings.portalTestimonials || [
-                              {
-                                name: 'Abigail Wambui',
-                                role: 'Software Developer Graduate',
-                                workplace: 'Fintech Firm, Nairobi',
-                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                                rating: 5,
-                                avatar: '👩‍💻'
-                              },
-                              {
-                                name: 'Kevin Kiprop',
-                                role: 'Healthcare Caregiver Alumnus',
-                                workplace: 'Professional Care Home, United Kingdom',
-                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                                rating: 5,
-                                avatar: '👨‍⚕️'
-                              },
-                              {
-                                name: 'Gladys Atieno',
-                                role: 'Cosmetology & Hairdressing Lead',
-                                workplace: 'Owner, Royal Glitz Spa - Thika',
-                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                                rating: 5,
-                                avatar: '💇‍♀️'
-                              }
-                            ])];
-                            currentList[index] = { ...currentList[index], role: e.target.value };
-                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                          }}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Current Workplace</label>
-                        <input
-                          type="text"
-                          value={test.workplace}
-                          onChange={(e) => {
-                            const currentList = [...(appSettings.portalTestimonials || [
-                              {
-                                name: 'Abigail Wambui',
-                                role: 'Software Developer Graduate',
-                                workplace: 'Fintech Firm, Nairobi',
-                                quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                                rating: 5,
-                                avatar: '👩‍💻'
-                              },
-                              {
-                                name: 'Kevin Kiprop',
-                                role: 'Healthcare Caregiver Alumnus',
-                                workplace: 'Professional Care Home, United Kingdom',
-                                quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                                rating: 5,
-                                avatar: '👨‍⚕️'
-                              },
-                              {
-                                name: 'Gladys Atieno',
-                                role: 'Cosmetology & Hairdressing Lead',
-                                workplace: 'Owner, Royal Glitz Spa - Thika',
-                                quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                                rating: 5,
-                                avatar: '💇‍♀️'
-                              }
-                            ])];
-                            currentList[index] = { ...currentList[index], workplace: e.target.value };
-                            setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                          }}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Rating (1-5)</label>
-                          <select
-                            value={test.rating}
-                            onChange={(e) => {
-                              const currentList = [...(appSettings.portalTestimonials || [
-                                {
-                                  name: 'Abigail Wambui',
-                                  role: 'Software Developer Graduate',
-                                  workplace: 'Fintech Firm, Nairobi',
-                                  quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                                  rating: 5,
-                                  avatar: '👩‍💻'
-                                },
-                                {
-                                  name: 'Kevin Kiprop',
-                                  role: 'Healthcare Caregiver Alumnus',
-                                  workplace: 'Professional Care Home, United Kingdom',
-                                  quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                                  rating: 5,
-                                  avatar: '👨‍⚕️'
-                                },
-                                {
-                                  name: 'Gladys Atieno',
-                                  role: 'Cosmetology & Hairdressing Lead',
-                                  workplace: 'Owner, Royal Glitz Spa - Thika',
-                                  quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                                  rating: 5,
-                                  avatar: '💇‍♀️'
-                                }
-                              ])];
-                              currentList[index] = { ...currentList[index], rating: parseInt(e.target.value) || 5 };
-                              setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                            }}
-                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-900 text-[11px] h-[33px] font-medium"
-                          >
-                            <option value="5">5 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="2">2 Stars</option>
-                            <option value="1">1 Star</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Avatar Emoji</label>
-                          <input
-                            type="text"
-                            value={test.avatar}
-                            onChange={(e) => {
-                              const currentList = [...(appSettings.portalTestimonials || [
-                                {
-                                  name: 'Abigail Wambui',
-                                  role: 'Software Developer Graduate',
-                                  workplace: 'Fintech Firm, Nairobi',
-                                  quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                                  rating: 5,
-                                  avatar: '👩‍💻'
-                                },
-                                {
-                                  name: 'Kevin Kiprop',
-                                  role: 'Healthcare Caregiver Alumnus',
-                                  workplace: 'Professional Care Home, United Kingdom',
-                                  quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                                  rating: 5,
-                                  avatar: '👨‍⚕️'
-                                },
-                                {
-                                  name: 'Gladys Atieno',
-                                  role: 'Cosmetology & Hairdressing Lead',
-                                  workplace: 'Owner, Royal Glitz Spa - Thika',
-                                  quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                                  rating: 5,
-                                  avatar: '💇‍♀️'
-                                }
-                              ])];
-                              currentList[index] = { ...currentList[index], avatar: e.target.value };
-                              setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                            }}
-                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px]"
-                            placeholder="e.g. 👩‍🎓"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[9px] font-bold text-gray-550 uppercase mb-0.5">Quote Message Content</label>
-                      <textarea
-                        value={test.quote}
-                        onChange={(e) => {
-                          const currentList = [...(appSettings.portalTestimonials || [
-                            {
-                              name: 'Abigail Wambui',
-                              role: 'Software Developer Graduate',
-                              workplace: 'Fintech Firm, Nairobi',
-                              quote: 'The ICT Software Engineering program at BITC was completely project-oriented. I learned web programming build-outs, databases, and general system architecture. The mentors helped me secure a front-end role before my final examinations!',
-                              rating: 5,
-                              avatar: '👩‍💻'
-                            },
-                            {
-                              name: 'Kevin Kiprop',
-                              role: 'Healthcare Caregiver Alumnus',
-                              workplace: 'Professional Care Home, United Kingdom',
-                              quote: 'Thanks to TVET CDACC caregiver training at Breakthrough, I excelled in the UK relocation care standards. The practical sessions on elder client treatment, nursing aide ethics, and basic clinical first aid remain the gold standard.',
-                              rating: 5,
-                              avatar: '👨‍⚕️'
-                            },
-                            {
-                              name: 'Gladys Atieno',
-                              role: 'Cosmetology & Hairdressing Lead',
-                              workplace: 'Owner, Royal Glitz Spa - Thika',
-                              quote: 'Under BITC beauty educators, I acquired secrets of facial therapy, bridal makeup artistry, and salon financial management. Today, my own spa employs three junior stylers certified from this very institution!',
-                              rating: 5,
-                              avatar: '💇‍♀️'
-                            }
-                          ])];
-                          currentList[index] = { ...currentList[index], quote: e.target.value };
-                          setAppSettings({ ...appSettings, portalTestimonials: currentList });
-                        }}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-gray-900 text-[11px] min-h-[50px] leading-relaxed"
-                      />
-                    </div>
-                  </div>
-                ))}
-                {(appSettings.portalTestimonials || []).length === 0 && appSettings.portalTestimonials !== undefined && (
-                  <div className="text-[11px] italic text-gray-400 text-center py-6 bg-white rounded-lg border">No student testimonials currently customized. Using system defaults on website.</div>
-                )}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full bg-purple-600 text-white font-black py-4.5 rounded-2xl hover:bg-purple-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-200"
-            >
-              {isSaving ? <Loader2 className="animate-spin text-white" size={20} /> : <Save size={18} />}
-              {isSaving ? 'Saving' : 'Persist Public Portal Settings'}
-            </button>
-          </form>
-        </div>
+        <PublicPortalEditor
+          appSettings={appSettings}
+          setAppSettings={setAppSettings}
+          onSave={handleSaveSettings}
+          isSaving={isSaving}
+          addToast={addToast}
+        />
       )}
 
       {/* ERPNext Integration Tab */}
@@ -3669,6 +2728,128 @@ export const AdminSettings: React.FC = () => {
 
       {activeTab === 'finance' && (
         <div className="space-y-8">
+          {/* Bank & Payment Account Configuration */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Building2 size={18} className="text-purple-600" />
+                  Official Bank Details & Payment Modes
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Used across invoices, receipts, student portals, and admission letters.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppSettings(prev => ({
+                      ...prev,
+                      bankName: 'Co-operative Bank of Kenya',
+                      bankAccountName: 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE',
+                      bankAccountNumber: '032000025240',
+                      bankBranch: 'Thika Makongeni',
+                      bankPaybill: '247247',
+                      bankPaymentInstructions: "Quote your Admission Number as payment reference on all deposits. Cash payments on campus are strictly prohibited."
+                    }));
+                    addToast('Official bank details restored to defaults!', 'success');
+                  }}
+                  className="text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw size={12} />
+                  Restore Official Defaults
+                </button>
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={async () => {
+                    setIsSaving(true);
+                    try {
+                      await setDoc(doc(db, 'settings', 'app_config'), appSettings, { merge: true });
+                      addToast('Bank details updated and synced across all modules!', 'success');
+                    } catch (err: any) {
+                      addToast(err?.message || 'Failed to save bank details', 'error');
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  className="bg-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  Save Bank Details
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-600 uppercase mb-1">Bank Account Name</label>
+                <input
+                  type="text"
+                  value={appSettings.bankAccountName || ''}
+                  onChange={(e) => setAppSettings({ ...appSettings, bankAccountName: e.target.value })}
+                  placeholder="e.g. BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE"
+                  className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-600 uppercase mb-1">Bank Name</label>
+                <input
+                  type="text"
+                  value={appSettings.bankName || ''}
+                  onChange={(e) => setAppSettings({ ...appSettings, bankName: e.target.value })}
+                  placeholder="e.g. Co-operative Bank of Kenya"
+                  className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-600 uppercase mb-1">Account Number (A/C No.)</label>
+                <input
+                  type="text"
+                  value={appSettings.bankAccountNumber || ''}
+                  onChange={(e) => setAppSettings({ ...appSettings, bankAccountNumber: e.target.value })}
+                  placeholder="e.g. 032000025240"
+                  className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm font-mono font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-600 uppercase mb-1">Branch</label>
+                  <input
+                    type="text"
+                    value={appSettings.bankBranch || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, bankBranch: e.target.value })}
+                    placeholder="e.g. Thika Makongeni"
+                    className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-600 uppercase mb-1">Paybill / Till (Optional)</label>
+                  <input
+                    type="text"
+                    value={appSettings.bankPaybill || ''}
+                    onChange={(e) => setAppSettings({ ...appSettings, bankPaybill: e.target.value })}
+                    placeholder="e.g. 247247"
+                    className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm font-mono text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-bold text-gray-600 uppercase mb-1">Payment Reference & Campus Deposit Instructions</label>
+                <textarea
+                  rows={2}
+                  value={appSettings.bankPaymentInstructions || ''}
+                  onChange={(e) => setAppSettings({ ...appSettings, bankPaymentInstructions: e.target.value })}
+                  placeholder="e.g. Quote your Admission Number as payment reference on all deposits. Cash payments on campus are strictly prohibited."
+                  className="w-full px-3 py-2 bg-slate-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
            <div className="flex justify-between items-center">
              <div>
                <h2 className="text-xl font-bold text-gray-900 line-clamp-1">Expense Log</h2>

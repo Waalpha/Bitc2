@@ -28,15 +28,15 @@ export interface RoleConfig {
 export const SYSTEM_ROLES: RoleConfig[] = [
   {
     id: 'super_admin',
-    name: 'Super Admin (Global Platform)',
-    description: 'Full unrestricted access across all multi-tenant schools, system settings, and cloud infrastructure.',
+    name: 'Super Administrator',
+    description: 'Full unrestricted institutional access across all academic units, system settings, and infrastructure.',
     defaultPermissions: [...PERMISSIONS_LIST],
     isSystemRole: true,
   },
   {
     id: 'school_admin',
-    name: 'School Administrator',
-    description: 'Full administrative control over a single school tenant, staff, students, fees, and settings.',
+    name: 'Institutional Administrator',
+    description: 'Full administrative control over institutional operations, staff, students, fees, and settings.',
     defaultPermissions: PERMISSIONS_LIST.filter(p => p !== 'schools.manage'),
     isSystemRole: true,
   },

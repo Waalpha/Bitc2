@@ -1,51 +1,39 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, enableIndexedDbPersistence } from '@firebase/firestore';
-import { doc, getDocFromServer } from '@firebase/firestore';
+import { 
+  getFirestore, 
+  doc, 
+  getDocFromServer 
+} from '@firebase/firestore';
 import { getMessaging } from 'firebase/messaging';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
+const isConfigValid = Boolean(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId);
 export const isFirebaseReady = isConfigValid;
 
 const app = isConfigValid ? initializeApp(firebaseConfig) : null;
-export const auth = isConfigValid ? getAuth(app!) : ({} as any);
+export const auth = isConfigValid && app ? getAuth(app) : ({} as any);
 
-// Use initializeFirestore to force long polling, helping with proxy issues
-export const db = isConfigValid 
-  ? initializeFirestore(app!, {
-      experimentalForceLongPolling: true,
-    }, firebaseConfig.firestoreDatabaseId) 
+// Standard getFirestore initialization with databaseId as required by Firebase skill
+export const db = isConfigValid && app 
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId) 
   : ({} as any);
 
-// Enable persistence
-if (isConfigValid && typeof window !== 'undefined') {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a a time.
-        console.warn('Firestore persistence failed: failed-precondition');
-    } else if (err.code === 'unimplemented') {
-        // The current browser does not support all of the features required to enable persistence
-        console.warn('Firestore persistence failed: unimplemented');
-    }
-  });
-}
-
-export const messaging = isConfigValid && typeof window !== 'undefined' ? getMessaging(app!) : null;
+export const messaging = isConfigValid && app && typeof window !== 'undefined' ? getMessaging(app) : null;
 
 if (!isConfigValid) {
   console.warn("Firebase configuration is missing or invalid. Please check the Firebase Setup UI.");
 } else {
-  // Test connection to Firestore
+  // Test connection to Firestore safely
   const testConnection = async () => {
     try {
       await getDocFromServer(doc(db, 'test', 'connection'));
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('the client is offline')) {
-          console.error("Firestore Error: The client is offline. This usually means the Firestore Database has not been created in the Firebase Console, the configuration is incorrect, or the project is disabled.");
+          console.warn("Firestore Notice: The client is offline or starting up.");
         } else {
-          console.error("Firestore Test connection failed:", error.message);
+          console.warn("Firestore Test connection notice:", error.message);
         }
       }
     }

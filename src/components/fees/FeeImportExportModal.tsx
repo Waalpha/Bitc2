@@ -166,7 +166,7 @@ export const FeeImportExportModal: React.FC<FeeImportExportModalProps> = ({
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fee Import Template");
-    XLSX.writeFile(wb, "Davetech_Student_Fee_Import_Template.xlsx");
+    XLSX.writeFile(wb, "BITC_Student_Fee_Import_Template.xlsx");
     addToast("Excel Fee Import Template downloaded!", "success");
   };
 
@@ -188,7 +188,7 @@ export const FeeImportExportModal: React.FC<FeeImportExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = "Davetech_Student_Fee_Import_Template.csv";
+    a.download = "BITC_Student_Fee_Import_Template.csv";
     a.click();
     addToast("CSV Fee Import Template downloaded!", "success");
   };
@@ -543,7 +543,7 @@ export const FeeImportExportModal: React.FC<FeeImportExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-black text-white">Student Fees Import & Export Center</h2>
-              <p className="text-xs text-slate-400">Manage Excel/CSV fee record ledgers with real-time tenant validation</p>
+              <p className="text-xs text-slate-400">Manage Excel/CSV fee record ledgers with real-time student registry validation</p>
             </div>
           </div>
 

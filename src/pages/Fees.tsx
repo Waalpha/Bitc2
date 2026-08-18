@@ -489,12 +489,12 @@ export const Fees: React.FC = () => {
             </div>
 
             <div class="invoice-footer" style="margin-top: 30px; text-align: left; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
-              <p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Payment Instructions (Bank Deposit):</p>
+              <p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Payment Instructions (Bank Deposit / Paybill):</p>
               <p style="margin: 0; font-size: 10px; color: #334155; line-height: 1.4;">
-                <strong>Bank Account Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
-                <strong>Account Number (A/C. No.):</strong> 032000025240<br />
-                <strong>Branch:</strong> Thika Makongeni<br />
-                <em>Note: Always write the student's full name and Admission Number as the reference on the deposit slip.</em>
+                <strong>Bank Account Name:</strong> ${settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}<br />
+                <strong>Bank:</strong> ${settings?.bankName || 'Co-operative Bank of Kenya'} &bull; <strong>Branch:</strong> ${settings?.bankBranch || 'Thika Makongeni'}<br />
+                <strong>Account Number (A/C. No.):</strong> ${settings?.bankAccountNumber || '032000025240'} ${settings?.bankPaybill ? `&bull; <strong>Paybill:</strong> ${settings.bankPaybill}` : ''}<br />
+                <em>${settings?.bankPaymentInstructions || "Note: Always write the student's full name and Admission Number as the reference on the deposit slip. Direct cash payments on campus are strictly prohibited."}</em>
               </p>
             </div>
 
@@ -1212,11 +1212,12 @@ export const Fees: React.FC = () => {
             <ul style="font-size: 11px; color: #475569; padding-left: 18px; line-height: 1.6; margin: 0;">
               <li><strong>Payment Modes:</strong> All fees are payable directly to the official college bank account:
                 <div style="margin: 6px 0; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 6px; font-size: 11px; color: #1e293b; max-width: 600px; line-height: 1.45; display: block; font-weight: 500;">
-                  <strong>A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE &bull; 
-                  <strong>A/C. No.:</strong> 032000025240 &bull; 
-                  <strong>Branch:</strong> Thika Makongeni
+                  <strong>Bank:</strong> ${settings?.bankName || 'Co-operative Bank of Kenya'} &bull; 
+                  <strong>A/C Name:</strong> ${settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'} &bull; 
+                  <strong>A/C. No.:</strong> ${settings?.bankAccountNumber || '032000025240'} &bull; 
+                  <strong>Branch:</strong> ${settings?.bankBranch || 'Thika Makongeni'}
                 </div>
-                <span style="display: block; margin-top: 4px; font-weight: 600; color: #b91c1c;">Please Note: Cash payments are strictly prohibited on campus.</span>
+                <span style="display: block; margin-top: 4px; font-weight: 600; color: #b91c1c;">Please Note: ${settings?.bankPaymentInstructions || 'Cash payments are strictly prohibited on campus. Always use student admission number as reference.'}</span>
               </li>
               <li style="margin-top: 4px;"><strong>Installment Plans:</strong> Students may request monthly installment agreements at the finance registry.</li>
               <li style="margin-top: 4px;"><strong>Access:</strong> Tuition fee clearing is required before proceeding to end-of-semester clinical attachments.</li>
@@ -1716,8 +1717,8 @@ export const Fees: React.FC = () => {
                 <div style="border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; background-color: #f8fafc; margin-bottom: 15px; position: relative; z-index: 20;">
                   <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.05em;">Official Institution Bank Details:</p>
                   <p style="margin: 0; font-size: 10px; color: #475569; line-height: 1.45;">
-                    <strong>Bank A/C Name:</strong> BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE<br />
-                    <strong>Account Number (A/C. No.):</strong> 032000025240 &bull; <strong>Branch:</strong> Thika Makongeni
+                    <strong>Bank:</strong> ${settings?.bankName || 'Co-operative Bank of Kenya'} &bull; <strong>Bank A/C Name:</strong> ${settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}<br />
+                    <strong>Account Number (A/C. No.):</strong> ${settings?.bankAccountNumber || '032000025240'} &bull; <strong>Branch:</strong> ${settings?.bankBranch || 'Thika Makongeni'}
                   </p>
                 </div>
                 
@@ -4557,14 +4558,17 @@ export const Fees: React.FC = () => {
                           <div>
                             <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🏦 Direct Bank Deposits</p>
                             <div className="bg-bg-card border border-white/5 p-4 rounded-2xl space-y-1.5 my-2 text-text-primary shadow-inner">
-                              <p className="font-black text-xs text-primary tracking-wide">BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE</p>
+                              <p className="font-black text-xs text-primary tracking-wide">{settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</p>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] uppercase font-bold text-text-muted">A/C No:</span>
-                                <span className="font-mono text-sm font-black text-text-primary bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg select-all">032000025240</span>
+                                <span className="font-mono text-sm font-black text-text-primary bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg select-all">{settings?.bankAccountNumber || '032000025240'}</span>
                               </div>
-                              <p className="text-[10px] font-bold text-text-muted">Branch: Thika Makongeni</p>
+                              <p className="text-[10px] font-bold text-text-muted">Bank: {settings?.bankName || 'Co-operative Bank of Kenya'} &bull; Branch: {settings?.bankBranch || 'Thika Makongeni'}</p>
+                              {settings?.bankPaybill && (
+                                <p className="text-[10px] font-bold text-emerald-400">Paybill: {settings.bankPaybill}</p>
+                              )}
                             </div>
-                            <p className="mt-2">Direct bank payments require the official Admission Number as the payment reference. Hand-delivered cash is strictly prohibited on campus grounds.</p>
+                            <p className="mt-2">{settings?.bankPaymentInstructions || 'Direct bank payments require the official Admission Number as the payment reference. Hand-delivered cash is strictly prohibited on campus grounds.'}</p>
                           </div>
                           <div>
                             <p className="font-bold text-text-secondary uppercase tracking-wider text-[10px] mb-1">🛡️ Clinical Attachments</p>
@@ -5298,16 +5302,19 @@ export const Fees: React.FC = () => {
                   Official Bank Account
                 </span>
                 <div className="space-y-1">
-                  <p className="font-extrabold text-sm tracking-tight text-white leading-tight">BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE</p>
+                  <p className="font-extrabold text-sm tracking-tight text-white leading-tight">{settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-[10px] font-bold text-blue-200 uppercase">A/C No:</span>
-                    <p className="font-mono text-sm font-black text-white bg-blue-950/30 border border-white/10 px-2.5 py-1 rounded-lg select-all">032000025240</p>
+                    <p className="font-mono text-sm font-black text-white bg-blue-950/30 border border-white/10 px-2.5 py-1 rounded-lg select-all">{settings?.bankAccountNumber || '032000025240'}</p>
                   </div>
-                  <p className="text-xs font-semibold text-blue-200">Branch: Thika Makongeni</p>
+                  <p className="text-xs font-semibold text-blue-200">Bank: {settings?.bankName || 'Co-operative Bank of Kenya'} &bull; Branch: {settings?.bankBranch || 'Thika Makongeni'}</p>
+                  {settings?.bankPaybill && (
+                    <p className="text-xs font-semibold text-amber-300">Paybill: {settings.bankPaybill}</p>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-blue-100/95 leading-relaxed mt-4 bg-blue-700/30 p-2.5 rounded-xl border border-blue-500/10">
-                ⚠️ <strong>Reference Note:</strong> Please specify your official <strong>Admission Number</strong> as the reference/narrative on all deposits. Cash payments on campus are strictly prohibited.
+                ⚠️ <strong>Reference Note:</strong> {settings?.bankPaymentInstructions || 'Please specify your official Admission Number as the reference/narrative on all deposits. Cash payments on campus are strictly prohibited.'}
               </p>
             </div>
           </div>

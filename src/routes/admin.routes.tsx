@@ -2,7 +2,6 @@ import React from 'react';
 import { RouteObject, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './guards';
 import { AdminSettings } from '../pages/AdminSettings';
-import { DavetechAdmin } from '../pages/DavetechAdmin';
 import { Students } from '../pages/Students';
 import { StudentAdmission } from '../pages/StudentAdmission';
 import { Transcripts } from '../pages/Transcripts';
@@ -11,14 +10,6 @@ import { Fees } from '../pages/Fees';
 import { WhatsApp } from '../pages/WhatsApp';
 
 export const adminRoutes: RouteObject[] = [
-  {
-    path: '/davetech-admin',
-    element: (
-      <ProtectedRoute permission="settings.manage">
-        <DavetechAdmin />
-      </ProtectedRoute>
-    ),
-  },
   {
     path: '/admin',
     element: (

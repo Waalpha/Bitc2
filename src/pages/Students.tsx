@@ -937,6 +937,17 @@ export const Students: React.FC = () => {
                 </td>
               </tr>
             </table>
+
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; padding: 12px; margin: 14px 0; border-radius: 8px;">
+              <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase;">Official Tuition & Fee Payment Account:</p>
+              <p style="margin: 0; font-size: 11px; color: #334155; line-height: 1.45;">
+                <strong>Bank Account Name:</strong> ${settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}<br />
+                <strong>Bank:</strong> ${settings?.bankName || 'Co-operative Bank of Kenya'} &bull; <strong>Branch:</strong> ${settings?.bankBranch || 'Thika Makongeni'}<br />
+                <strong>Account Number:</strong> <span style="font-family: monospace; font-weight: 800; font-size: 12px; color: #0f172a;">${settings?.bankAccountNumber || '032000025240'}</span>
+                ${settings?.bankPaybill ? `&bull; <strong>Paybill:</strong> ${settings.bankPaybill}` : ''}<br />
+                <em style="color: #b91c1c; font-size: 10.5px;">${settings?.bankPaymentInstructions || 'Note: Quote your student Admission Number on all deposit slips. Cash payments on campus are strictly prohibited.'}</em>
+              </p>
+            </div>
             
             <p>Please report to the Registrar of Admissions desk to clear any pending fees, secure hostel rooms if applicable, and collect your timetable & orientation pack.</p>
             

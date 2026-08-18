@@ -15,7 +15,7 @@ export function getUserRole(user?: AppUser | null, customClaims?: Record<string,
 export function getUserSchool(user?: AppUser | null, customClaims?: Record<string, any>): string {
   if (customClaims?.schoolId) return customClaims.schoolId;
   if (user?.schoolId) return user.schoolId;
-  return 'bitc'; // Default fallback multi-tenant school ID
+  return 'bitc'; // Default fallback school ID
 }
 
 /**

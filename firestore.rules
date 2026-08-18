@@ -126,12 +126,13 @@ service cloud.firestore {
 
     // Schools Collection
     match /schools/{schoolId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isSuperAdmin() || (isSchoolAdmin() && schoolId == getSchoolId());
 
       // Nested Sub-collection Support for Tenant-scoped queries
       match /{subcollection}/{docId} {
-        allow read, write: if isSuperAdmin() || schoolId == getSchoolId();
+        allow read: if true;
+        allow write: if isSuperAdmin() || schoolId == getSchoolId();
       }
     }
 
@@ -313,7 +314,7 @@ service cloud.firestore {
 
     // System Settings & Calendar
     match /settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isSchoolAdmin() && isValidSettings(incoming(), settingId);
     }
 

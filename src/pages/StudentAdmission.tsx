@@ -39,21 +39,9 @@ const TABS = [
 ];
 
 import { uploadFile } from '../services/uploadService';
+import { getCourseAdmissionCode, formatAdmissionNumber, calculateNextAdmissionSerial, KNOWN_COURSES } from '../utils/admissionUtils';
 
-const SYSTEM_COURSES = [
-  "Diploma in Beauty Therapy, Skincare & Professional Makeup",
-  "Certificate in Hairdressing & Beauty Therapy",
-  "Diploma in Software Engineering & Web Development",
-  "Certificate in Computer Packages & Digital Commerce Systems",
-  "Certificate in Healthcare Support Services & Caregiver",
-  "Diploma in Nursing Aide, Anatomy & Patient Nutrition",
-  "Certificate in Professional Cookery, General Baking & Cake Decoration",
-  "Diploma in Catering & Hospitality Management",
-  "Certificate in Electrical and Electronics Technology",
-  "Certificate in Theology & Christian Ministry",
-  "Certificate in Theology & Biblical Studies",
-  "Diploma in Theology & Christian Ministry"
-];
+const SYSTEM_COURSES = KNOWN_COURSES;
 
 export const StudentAdmission: React.FC = () => {
   const { user, userData, hasPermission, settings } = useAuth();
@@ -359,6 +347,17 @@ export const StudentAdmission: React.FC = () => {
                 </td>
               </tr>
             </table>
+
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; padding: 12px; margin: 14px 0; border-radius: 8px;">
+              <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase;">Official Tuition & Fee Payment Account:</p>
+              <p style="margin: 0; font-size: 11px; color: #334155; line-height: 1.45;">
+                <strong>Bank Account Name:</strong> ${settings?.bankAccountName || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}<br />
+                <strong>Bank:</strong> ${settings?.bankName || 'Co-operative Bank of Kenya'} &bull; <strong>Branch:</strong> ${settings?.bankBranch || 'Thika Makongeni'}<br />
+                <strong>Account Number:</strong> <span style="font-family: monospace; font-weight: 800; font-size: 12px; color: #0f172a;">${settings?.bankAccountNumber || '032000025240'}</span>
+                ${settings?.bankPaybill ? `&bull; <strong>Paybill:</strong> ${settings.bankPaybill}` : ''}<br />
+                <em style="color: #b91c1c; font-size: 10.5px;">${settings?.bankPaymentInstructions || 'Note: Quote your student Admission Number on all deposit slips. Cash payments on campus are strictly prohibited.'}</em>
+              </p>
+            </div>
             
             <p>Please report to the Registrar of Admissions desk to clear any pending fees, secure hostel rooms if applicable, and collect your timetable & orientation pack.</p>
             
@@ -457,67 +456,28 @@ export const StudentAdmission: React.FC = () => {
     fetchClasses();
   }, []);
 
-  // Extract course code abbreviation dynamically
-  const getCourseCode = (courseName: string): string => {
-    if (!courseName) return 'CNA';
-    const lower = courseName.toLowerCase();
-    
-    // Explicit course matches
-    if (lower.includes('beauty') || lower.includes('makeup')) return 'DBT';
-    if (lower.includes('hairdressing') || lower.includes('styling')) return 'CHD';
-    if (lower.includes('software') || lower.includes('engineering') || lower.includes('web')) return 'DSE';
-    if (lower.includes('packages') || lower.includes('computer')) return 'CCP';
-    if (lower.includes('caregiver') || lower.includes('community health') || lower.includes('healthcare support') || lower.includes('healthcare service')) return 'CNA';
-    if (lower.includes('nursing') || lower.includes('aide')) return 'DNA';
-    if (lower.includes('cookery') || lower.includes('baking') || lower.includes('cake')) return 'CPC';
-    if (lower.includes('catering') || lower.includes('hospitality')) return 'DCH';
-    if (lower.includes('electrical') || lower.includes('electronics') || lower.includes('eet') || lower.includes('solar')) return 'CEET';
-    if (lower.includes('theological') || lower.includes('theology') || lower.includes('divinity') || lower.includes('biblical')) return 'THS';
-    
-    // Fallback: 3 letter uppercase abbreviation from the word initials
-    const words = courseName.trim().replace(/[^a-zA-Z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !['and', 'for', 'the', 'with'].includes(w.toLowerCase()));
-    if (words.length >= 3) {
-      return words.slice(0, 3).map(w => w[0].toUpperCase()).join('');
-    } else if (words.length > 0) {
-      const combined = words.join('').toUpperCase();
-      return combined.slice(0, 3).padEnd(3, 'A');
-    }
-    return 'CNA';
-  };
-
-  // Load highest base serial number from database starting from 355
+  // Load highest base serial number from database or calculate dynamically
   useEffect(() => {
     const fetchBaseSerial = async () => {
       try {
         const usersSnap = await getDocs(collection(db, 'users'));
-        let maxNum = 355; // Next will automatically block to 356
+        let existingList: Array<{ admissionNumber?: string; course?: string }> = [];
         usersSnap.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.admissionNumber) {
-            const parts = data.admissionNumber.toString().split('/');
-            parts.forEach(part => {
-              const num = parseInt(part, 10);
-              // Ignore high numbers that look like years (e.g. 2024 to 2029) and invalid values
-              if (!isNaN(num) && num !== 2024 && num !== 2025 && num !== 2026 && num !== 2027 && num !== 2028 && num !== 2029 && num > maxNum && num < 10000) {
-                maxNum = num;
-              }
-            });
-          }
+          existingList.push(doc.data());
         });
-        setBaseSerial(maxNum);
+        const serial = calculateNextAdmissionSerial(existingList, formData.course);
+        setBaseSerial(serial);
       } catch (error) {
         console.error("Error fetching students for base serial:", error);
       }
     };
     fetchBaseSerial();
-  }, []);
+  }, [formData.course]);
 
-  // Reactively calculate course-based automated admission number
+  // Reactively calculate course-based automated admission number: BITC/course/serial/academicYear
   useEffect(() => {
-    const nextSerial = baseSerial + 1;
-    const code = getCourseCode(formData.course);
     const yr = formData.academicYear || '2026';
-    const formattedId = `BITC/${code}/${nextSerial}/${yr}`;
+    const formattedId = formatAdmissionNumber(formData.course, baseSerial, yr);
     
     setFormData(prev => ({
       ...prev,
@@ -617,13 +577,7 @@ export const StudentAdmission: React.FC = () => {
       });
 
       // Update the base serial internally so the next student is assigned the next incremental number
-      const currentParts = formData.admissionNumber.toString().split('/');
-      currentParts.forEach(part => {
-        const num = parseInt(part, 10);
-        if (!isNaN(num) && num !== 2024 && num !== 2025 && num !== 2026 && num !== 2027 && num > baseSerial && num < 10000) {
-          setBaseSerial(num);
-        }
-      });
+      setBaseSerial(prev => prev + 1);
 
       const admittedStudentDetails = {
         name: fullName,

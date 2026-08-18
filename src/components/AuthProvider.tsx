@@ -59,10 +59,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSchoolId, setActiveSchoolIdState] = useState<string>(() => localStorage.getItem('active_school_id') || 'bitc');
   const [settings, setSettings] = useState<AppSettings | null>({
     appTitle: 'BITC',
+    schoolName: 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE',
     fontFamily: 'Inter',
     fontSize: '16px',
     textAlign: 'left',
     activeSession: '2024/2025 Semester 1',
+    bankName: 'Co-operative Bank of Kenya',
+    bankAccountName: 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE',
+    bankAccountNumber: '032000025240',
+    bankBranch: 'Thika Makongeni',
+    bankPaybill: '247247',
+    bankPaymentInstructions: "Write student full name and Admission Number as the payment reference. Cash payments on campus are strictly prohibited.",
     publicHeroImages: [],
     portalGallery: []
   });
@@ -80,9 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!isFirebaseReady) return;
 
-    // Standard school bootstrap if firestore empty
+    // Standard school bootstrap if firestore empty and user is logged in
     const initDefaultSchool = async () => {
       try {
+        if (!auth?.currentUser) return;
         const { getDocs, setDoc, doc, collection } = await import('firebase/firestore');
         const snap = await getDocs(collection(db, 'schools'));
         if (snap.empty) {
@@ -94,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       } catch (err) {
-        console.error("Error bootstrapping default school:", err);
+        // Silently skip if permissions don't allow bootstrap write yet
       }
     };
     initDefaultSchool();

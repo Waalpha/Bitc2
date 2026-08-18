@@ -143,9 +143,9 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { id: 'hr.manage', name: 'HR & Payroll Management', category: 'Modules', description: 'Manage staff contracts, payroll, leaves, and attendance' },
 
   // Administration
-  { id: 'settings.manage', name: 'System Settings', category: 'System', description: 'Modify tenant parameters, branding, and academic terms' },
+  { id: 'settings.manage', name: 'System Settings', category: 'System', description: 'Modify institutional parameters, branding, and academic terms' },
   { id: 'erpnext.manage', name: 'ERPNext Integration', category: 'System', description: 'Configure ERPNext API keys, sync schedules, and webhooks' },
-  { id: 'schools.manage', name: 'Multi-School SaaS Tenants', category: 'System', description: 'Provision and configure multi-tenant school instances' },
+  { id: 'schools.manage', name: 'Campus / Branches Management', category: 'System', description: 'Configure institution campuses and branches' },
   { id: 'users.manage', name: 'User Management', category: 'System', description: 'Create, deactivate, and manage user accounts and scopes' },
   { id: 'roles.manage', name: 'Role & Permission Matrix', category: 'System', description: 'Create and assign custom roles and security scopes' },
   { id: 'audit.view', name: 'View Security Audit Logs', category: 'System', description: 'Inspect system audit trails, logins, and security events' },

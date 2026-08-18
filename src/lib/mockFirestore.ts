@@ -133,8 +133,30 @@ async function cacheSingleDocFromServer(collectionName: string, id: string, docS
   }
 }
 
+export function getFirestore(app?: any, databaseId?: string) {
+  if (app && databaseId) {
+    try {
+      return (realFS as any).getFirestore(app, databaseId);
+    } catch {
+      return (realFS as any).getFirestore ? (realFS as any).getFirestore(app) : { type: 'firestore' };
+    }
+  }
+  if (app && (realFS as any).getFirestore) {
+    return (realFS as any).getFirestore(app);
+  }
+  return { type: 'firestore' };
+}
+
 export function initializeFirestore(app: any, settings: any, databaseId?: string) {
   return { type: 'firestore' };
+}
+
+export function persistentLocalCache(options?: any) {
+  return (realFS as any).persistentLocalCache ? (realFS as any).persistentLocalCache(options) : options;
+}
+
+export function persistentMultipleTabManager() {
+  return (realFS as any).persistentMultipleTabManager ? (realFS as any).persistentMultipleTabManager() : {};
 }
 
 export function enableIndexedDbPersistence(db: any) {

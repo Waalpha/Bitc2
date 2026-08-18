@@ -157,7 +157,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {
       title: 'ADMINISTRATION',
       items: [
-        { name: 'Davetech Command Center', path: '/davetech-admin', icon: ShieldCheck, permission: 'settings.manage' },
         { name: 'Admin Section', path: '/admin', icon: Settings, permission: 'settings.manage' },
         { name: 'HR Management', path: '/hr', icon: Users, permission: 'hr.manage' },
         { name: 'Units Catalog', path: '/units', icon: BookOpen, permission: 'units.manage' },

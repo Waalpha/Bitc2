@@ -29,6 +29,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { withOklabOklchPatch } from '../utils/canvasPatch';
+import { getSchoolForCourse, getDepartmentForCourse } from '../utils/admissionUtils';
 
 const getTodayISODate = () => {
   const d = new Date();
@@ -74,6 +75,7 @@ export const Transcripts: React.FC = () => {
 
   // Overrides for School Details
   const [schoolNameOverride, setSchoolNameOverride] = useState('');
+  const [schoolFacultyOverride, setSchoolFacultyOverride] = useState(localStorage.getItem('transcript_facultyName') || '');
   const [logoUrlOverride, setLogoUrlOverride] = useState('');
   const [addressOverride, setAddressOverride] = useState('');
   const [phoneOverride, setPhoneOverride] = useState('');
@@ -264,6 +266,15 @@ export const Transcripts: React.FC = () => {
               text-transform: uppercase;
               margin: 0;
               font-family: 'Trebuchet MS', Arial, sans-serif;
+            }
+            .school-faculty {
+              font-size: 11.5pt;
+              font-weight: bold;
+              color: #1e40af;
+              text-transform: uppercase;
+              margin: 4px 0 2px 0;
+              letter-spacing: 0.5px;
+              font-family: 'Georgia', serif;
             }
             .school-subtitle {
               font-size: 8.5pt;
@@ -477,6 +488,7 @@ export const Transcripts: React.FC = () => {
               <tr>
                 <td style="padding-bottom:15px; vertical-align:middle;">
                   <h2 class="school-title">${schoolNameOverride || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}</h2>
+                  <h3 class="school-faculty">${schoolFacultyOverride || getSchoolForCourse(selectedStudent?.course)}</h3>
                   <p class="school-subtitle">Ministry of Higher Education, Science & Technology & TVETA Registered</p>
                   <p class="school-desc">Official Certificate of Registrar of Academic Affairs</p>
                 </td>
@@ -504,6 +516,16 @@ export const Transcripts: React.FC = () => {
                 <td class="info-card">
                   <p class="info-label">Registration Number</p>
                   <p class="info-val">${selectedStudent.admissionNumber || 'N/A'}</p>
+                </td>
+              </tr>
+              <tr>
+                <td class="info-card">
+                  <p class="info-label">Faculty / School</p>
+                  <p class="info-val" style="color:#1e40af; font-weight:bold;">${schoolFacultyOverride || getSchoolForCourse(selectedStudent.course)}</p>
+                </td>
+                <td class="info-card">
+                  <p class="info-label">Department</p>
+                  <p class="info-val">${getDepartmentForCourse(selectedStudent.course)}</p>
                 </td>
               </tr>
               <tr>
@@ -1172,6 +1194,9 @@ export const Transcripts: React.FC = () => {
     if (field === 'schoolName') {
       setSchoolNameOverride(value);
       localStorage.setItem('transcript_schoolName', value);
+    } else if (field === 'facultyName') {
+      setSchoolFacultyOverride(value);
+      localStorage.setItem('transcript_facultyName', value);
     } else if (field === 'logoUrl') {
       setLogoUrlOverride(value);
       localStorage.setItem('transcript_logoUrl', value);
@@ -1225,6 +1250,7 @@ export const Transcripts: React.FC = () => {
       setPhoneOverride('+254 727 114 355 / +254 707 760 239');
       setEmailOverride('info@bitc.ac.ke');
     }
+    setSchoolFacultyOverride('');
     setRegistrarNameOverride('PROF. PATRICK NJUGUNA, PHD');
     setRegistrarTitleOverride('REGISTRAR OF ACADEMIC AFFAIRS');
     setSignatureUrlOverride('');
@@ -1235,6 +1261,7 @@ export const Transcripts: React.FC = () => {
     setSealDateOverride(getTodayISODate());
     
     localStorage.removeItem('transcript_schoolName');
+    localStorage.removeItem('transcript_facultyName');
     localStorage.removeItem('transcript_logoUrl');
     localStorage.removeItem('transcript_address');
     localStorage.removeItem('transcript_phone');
@@ -1609,6 +1636,28 @@ export const Transcripts: React.FC = () => {
                           onChange={(e) => handleSchoolDetailChange('schoolName', e.target.value)}
                           className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] uppercase font-bold text-slate-400">Faculty / School Banner</label>
+                          {schoolFacultyOverride && (
+                            <button 
+                              type="button" 
+                              onClick={() => handleSchoolDetailChange('facultyName', '')}
+                              className="text-[9px] text-blue-600 hover:underline font-semibold"
+                            >
+                              Auto-detect
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={schoolFacultyOverride || (selectedStudent ? getSchoolForCourse(selectedStudent.course) : 'School of Health Sciences')}
+                          onChange={(e) => handleSchoolDetailChange('facultyName', e.target.value)}
+                          placeholder="e.g. School of Health Sciences"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold ring-1 ring-slate-100 dark:ring-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <span className="text-[9px] text-slate-400 mt-1 block leading-tight">Dynamically maps to School of Health Sciences, Cosmetology, Electrical, etc.</span>
                       </div>
                       <div>
                         <label className="text-[10px] uppercase font-bold text-slate-400">Logo Image URL</label>
@@ -2030,16 +2079,19 @@ export const Transcripts: React.FC = () => {
                         {/* Identity & Accreditation */}
                         <div className="text-center flex-1 space-y-0.5">
                           <h1 className="text-lg sm:text-xl font-serif font-black uppercase tracking-tight text-slate-950 leading-tight">
-                            {schoolNameOverride}
+                            {schoolNameOverride || 'BREAKTHROUGH INTERNATIONAL TRAINING COLLEGE'}
                           </h1>
+                          <div className="text-xs sm:text-sm font-serif font-black uppercase tracking-wider text-blue-900 leading-tight py-0.5">
+                            {schoolFacultyOverride || getSchoolForCourse(selectedStudent?.course)}
+                          </div>
                           <p className="text-[9.5px] font-sans font-bold text-red-700 uppercase tracking-wider leading-none">
                             Ministry of Education & TVETA Registered Institution — Reg No. TVETA/TVC/0082/2016
                           </p>
                           <p className="text-[8.5px] font-sans text-slate-700 font-medium leading-tight">
-                            {addressOverride} | Tel: {phoneOverride}
+                            {addressOverride || 'P O BOX 5110 – 01002 Madaraka Thika'} | Tel: {phoneOverride || '+254 727 114 355 / +254 707 760 239'}
                           </p>
                           <p className="text-[8.5px] font-sans text-slate-700 font-medium leading-none">
-                            Email: {emailOverride} | Website: www.bitc.ac.ke
+                            Email: {emailOverride || 'info@bitc.ac.ke'} | Website: www.bitc.ac.ke
                           </p>
                         </div>
 
@@ -2071,46 +2123,56 @@ export const Transcripts: React.FC = () => {
                     {/* 3. STUDENT PARTICULARS */}
                     <div className="border border-slate-900 bg-slate-50/30 p-2.5">
                       <div className="flex gap-3 items-start">
-                        <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1 text-[10.5px] font-sans">
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-[10.5px] font-sans">
                           
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Student Name:</span>
-                            <span className="font-black text-slate-950 uppercase">{selectedStudent.name}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Student Name:</span>
+                            <span className="flex-1 font-black text-slate-950 uppercase leading-snug break-words">{selectedStudent.name}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Registration No:</span>
-                            <span className="font-mono font-bold text-slate-950 uppercase">{selectedStudent.admissionNumber || 'BITC/2026/001'}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Registration No:</span>
+                            <span className="flex-1 font-mono font-bold text-slate-950 uppercase leading-snug break-words">{selectedStudent.admissionNumber || 'BITC/2026/001'}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Programme / Course:</span>
-                            <span className="font-bold text-slate-950 uppercase truncate">{selectedStudent.course || 'Certificate Program'}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Faculty / School:</span>
+                            <span className="flex-1 font-black text-blue-950 uppercase leading-snug break-words">{schoolFacultyOverride || getSchoolForCourse(selectedStudent.course)}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Department:</span>
-                            <span className="font-bold text-slate-950 uppercase truncate">{getDepartmentForCourse(selectedStudent.course)}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Department:</span>
+                            <span className="flex-1 font-bold text-slate-950 uppercase leading-snug break-words">{getDepartmentForCourse(selectedStudent.course)}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">ID / Passport No:</span>
-                            <span className="font-mono text-slate-950 uppercase">{selectedStudent.idNumber || 'N/A'}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Programme / Course:</span>
+                            <span className="flex-1 font-bold text-slate-950 uppercase leading-snug break-words">{selectedStudent.course || 'Certificate Program'}</span>
                           </div>
 
-                          <div className="flex border-b border-slate-200 pb-0.5">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Academic Intake / Year:</span>
-                            <span className="font-semibold text-slate-950 uppercase">{selectedStudent.academicYear || '2025/2026'}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">ID / Passport No:</span>
+                            <span className="flex-1 font-mono text-slate-950 uppercase leading-snug break-words">{selectedStudent.idNumber || 'N/A'}</span>
                           </div>
 
-                          <div className="flex">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Date of Issue:</span>
-                            <span className="font-semibold text-slate-950 uppercase">{sealDateOverride}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Academic Intake / Year:</span>
+                            <span className="flex-1 font-semibold text-slate-950 uppercase leading-snug break-words">{selectedStudent.academicYear || '2025/2026'}</span>
                           </div>
 
-                          <div className="flex">
-                            <span className="w-32 font-bold text-slate-600 uppercase text-[9.5px]">Transcript Serial:</span>
-                            <span className="font-mono font-bold text-blue-900 uppercase">{generateAutomatedSerial(selectedStudent)}</span>
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Date of Issue:</span>
+                            <span className="flex-1 font-semibold text-slate-950 uppercase leading-snug break-words">{sealDateOverride}</span>
+                          </div>
+
+                          <div className="flex items-baseline gap-2 border-b border-slate-200 pb-0.5 sm:border-b-0 sm:pb-0">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Transcript Serial:</span>
+                            <span className="flex-1 font-mono font-bold text-blue-900 uppercase leading-snug break-words">{generateAutomatedSerial(selectedStudent)}</span>
+                          </div>
+
+                          <div className="flex items-baseline gap-2 pb-0.5 sm:pb-0">
+                            <span className="w-32 shrink-0 font-bold text-slate-600 uppercase text-[9.5px]">Record Status:</span>
+                            <span className="flex-1 font-semibold text-emerald-800 uppercase leading-snug break-words">OFFICIAL & VERIFIED</span>
                           </div>
 
                         </div>
@@ -2382,17 +2444,17 @@ export const Transcripts: React.FC = () => {
                 {/* Header */}
                 <div className="text-center space-y-3 z-10 relative">
                   {/* Logo */}
-                  <div className="flex justify-center mb-1">
+                  <div className="flex justify-center mb-2">
                     {logoUrlOverride ? (
                       <img 
                         src={logoUrlOverride} 
                         alt="School Logo" 
-                        className="h-16 w-auto object-contain max-w-[110px] mix-blend-multiply"
+                        className="cert-logo-img h-24 sm:h-28 w-auto object-contain max-w-[160px] sm:max-w-[190px] mix-blend-multiply drop-shadow-sm transition-all"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-sm inline-flex items-center justify-center">
-                        <GraduationCap className="text-white w-10 h-10" />
+                      <div className="bg-slate-900 text-white p-4 rounded-3xl shadow-md inline-flex items-center justify-center">
+                        <GraduationCap className="text-white w-14 h-14 sm:w-16 sm:h-16" />
                       </div>
                     )}
                   </div>
@@ -2400,6 +2462,9 @@ export const Transcripts: React.FC = () => {
                   <h2 className="cert-title-1 text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-amber-950 leading-none">
                     {schoolNameOverride}
                   </h2>
+                  <h3 className="cert-faculty-title text-sm md:text-base font-serif font-bold uppercase tracking-wider text-amber-900 leading-tight">
+                    {schoolFacultyOverride || getSchoolForCourse(selectedStudent.course)}
+                  </h3>
                   <p className="cert-title-2 text-[10px] md:text-xs font-sans font-extrabold text-slate-500 uppercase tracking-[0.2em] leading-none">
                     Ministry of Higher Education, Science & Technology & TVETA Registered
                   </p>
@@ -2805,6 +2870,13 @@ export const Transcripts: React.FC = () => {
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+          }
+
+          #certificate-view-element .cert-logo-img {
+            height: ${printOrientation === 'landscape' ? '82px' : '72px'} !important;
+            max-width: ${printOrientation === 'landscape' ? '180px' : '160px'} !important;
+            margin-bottom: 4px !important;
+            object-fit: contain !important;
           }
 
           #certificate-view-element .cert-title-1 {

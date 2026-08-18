@@ -20,7 +20,7 @@ export interface Role {
 }
 
 export const PERMISSIONS = [
-  { id: 'settings.manage', name: 'Manage System Settings', description: 'Can modify application settings, branding, white-label options, and tenant configurations' },
+  { id: 'settings.manage', name: 'Manage System Settings', description: 'Can modify application settings, branding, institutional options, and configurations' },
   { id: 'system_settings', name: 'System Settings (Legacy)', description: 'Can modify app title, logo, and styles' },
   { id: 'manage_users', name: 'Manage Users', description: 'Can view, edit, and delete users' },
   { id: 'manage_classes', name: 'Manage Classes', description: 'Can create and delete classes' },

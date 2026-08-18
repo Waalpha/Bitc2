@@ -116,9 +116,9 @@ export async function logAuditEvent(
       return;
     }
 
-    const tenantId = schoolId || 'bitc';
+    const institutionId = schoolId || 'bitc';
     const logData: AuditLogEntry = {
-      schoolId: tenantId,
+      schoolId: institutionId,
       userId: user?.uid || 'anonymous',
       userName: user?.name || user?.email || 'System User',
       userEmail: user?.email || '',

@@ -7,7 +7,7 @@ export class SchoolService {
   }
 
   static async registerSchool(data: Omit<SchoolRecord, 'id'>): Promise<SchoolRecord> {
-    LoggerService.info('Registering new multi-tenant school', { name: data.name, code: data.code });
+    LoggerService.info('Registering new school branch/campus', { name: data.name, code: data.code });
     return await schoolRepository.create(data);
   }
 }
